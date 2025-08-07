@@ -1,5 +1,6 @@
 local client = client
 local reloadSkinTimer = GetGameTimer()
+local hasOpenedCreator = false
 
 local function LoadPlayerUniform(reset)
     if reset then
@@ -754,3 +755,55 @@ RegisterNetEvent("illenium-appearance:client:ClearStuckProps", function()
       end
     end
 end)
+
+-- Esta es la función que se encargará de abrir el menú de ropa de forma segura
+local function OpenCreatorForNewPlayer()
+    if hasOpenedCreator then return end
+    hasOpenedCreator = true
+
+    local config = getNewCharacterConfig()
+    local playerPed = PlayerPedId()
+
+    DoScreenFadeOut(500)
+    Wait(500)
+    FreezeEntityPosition(playerPed, true)
+
+    client.startPlayerCustomization(function(appearance)
+        -- ESTE CÓDIGO SE EJECUTA CUANDO CIERRAS EL MENÚ
+        print('[CLOTHING-DEBUG] El menú de ropa se ha cerrado. Intentando devolver el control.')
+
+        if (appearance) then
+            TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
+        end
+        
+        Wait(500) -- Pequeña espera para que se procese todo
+        
+        -- ------ INICIO DE LA DESCONGELACIÓN FORZADA ------ --
+        
+        -- 1. Devolvemos el foco de la interfaz al juego
+        SetNuiFocus(false, false)
+        
+        -- 2. Quitamos la congelación de posición
+        FreezeEntityPosition(playerPed, false)
+        
+        -- 3. (EL MÁS IMPORTANTE) Forzamos la limpieza de cualquier tarea o animación
+        ClearPedTasksImmediately(playerPed)
+        
+        -- 4. Hacemos que la pantalla vuelva a aparecer
+        DoScreenFadeIn(1000)
+        
+        print('[CLOTHING-DEBUG] ¡Control devuelto! Si sigues congelado, el problema es externo.')
+        -- ------ FIN DE LA DESCONGELACIÓN FORZADA ------ --
+        
+    end, config)
+end
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    Wait(2000)
+    
+    local isNew = exports['qb-multicharacter']:isNewCharacter()
+    if isNew and not hasOpenedCreator then
+        OpenCreatorForNewPlayer()
+    end
+end)
+-- FIN DEL CÓDIGO DE DESCONGELACIÓN FORZADA

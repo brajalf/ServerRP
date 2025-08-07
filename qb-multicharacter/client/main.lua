@@ -3,6 +3,7 @@ local charPed = nil
 local loadScreenCheckState = false
 local QBCore = exports['qb-core']:GetCoreObject()
 local cached_player_skins = {}
+local isNewCharacter = false
 
 local randommodels = { -- models possible to load when choosing empty slot
     'mp_m_freemode_01',
@@ -95,28 +96,16 @@ end
 
 -- Events
 
-RegisterNetEvent('qb-multicharacter:client:closeNUIdefault', function() -- This event is only for no starting apartments
-    DeleteEntity(charPed)
-    SetNuiFocus(false, false)
+RegisterNetEvent('qb-multicharacter:client:closeNUIdefault', function()
     DoScreenFadeOut(500)
-    Wait(2000)
-    SetEntityCoords(PlayerPedId(), Config.DefaultSpawn.x, Config.DefaultSpawn.y, Config.DefaultSpawn.z)
-    TriggerServerEvent('QBCore:Server:OnPlayerLoaded')
-    TriggerEvent('QBCore:Client:OnPlayerLoaded')
-    TriggerServerEvent('qb-houses:server:SetInsideMeta', 0, false)
-    TriggerServerEvent('qb-apartments:server:SetInsideMeta', 0, 0, false)
-    Wait(500)
-    openCharMenu()
-    SetEntityVisible(PlayerPedId(), true)
-    Wait(500)
-    DoScreenFadeIn(250)
-    TriggerEvent('qb-weathersync:client:EnableSync')
-    TriggerEvent('qb-clothes:client:CreateFirstCharacter')
+    Wait(1000)
+    TriggerEvent('qb-spawn:client:openUI', true)
 end)
 
-RegisterNetEvent('qb-multicharacter:client:closeNUI', function()
-    DeleteEntity(charPed)
-    SetNuiFocus(false, false)
+RegisterNetEvent('qb-multicharacter:client:closeNUI', function(data)
+    DoScreenFadeOut(500)
+    Wait(1000)
+    TriggerEvent('qb-spawn:client:openUI', true)
 end)
 
 RegisterNetEvent('qb-multicharacter:client:chooseChar', function()
@@ -274,4 +263,16 @@ RegisterNUICallback('removeCharacter', function(data, cb)
     DeletePed(charPed)
     TriggerEvent('qb-multicharacter:client:chooseChar')
     cb('ok')
+end)
+
+RegisterNetEvent('qb-multicharacter:client:characterCreated', function()
+    isNewCharacter = true
+end)
+
+exports('isNewCharacter', function()
+    if isNewCharacter then
+        isNewCharacter = false -- Se resetea después de verificar para que no vuelva a ocurrir
+        return true
+    end
+    return false
 end)
