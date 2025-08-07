@@ -116,6 +116,8 @@ RegisterNetEvent('qb-multicharacter:server:createCharacter', function(data)
     newData.cid = data.cid
     newData.charinfo = data
     if QBCore.Player.Login(src, false, newData) then
+        local Player = QBCore.Functions.GetPlayer(src)
+        Player.Functions.SetMetaData("is_new_character", true)
         repeat
             Wait(10)
         until hasDonePreloading[src]
@@ -214,3 +216,11 @@ QBCore.Commands.Add('deletechar', Lang:t('commands.deletechar_description'), { {
         TriggerClientEvent('QBCore:Notify', source, Lang:t('notifications.forgot_citizenid'), 'error')
     end
 end, 'god')
+
+RegisterNetEvent('qb-multicharacter:server:removeNewCharFlag', function()
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        -- Eliminamos la marca de "personaje nuevo"
+        Player.Functions.SetMetaData("is_new_character", false)
+    end
+end)

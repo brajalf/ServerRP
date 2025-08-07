@@ -80,3 +80,25 @@ After_Spawn = function(Framework)
     elseif Framework == "custom" then
     end
 end
+
+-- Este evento se dispara automáticamente cuando tu personaje ha cargado en el mundo
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    -- Damos una pequeña pausa para asegurar que todo esté 100% estable
+    Citizen.Wait(1500)
+
+    -- Obtenemos los datos del jugador, incluyendo los metadatos que pusimos antes
+    local playerData = QBCore.Functions.GetPlayerData()
+
+    -- Revisamos si existe la marca "is_new_character" y si está en true
+    if playerData.metadata["is_new_character"] then
+
+        -- Disparamos el evento ORIGINAL de qb-clothing. Esto es crucial
+        -- para que el script maneje el control, la cámara y el cierre correctamente.
+        TriggerEvent('qb-clothes:client:CreateFirstCharacter')
+
+        -- Le decimos al servidor que elimine la marca que pusimos,
+        -- para que esto no se vuelva a ejecutar nunca más para este personaje.
+        TriggerServerEvent('qb-multicharacter:server:removeNewCharFlag')
+
+    end
+end)
