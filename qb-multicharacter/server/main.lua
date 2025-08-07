@@ -137,7 +137,6 @@ RegisterNetEvent('qb-multicharacter:server:createCharacter', function(data)
             TriggerEvent('apartments:client:SetHomeBlip', nil)
         end
     end
-    TriggerClientEvent('qb-multicharacter:client:characterCreated', src)
 end)
 
 RegisterNetEvent('qb-multicharacter:server:deleteCharacter', function(citizenid)
