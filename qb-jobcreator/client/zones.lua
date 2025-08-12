@@ -1,0 +1,120 @@
+QBCore = exports['qb-core']:GetCoreObject()
+
+local Active = {}
+
+local function removeAll()
+  if Config.Integrations.UseQbTarget and next(Active) then
+    for _, z in pairs(Active) do
+      if z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+    end
+  end
+  Active = {}
+end
+
+local function playerJobData()
+  local pd = QBCore.Functions.GetPlayerData() or {}
+  local job = pd.job or {}
+  local gradeLevel = (type(job.grade)=='table' and job.grade.level) or job.grade or 0
+  local isboss = job.isboss or (type(job.grade)=='table' and job.grade.isboss) or false
+  return job.name or 'unemployed', gradeLevel, isboss, (pd.citizenid or pd.citizen)
+end
+
+-- ¿Tiene el job vía recurso de multi‑trabajo?
+local function hasMultiJob(job)
+  if not (Config.MultiJob and Config.MultiJob.Enabled and Config.MultiJob.Resource) then return false end
+  if GetResourceState(Config.MultiJob.Resource) ~= 'started' then return false end
+  local ok, has = pcall(function()
+    local r = exports[Config.MultiJob.Resource]
+    if r.HasJobClient then return r.HasJobClient(job) end -- prefer client export
+    return false
+  end)
+  return ok and has or false
+end
+
+-- Regla de acceso por zona (mínimo de rango + pertenecer al job). Opcional: exigir boss.
+local function canUseZone(z, requireBoss)
+  local name, grade, isboss = playerJobData()
+  local inJob = (name == z.job) or hasMultiJob(z.job)
+  if not inJob then return false end
+  if requireBoss and not isboss then return false end
+  local minG = (z.data and (z.data.gradeMin or z.data.minGrade)) or 0
+  if tonumber(minG) and grade < tonumber(minG) then return false end
+  return true
+end
+
+local function addTargetForZone(z)
+  if not Config.Integrations.UseQbTarget then return end
+  local name = ('jc_%s_%s_%s'):format(z.ztype, z.job, z.id)
+  local size = (z.radius or Config.Zone.DefaultRadius) * 2.0
+  local opts = {}
+
+  -- Acción por tipo
+  if z.ztype == 'boss' then
+    table.insert(opts, {
+      label = 'Abrir gestión del trabajo',
+      icon = 'fa-solid fa-briefcase',
+      canInteract = function() return canUseZone(z, true) end,
+      action = function()
+        -- Abre el panel de jefe sólo para este trabajo (no F7)
+        TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job)
+      end
+    })
+
+  elseif z.ztype == 'stash' and Config.Integrations.UseQbInventory then
+    table.insert(opts, {
+      label = 'Abrir Almacén', icon = 'fa-solid fa-box',
+      canInteract = function() return canUseZone(z, false) end,
+      action = function()
+        local stashId = ('jc_%s_%s'):format(z.job, z.id)
+        TriggerServerEvent('inventory:server:OpenInventory', 'stash', stashId, { maxweight = 400000, slots = 50 })
+        TriggerEvent('inventory:client:SetCurrentStash', stashId)
+      end
+    })
+
+  elseif z.ztype == 'garage' then
+    table.insert(opts, {
+      label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
+      canInteract = function() return canUseZone(z, false) end,
+      action = function()
+        local model = (z.data and z.data.vehicle) or 'adder' -- TODO: integra tu selector/DB de garajes
+        QBCore.Functions.SpawnVehicle(model, function(veh)
+          SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
+          SetEntityHeading(veh, z.coords.w or 0.0)
+          SetVehicleEngineOn(veh, true, true)
+        end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
+      end
+    })
+
+  elseif z.ztype == 'crafting' then
+    table.insert(opts, {
+      label = 'Craftear', icon = 'fa-solid fa-hammer',
+      canInteract = function() return canUseZone(z, false) end,
+      action = function()
+        QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary')
+      end
+    })
+  end
+
+  exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
+    name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
+  }, { options = opts, distance = (z.radius or Config.Zone.DefaultRadius) + 0.5 })
+
+  z._zoneName = name
+end
+
+-- Reconstrucción completa desde el servidor
+RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
+  removeAll()
+  for _, z in ipairs(zones or {}) do
+    Active[#Active+1] = z
+    -- Blip siempre disponible
+    if z.ztype == 'blip' then
+      local blip = AddBlipForCoord(z.coords.x, z.coords.y, z.coords.z)
+      SetBlipSprite(blip, Config.Zone.BlipSprite); SetBlipColour(blip, Config.Zone.BlipColor)
+      SetBlipScale(blip, 0.8); SetBlipAsShortRange(blip, true)
+      BeginTextCommandSetBlipName('STRING'); AddTextComponentString(z.label or ('Punto '..z.job)); EndTextCommandSetBlipName(blip)
+    else
+      addTargetForZone(z)
+    end
+  end
+end)

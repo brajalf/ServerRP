@@ -1,0 +1,6 @@
+CreateThread(function()
+  RegisterKeyMapping('jobpanel', 'Abrir panel de trabajos', 'keyboard', 'F7')
+  RegisterCommand('jobpanel', function()
+    TriggerEvent('qb-jobcreator:client:openUI')
+  end, false)
+end)
