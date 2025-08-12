@@ -389,3 +389,16 @@ RegisterNetEvent('qb-jobcreator:server:wash', function(job, amount)
   local amt = math.abs(tonumber(amount) or 0)
   SocietyAdd(job, math.floor(amt * 0.9))
 end)
+
+-- Actualizar zona (guardar 'data', label/radius/coords opcional)
+RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
+  local src = source
+  -- si usas boss-perms aquí, cambia ensurePerm por allowAdminOrBoss(src, job)
+  if not ensurePerm(src) then return end
+  if not DB.UpdateZone then
+    print('[qb-jobcreator] Falta DB.UpdateZone() en server/db.lua')
+    return
+  end
+  DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords })
+  LoadAll()
+end)

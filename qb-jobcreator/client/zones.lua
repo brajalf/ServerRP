@@ -44,73 +44,98 @@ end
 
 local function addTargetForZone(z)
   if not Config.Integrations.UseQbTarget then return end
+
   local name = ('jc_%s_%s_%s'):format(z.ztype, z.job, z.id)
-  local size = (z.radius or Config.Zone.DefaultRadius) * 2.0
+  local size = (z.radius or 2.0) * 2.0
   local opts = {}
 
-  -- Acción por tipo
+  -- boss
   if z.ztype == 'boss' then
-    table.insert(opts, {
+    opts[#opts+1] = {
       label = 'Abrir gestión del trabajo',
       icon = 'fa-solid fa-briefcase',
-      canInteract = function() return canUseZone(z, true) end,
+      canInteract = function()
+        return canUseZone(z, true)
+      end,
       action = function()
-        -- Abre el panel de jefe sólo para este trabajo (no F7)
         TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job)
       end
-    })
-
+    }
+  -- stash
   elseif z.ztype == 'stash' and Config.Integrations.UseQbInventory then
-    table.insert(opts, {
-      label = 'Abrir Almacén', icon = 'fa-solid fa-box',
+    opts[#opts+1] = {
+      label = 'Abrir Almacén',
+      icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local stashId = ('jc_%s_%s'):format(z.job, z.id)
         TriggerServerEvent('inventory:server:OpenInventory', 'stash', stashId, { maxweight = 400000, slots = 50 })
         TriggerEvent('inventory:client:SetCurrentStash', stashId)
       end
-    })
-
-  elseif z.ztype == 'garage' then
-    table.insert(opts, {
+    }
+  -- garage (fallback 1 vehículo; abajo te dejo mejora por rango)
+elseif z.ztype == 'garage' then
+  local vehicles = (z.data and z.data.vehicles) or nil
+  if type(vehicles) == 'table' and #vehicles > 0 then
+    for _, v in ipairs(vehicles) do
+      opts[#opts+1] = {
+        label = v.label or (v.model or 'Vehículo'),
+        icon = 'fa-solid fa-car',
+        canInteract = function()
+          local _, grade = playerJobData()
+          local min = tonumber(v.minGrade or v.grade or 0) or 0
+          return canUseZone(z, false) and grade >= min
+        end,
+        action = function()
+          local model = v.model or 'adder'
+          QBCore.Functions.SpawnVehicle(model, function(veh)
+            SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
+            SetEntityHeading(veh, z.coords.w or 0.0)
+            SetVehicleEngineOn(veh, true, true)
+          end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
+        end
+      }
+    end
+  else
+    -- fallback 1 vehículo
+    opts[#opts+1] = {
       label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        local pd = QBCore.Functions.GetPlayerData()
-        local grade = 0
-        if pd and pd.job then
-          local g = pd.job.grade
-          if type(g) == 'table' then grade = g.level or 0 else grade = g or 0 end
-        end
-        local model
-        if z.data and z.data.vehicles then
-          model = z.data.vehicles[tostring(grade)] or z.data.vehicles[grade]
-        end
-        model = model or (z.data and z.data.vehicle) or 'adder'
+        local model = (z.data and z.data.vehicle) or 'adder'
         QBCore.Functions.SpawnVehicle(model, function(veh)
           SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
           SetEntityHeading(veh, z.coords.w or 0.0)
           SetVehicleEngineOn(veh, true, true)
         end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
       end
-    })
-
+    }
+  end
+  -- crafting (placeholder)
   elseif z.ztype == 'crafting' then
-    table.insert(opts, {
-      label = 'Craftear', icon = 'fa-solid fa-hammer',
+    opts[#opts+1] = {
+      label = 'Craftear',
+      icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary')
       end
-    })
+    }
   end
 
+  -- ⚠️ si no hay opciones, no registres la zona en qb-target
+  if #opts == 0 then return end
+
   exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
-    name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
-  }, { options = opts, distance = (z.radius or Config.Zone.DefaultRadius) + 0.5 })
+    name = name,
+    heading = 0.0,
+    minZ = z.coords.z - 1.0,
+    maxZ = z.coords.z + 2.0
+  }, { options = opts, distance = (z.radius or 2.0) + 0.5 })
 
   z._zoneName = name
 end
+
 
 -- Reconstrucción completa desde el servidor
 RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)

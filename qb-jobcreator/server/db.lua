@@ -101,3 +101,14 @@ function DB.UpdateMultiJobGrade(citizenid, job, grade)
   local q = ([[UPDATE %s SET %s=? WHERE %s=? AND %s=?]]):format(t.name, t.columns.grade, t.columns.citizen, t.columns.job)
   exec(q, { grade, citizenid, job })
 end
+
+function DB.UpdateZone(id, fields)
+  local sets, params = {}, {}
+  if fields.label   ~= nil then sets[#sets+1] = 'label=?';   params[#params+1] = fields.label end
+  if fields.radius  ~= nil then sets[#sets+1] = 'radius=?';  params[#params+1] = fields.radius end
+  if fields.coords  ~= nil then sets[#sets+1] = 'coords=?';  params[#params+1] = json.encode(fields.coords) end
+  if fields.data    ~= nil then sets[#sets+1] = 'data=?';    params[#params+1] = json.encode(fields.data) end
+  if #sets == 0 then return end
+  params[#params+1] = id
+  MySQL.query.await(('UPDATE jobcreator_zones SET %s WHERE id=?'):format(table.concat(sets, ',')), params)
+end

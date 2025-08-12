@@ -3,7 +3,19 @@ const App = (() => {
   const $ = sel => document.querySelector(sel)
   const $$ = sel => document.querySelectorAll(sel)
 
-  function post(name, data={}) { return fetch(`https://qb-jobcreator/${name}`, { method:'POST', body: JSON.stringify(data) }) }
+  function post(name, data = {}) {
+  const res = (typeof GetParentResourceName === 'function')
+    ? GetParentResourceName()
+    : 'qb-jobcreator'; // fallback
+  return fetch(`https://${res}/${name}`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }).catch(err => {
+    console.error(`[jobcreator] fetch fail -> ${name}`, err);
+    // Devolvemos un Response-like para evitar que reviente el .then()
+    return new Response(JSON.stringify({ ok:false, error:'fetch_failed' }));
+  });
+}
   function money(n){ return new Intl.NumberFormat('es-CO', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n||0) }
 
   // ===== Toasts =====

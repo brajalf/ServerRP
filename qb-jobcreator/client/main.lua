@@ -102,3 +102,30 @@ RegisterNUICallback('getCoords', function(_, cb) local p = GetEntityCoords(Playe
 RegisterCommand('jobpanel', function() TriggerServerEvent('qb-jobcreator:server:reqOpenPanel') end, false)
 RegisterCommand('jobpanel_close', function() ForceClose() end, false)
 RegisterKeyMapping('jobpanel', 'Abrir panel de trabajos (Admin)', 'keyboard', 'F7')
+
+
+-- Lista de cercanos (por si la UI lo usa)
+RegisterNUICallback('nearbyPlayers', function(data, cb)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getNearbyPlayers', function(list)
+    cb(list or {})
+  end, data.job, data.radius or 3.5)
+end)
+
+-- Reclutar a un ID concreto (por si la UI lo usa)
+RegisterNUICallback('recruit', function(data, cb)
+  TriggerServerEvent('qb-jobcreator:server:recruit', data.job, tonumber(data.grade) or 0, tonumber(data.targetId) or -1)
+  cb({ ok = true })
+end)
+
+-- Guardar data de una zona (para “vehículos por rango”)
+RegisterNUICallback('updateZone', function(data, cb)
+  TriggerServerEvent('qb-jobcreator:server:updateZone', tonumber(data.id), data.data, data.label, data.radius, data.coords)
+  cb({ ok = true })
+end)
+
+-- Boss UI (cuando entras al punto 'boss')
+RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
+  SetNuiFocus(true, true)
+  SetNuiFocusKeepInput(false)
+  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, scope = { type='boss', job = jobName }, branding = Config and Config.Branding or nil } })
+end)
