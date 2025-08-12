@@ -76,7 +76,17 @@ local function addTargetForZone(z)
       label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        local model = (z.data and z.data.vehicle) or 'adder' -- TODO: integra tu selector/DB de garajes
+        local pd = QBCore.Functions.GetPlayerData()
+        local grade = 0
+        if pd and pd.job then
+          local g = pd.job.grade
+          if type(g) == 'table' then grade = g.level or 0 else grade = g or 0 end
+        end
+        local model
+        if z.data and z.data.vehicles then
+          model = z.data.vehicles[tostring(grade)] or z.data.vehicles[grade]
+        end
+        model = model or (z.data and z.data.vehicle) or 'adder'
         QBCore.Functions.SpawnVehicle(model, function(veh)
           SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
           SetEntityHeading(veh, z.coords.w or 0.0)
