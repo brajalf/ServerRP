@@ -91,11 +91,13 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
   bandage = { needs = { {item='cloth', qty=2} }, time = 3000 },
 }
 
+-- ====================
 -- Garajes avanzados
-Config.Garages = {
-  UseQbGarages = false,           -- true para intentar usar qb-garages
-  QbResource   = 'qb-garages',    -- nombre del recurso
-  SpawnEvent   = 'qb-garages:server:spawnjobvehicle', -- ajusta si tu versión usa otro
-  -- Si prefieres comando, define aquí (se ejecuta client-side, p.e. 'car' o 'veh')
-  Command     = nil               -- 'car' por ejemplo; nil = no usar comando
+-- ====================
+-- Puedes usar qb-garages, o un comando (p.ej. /car) o el spawn nativo de QBCore.
+Config.Garages = Config.Garages or {
+  UseQbGarages = false,                 -- true para intentar usar qb-garages
+  QbResource   = 'qb-garages',          -- nombre del recurso
+  SpawnEvent   = 'qb-garages:server:spawnjobvehicle', -- si tu versión expone otro, cámbialo
+  Command      = 'car'                  -- comando para spawnear (client). Ej: 'car'. Pon nil si no quieres usar comando
 }

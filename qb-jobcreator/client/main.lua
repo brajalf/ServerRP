@@ -123,9 +123,26 @@ RegisterNUICallback('updateZone', function(data, cb)
   cb({ ok = true })
 end)
 
--- Boss UI (cuando entras al punto 'boss')
+-- Apertura directa del panel del BOSS (desde zona 'boss')
 RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
   SetNuiFocus(true, true)
   SetNuiFocusKeepInput(false)
-  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, scope = { type='boss', job = jobName }, branding = Config and Config.Branding or nil } })
+  uiOpen = true
+  SendNUIMessage({
+    action = 'open',
+    payload = {
+      ok = true,
+      jobs = Jobs or {},
+      zones = Zones or {},
+      totals = { jobs = 0, employees = 0, money = 0 },
+      popular = {},
+      branding = Config and Config.Branding or nil,
+      scope = { type = 'boss', job = jobName }
+    }
+  })
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
+    if type(data) == 'table' and data.ok then
+      SendNUIMessage({ action = 'update', payload = data })
+    end
+  end)
 end)

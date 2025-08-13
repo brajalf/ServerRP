@@ -42,6 +42,32 @@ local function canUseZone(z, requireBoss)
   return true
 end
 
+-- Spawner unificado: primero comando, luego qb-garages y por último QBCore
+local function spawnFromConfig(model, coords, heading)
+  model = tostring(model or 'adder')
+
+  -- 1) Comando (client): /car <modelo>
+  if Config.Garages and Config.Garages.Command then
+    ExecuteCommand(('%s %s'):format(Config.Garages.Command, model))
+    return
+  end
+
+  -- 2) qb-garages (server event)
+  if Config.Garages and Config.Garages.UseQbGarages and GetResourceState(Config.Garages.QbResource or 'qb-garages') == 'started' then
+    if Config.Garages.SpawnEvent and type(Config.Garages.SpawnEvent) == 'string' then
+      TriggerServerEvent(Config.Garages.SpawnEvent, model, coords, heading or 0.0)
+      return
+    end
+  end
+
+  -- 3) fallback QBCore: SpawnVehicle
+  QBCore.Functions.SpawnVehicle(model, function(veh)
+    SetVehicleNumberPlateText(veh, ('JOB%03d'):format(math.random(0,999)))
+    SetEntityHeading(veh, heading or 0.0)
+    SetVehicleEngineOn(veh, true, true)
+  end, vector3(coords.x, coords.y, coords.z), true)
+end
+
 local function addTargetForZone(z)
   if not Config.Integrations.UseQbTarget then return end
 
@@ -75,12 +101,12 @@ local function addTargetForZone(z)
     }
   -- garage  (ver §4 para modo avanzado)
   elseif z.ztype == 'garage' then
-  local vehicles = (z.data and z.data.vehicles) or nil
+  local vehicles = z.data and z.data.vehicles
   if type(vehicles) == 'table' and #vehicles > 0 then
-    -- por rango: { model, label, minGrade, cmd? }
+    -- Lista por rango: { model, label, minGrade }
     for _, v in ipairs(vehicles) do
-      opts[#opts+1] = {
-        label = v.label or (v.model or 'Vehículo'),
+      table.insert(opts, {
+        label = v.label or v.model or 'Vehículo',
         icon  = 'fa-solid fa-car',
         canInteract = function()
           local _, grade = playerJobData()
@@ -88,20 +114,20 @@ local function addTargetForZone(z)
           return canUseZone(z, false) and grade >= min
         end,
         action = function()
-          spawnFromConfig(v.model or 'adder', z.coords, z.coords.w or 0.0)
+          spawnFromConfig(v.model, z.coords, z.coords.w or 0.0)
         end
-      }
+      })
     end
   else
-    -- fallback un solo vehículo (data.vehicle)
-    opts[#opts+1] = {
+    -- Fallback: un solo vehículo (data.vehicle)
+    table.insert(opts, {
       label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local model = (z.data and z.data.vehicle) or 'adder'
         spawnFromConfig(model, z.coords, z.coords.w or 0.0)
       end
-    }
+    })
   end
   -- crafting
   elseif z.ztype == 'crafting' then

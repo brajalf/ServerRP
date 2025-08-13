@@ -4,17 +4,8 @@ const App = (() => {
   const $$ = sel => document.querySelectorAll(sel)
 
 function post(name, data = {}) {
-  const res = (typeof GetParentResourceName === 'function')
-    ? GetParentResourceName()
-    : 'qb-jobcreator'; // fallback
-  return fetch(`https://${res}/${name}`, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  }).catch(err => {
-    console.error(`[jobcreator] fetch fail -> ${name}`, err);
-    // devolvemos un Response-like para que los .then no rompan
-    return new Response(JSON.stringify({ ok:false, error:'fetch_failed' }));
-  });
+  const res = (typeof GetParentResourceName === 'function') ? GetParentResourceName() : 'qb-jobcreator';
+  return fetch(`https://${res}/${name}`, { method: 'POST', body: JSON.stringify(data) });
 }
   function money(n){ return new Intl.NumberFormat('es-CO', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n||0) }
 
