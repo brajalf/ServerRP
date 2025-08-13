@@ -98,6 +98,17 @@ local function ensurePerm(src, job)
   return false
 end
 
+local function isBossOf(src, job)
+  local P = QBCore.Functions.GetPlayer(src)
+  if not P or not P.PlayerData or not P.PlayerData.job then return false end
+  local jd = P.PlayerData.job
+  return (jd.name == job) and (jd.isboss or (jd.grade and jd.grade.isboss))
+end
+local function allowAdminOrBoss(src, job)
+  if HasOpenPermission(src) then return true end
+  return isBossOf(src, job)
+end
+
 QBCore.Commands.Add('jobcreator', _L('open_creator'), {}, false, function(src)
   if not ensurePerm(src) then return end
   TriggerClientEvent('qb-jobcreator:client:openUI', src)
@@ -200,26 +211,27 @@ end)
 
 -- ===== Zonas =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, cb, job)
-  if not ensurePerm(src, job) then return cb({}) end
+  if not allowAdminOrBoss(src, job) then return cb({}) end
   local list = {}
   for _, z in ipairs(Runtime.Zones or {}) do if z.job == job then list[#list+1] = z end end
   cb(list)
 end)
+
 RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
-  local src = source; if not ensurePerm(src, zone and zone.job) then return end
+  local src = source; if not allowAdminOrBoss(src, zone.job) then return end
   DB.SaveZone(zone); LoadAll()
 end)
+
 RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
-  local src = source
-  local job
-  for _, z in ipairs(Runtime.Zones or {}) do if z.id == id then job = z.job break end end
-  if not ensurePerm(src, job) then return end
+  local src = source; local job
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
+  if not allowAdminOrBoss(src, job or '') then return end
   DB.DeleteZone(id); LoadAll()
 end)
 
 -- ===== Empleados =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getEmployees', function(src, cb, jobName)
-  if not ensurePerm(src, jobName) then return cb({}) end
+  if not allowAdminOrBoss(src, jobName) then return cb({}) end
   local list, seen = {}, {}
 
   -- Online (incluye asignaciones de multitrabajo)
@@ -294,7 +306,7 @@ end)
 
 -- Reclutar / Despedir / Cambiar rango
 RegisterNetEvent('qb-jobcreator:server:recruit', function(jobName, grade, targetId)
-  local src = source; if not ensurePerm(src, jobName) then return end
+  local src = source; if not allowAdminOrBoss(src, jobName) then return end
   local Target = QBCore.Functions.GetPlayer(tonumber(targetId) or -1)
   if not Target then return end
   local cid = Target.PlayerData.citizenid
@@ -305,7 +317,7 @@ RegisterNetEvent('qb-jobcreator:server:recruit', function(jobName, grade, target
 end)
 
 RegisterNetEvent('qb-jobcreator:server:fire', function(jobName, citizenid)
-  local src = source; if not ensurePerm(src, jobName) then return end
+  local src = source; if not allowAdminOrBoss(src, jobName) then return end
   for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
     if Player.PlayerData.citizenid == citizenid then
       if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
@@ -320,7 +332,7 @@ RegisterNetEvent('qb-jobcreator:server:fire', function(jobName, citizenid)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:setGrade', function(jobName, citizenid, newGrade)
-  local src = source; if not ensurePerm(src, jobName) then return end
+  local src = source; if not allowAdminOrBoss(src, jobName) then return end
   newGrade = tonumber(newGrade) or 0
   for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
     if Player.PlayerData.citizenid == citizenid then
@@ -360,12 +372,12 @@ local function SocietyBalance(job)
 end
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getAccount', function(src, cb, job)
-  if not ensurePerm(src, job) then return cb(0) end
+  if not allowAdminOrBoss(src, job) then return cb(0) end
   cb(SocietyBalance(job))
 end)
 
 RegisterNetEvent('qb-jobcreator:server:deposit', function(job, amount, from)
-  local src = source; if not ensurePerm(src, job) then return end
+  local src = source; if not allowAdminOrBoss(src, job) then return end
   local Player = QBCore.Functions.GetPlayer(src); amount = math.abs(tonumber(amount) or 0); if amount <= 0 then return end
   local acc = (from == 'bank') and 'bank' or 'cash'
   if Player.Functions.RemoveMoney(acc, amount, 'job-society-deposit') then
@@ -377,7 +389,7 @@ RegisterNetEvent('qb-jobcreator:server:deposit', function(job, amount, from)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:withdraw', function(job, amount, to)
-  local src = source; if not ensurePerm(src, job) then return end
+  local src = source; if not allowAdminOrBoss(src, job) then return end
   local Player = QBCore.Functions.GetPlayer(src); amount = math.abs(tonumber(amount) or 0); if amount <= 0 then return end
   local acc = (to == 'bank') and 'bank' or 'cash'
   SocietyRemove(job, amount)
@@ -385,20 +397,16 @@ RegisterNetEvent('qb-jobcreator:server:withdraw', function(job, amount, to)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:wash', function(job, amount)
-  local src = source; if not ensurePerm(src, job) then return end
+  local src = source; if not allowAdminOrBoss(src, job) then return end
   local amt = math.abs(tonumber(amount) or 0)
   SocietyAdd(job, math.floor(amt * 0.9))
 end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
 RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
-  local src = source
-  -- si usas boss-perms aquí, cambia ensurePerm por allowAdminOrBoss(src, job)
-  if not ensurePerm(src) then return end
-  if not DB.UpdateZone then
-    print('[qb-jobcreator] Falta DB.UpdateZone() en server/db.lua')
-    return
-  end
-  DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords })
+  local src = source; local job
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
+  if not allowAdminOrBoss(src, job or '') then return end
+  if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
   LoadAll()
 end)

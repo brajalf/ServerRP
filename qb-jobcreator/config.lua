@@ -19,7 +19,7 @@ Config.InteractionMode = Config.InteractionMode or 'target' -- 'target' | 'textu
 Config.Integrations = Config.Integrations or {
   UseQbTarget     = true,
   UseOxTarget     = false,
-  UseQbManagement = true,   -- fondos de sociedad; si no, fallback propio en DB
+  UseQbManagement = false,   -- fondos de sociedad; si no, fallback propio en DB
   UseQbInventory  = true,
   UseBossMenu     = true,
   HospitalReviveEvent = 'hospital:client:Revive',
@@ -89,4 +89,13 @@ Config.ZoneTypes = Config.ZoneTypes or {
 
 Config.CraftingRecipes = Config.CraftingRecipes or {
   bandage = { needs = { {item='cloth', qty=2} }, time = 3000 },
+}
+
+-- Garajes avanzados
+Config.Garages = {
+  UseQbGarages = false,           -- true para intentar usar qb-garages
+  QbResource   = 'qb-garages',    -- nombre del recurso
+  SpawnEvent   = 'qb-garages:server:spawnjobvehicle', -- ajusta si tu versión usa otro
+  -- Si prefieres comando, define aquí (se ejecuta client-side, p.e. 'car' o 'veh')
+  Command     = nil               -- 'car' por ejemplo; nil = no usar comando
 }

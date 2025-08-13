@@ -45,8 +45,13 @@ end
 local function addTargetForZone(z)
   if not Config.Integrations.UseQbTarget then return end
 
+  -- ✅ valida coords y radio
+  if not z.coords or type(z.coords.x) ~= 'number' or type(z.coords.y) ~= 'number' or type(z.coords.z) ~= 'number' then
+    return
+  end
+  z.radius = tonumber(z.radius) or (Config.Zone and Config.Zone.DefaultRadius) or 2.0
   local name = ('jc_%s_%s_%s'):format(z.ztype, z.job, z.id)
-  local size = (z.radius or 2.0) * 2.0
+  local size = z.radius * 2.0
   local opts = {}
 
   -- boss
@@ -54,18 +59,13 @@ local function addTargetForZone(z)
     opts[#opts+1] = {
       label = 'Abrir gestión del trabajo',
       icon = 'fa-solid fa-briefcase',
-      canInteract = function()
-        return canUseZone(z, true)
-      end,
-      action = function()
-        TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job)
-      end
+      canInteract = function() return canUseZone(z, true) end,
+      action = function() TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job) end
     }
   -- stash
   elseif z.ztype == 'stash' and Config.Integrations.UseQbInventory then
     opts[#opts+1] = {
-      label = 'Abrir Almacén',
-      icon = 'fa-solid fa-box',
+      label = 'Abrir Almacén', icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local stashId = ('jc_%s_%s'):format(z.job, z.id)
@@ -73,69 +73,77 @@ local function addTargetForZone(z)
         TriggerEvent('inventory:client:SetCurrentStash', stashId)
       end
     }
-  -- garage (fallback 1 vehículo; abajo te dejo mejora por rango)
-elseif z.ztype == 'garage' then
+  -- garage  (ver §4 para modo avanzado)
+  elseif z.ztype == 'garage' then
   local vehicles = (z.data and z.data.vehicles) or nil
   if type(vehicles) == 'table' and #vehicles > 0 then
+    -- por rango: { model, label, minGrade, cmd? }
     for _, v in ipairs(vehicles) do
       opts[#opts+1] = {
         label = v.label or (v.model or 'Vehículo'),
-        icon = 'fa-solid fa-car',
+        icon  = 'fa-solid fa-car',
         canInteract = function()
           local _, grade = playerJobData()
           local min = tonumber(v.minGrade or v.grade or 0) or 0
           return canUseZone(z, false) and grade >= min
         end,
         action = function()
-          local model = v.model or 'adder'
-          QBCore.Functions.SpawnVehicle(model, function(veh)
-            SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
-            SetEntityHeading(veh, z.coords.w or 0.0)
-            SetVehicleEngineOn(veh, true, true)
-          end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
+          spawnFromConfig(v.model or 'adder', z.coords, z.coords.w or 0.0)
         end
       }
     end
   else
-    -- fallback 1 vehículo
+    -- fallback un solo vehículo (data.vehicle)
     opts[#opts+1] = {
       label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local model = (z.data and z.data.vehicle) or 'adder'
-        QBCore.Functions.SpawnVehicle(model, function(veh)
-          SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999)))
-          SetEntityHeading(veh, z.coords.w or 0.0)
-          SetVehicleEngineOn(veh, true, true)
-        end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
+        spawnFromConfig(model, z.coords, z.coords.w or 0.0)
       end
     }
   end
-  -- crafting (placeholder)
+  -- crafting
   elseif z.ztype == 'crafting' then
     opts[#opts+1] = {
-      label = 'Craftear',
-      icon = 'fa-solid fa-hammer',
+      label = 'Craftear', icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
-      action = function()
-        QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary')
-      end
+      action = function() QBCore.Functions.Notify('Abrir crafteo (placeholder).', 'primary') end
     }
   end
 
-  -- ⚠️ si no hay opciones, no registres la zona en qb-target
+  -- ✅ no registres zonas sin opciones
   if #opts == 0 then return end
 
   exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
-    name = name,
-    heading = 0.0,
-    minZ = z.coords.z - 1.0,
-    maxZ = z.coords.z + 2.0
-  }, { options = opts, distance = (z.radius or 2.0) + 0.5 })
+    name = name, heading = 0.0, minZ = z.coords.z - 1.0, maxZ = z.coords.z + 2.0
+  }, { options = opts, distance = z.radius + 0.5 })
 
   z._zoneName = name
 end
 
+local function spawnFromConfig(model, coords, heading)
+  -- 1) qb-garages
+  if Config.Garages and Config.Garages.UseQbGarages and GetResourceState(Config.Garages.QbResource or 'qb-garages') == 'started' then
+    if Config.Garages.SpawnEvent and type(Config.Garages.SpawnEvent)=='string' then
+      -- ajusta a tu evento real si es distinto
+      TriggerServerEvent(Config.Garages.SpawnEvent, model, coords, heading)
+      return true
+    end
+  end
+  -- 2) comando (client)
+  if Config.Garages and Config.Garages.Command then
+    ExecuteCommand(('%s %s'):format(Config.Garages.Command, model))
+    return true
+  end
+  -- 3) fallback QBCore (actual)
+  QBCore.Functions.SpawnVehicle(model, function(veh)
+    SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub((QBCore.Functions.GetPlayerData().job.name or 'JOB'),1,3)), math.random(0,999)))
+    SetEntityHeading(veh, heading or 0.0)
+    SetVehicleEngineOn(veh, true, true)
+  end, vector3(coords.x, coords.y, coords.z), true)
+  return true
+end
 
 -- Reconstrucción completa desde el servidor
 RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
