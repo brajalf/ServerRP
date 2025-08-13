@@ -134,9 +134,133 @@ function post(name, data = {}) {
     list.forEach(e=>{ html+=`<tr><td>${e.name}</td><td>${e.grade}</td><td>${e.online?'<span class=\"badge ok\">Online</span>':'<span class=\"badge off\">Offline</span>'}</td><td class=\"actions-inline\"><button class=\"btn\" data-r=\"${e.citizenid}\">Rango</button><button class=\"btn danger\" data-cid=\"${e.citizenid}\">Despedir</button></td></tr>` })
     html+='</tbody></table>'; wrap.innerHTML=html; body.appendChild(wrap); wrap.querySelectorAll('button[data-cid]').forEach(b=>{ b.onclick=()=>post('fire',{ job: state.jd.job, citizenid: b.dataset.cid }).then(()=>{ toast('Empleado despedido','success'); renderJD() }) }); wrap.querySelectorAll('button[data-r]').forEach(b=>{ b.onclick=()=>{ const cid = b.dataset.r; const emp = list.find(x=>x.citizenid===cid); openSetGradeModal(state.jd.job, emp) } }) }) }
   function renderJDFinance(body){ body.innerHTML=''; const p=document.createElement('div'); p.className='panel'; p.innerHTML='<div id="jd-acc"></div>'; body.appendChild(p); post('getAccount',{ job: state.jd.job }).then(r=>r.json()).then(bal=>{ p.innerHTML = `<div class=\"row\"><div class=\"card\"><div class=\"h\">Saldo</div><div class=\"b\">${money(bal)}</div></div><div class=\"card\"><label>Monto</label><input id=\"jd-amt\" class=\"input\" placeholder=\"Cantidad\"/></div><div class=\"card\"><label>Cuenta</label><select id=\"jd-accsel\" class=\"input\"><option value=\"cash\">Efectivo</option><option value=\"bank\">Banco</option></select></div><div class=\"card\"><div class=\"actions-inline\"><button class=\"btn\" id=\"jd-dep\">Depositar</button><button class=\"btn\" id=\"jd-wd\">Retirar</button><button class=\"btn\" id=\"jd-wash\">Lavar</button></div></div></div>`; $('#jd-dep').onclick=()=>{ const v=Number($('#jd-amt').value)||0; const a=$('#jd-accsel').value; post('deposit',{ job: state.jd.job, amount:v, from:a }).then(()=>{ toast('Depósito realizado','success'); renderJDFinance(body) }) }; $('#jd-wd').onclick=()=>{ const v=Number($('#jd-amt').value)||0; const a=$('#jd-accsel').value; post('withdraw',{ job: state.jd.job, amount:v, to:a }).then(()=>{ toast('Retiro realizado','success'); renderJDFinance(body) }) }; $('#jd-wash').onclick=()=>{ const v=Number($('#jd-amt').value)||0; post('wash',{ job: state.jd.job, amount:v }).then(()=>{ toast('Dinero lavado','success'); renderJDFinance(body) }) } }) }
-  function renderJDZones(body){ body.innerHTML = `<div class="toolbar"><button class="btn" id="addz">+ Añadir Zona</button></div><div id="zlist" class="panel"></div>`; const list = $('#zlist'); function load(){ post('getZones',{ job: state.jd.job }).then(r=>r.json()).then(zs => {
-    zs = Array.isArray(zs) ? zs : [];   // ⬅️ añade esta línea
-    let html = '<table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Etiqueta</th><th>Radio</th><th>Coords</th><th></th></tr></thead><tbody>'; zs.forEach(z=>{ html+=`<tr><td>${z.id}</td><td>${z.ztype}</td><td>${z.label}</td><td>${z.radius}</td><td>${z.data && (z.data.gradeMin||'-')}</td><td>${z.coords && (z.coords.x.toFixed(1)+','+z.coords.y.toFixed(1))}</td><td><button class=\"btn danger\" data-id=\"${z.id}\">Borrar</button></td></tr>` }); html+='</tbody></table>'; list.innerHTML=html; list.querySelectorAll('button[data-id]').forEach(b=> b.onclick=()=>{ post('deleteZone',{ id:Number(b.dataset.id) }).then(()=>{ toast('Zona eliminada','success'); load() }) }) }) } load(); $('#addz').onclick=()=>{ const html = `<div class=\"row\"><div><label>Tipo</label><select id=\"ztype\" class=\"input\">${['blip','boss','stash','garage','crafting','cloakroom','shop','collect','spawner','sell','alarm','register','anim','music','teleport'].map(t=>`<option>${t}</option>`).join('')}</select></div><div><label>Etiqueta</label><input id=\"zlabel\" class=\"input\"/></div></div><div class=\"row\"><div><label>Radio</label><input id=\"zrad\" class=\"input\" value=\"2.0\"/></div><div><label>Mín. Rango</label><input id=\"zmin\" class=\"input\" placeholder=\"0\" value=\"0\"/></div></div><div class=\"row garage-row hidden\"><div><label>Vehículos (rango=modelo, coma)</label><input id=\"zveh\" class=\"input\" placeholder=\"0=primo,1=sultan\"/></div></div><div class=\"row\"><div><label>Usar mis coords</label><div class=\"h\">Se capturarán al guardar</div></div></div>`; modal('Nueva Zona', html, ()=>{ post('getCoords',{}).then(r=>r.json()).then(c=>{ const data={ gradeMin: Number($('#zmin').value)||0 }; if($('#ztype').value==='garage'){ const map={}; ($('#zveh').value||'').split(',').forEach(p=>{ const [g,m]=p.split('=').map(s=>s.trim()); if(g&&m) map[g]=m }); data.vehicles=map } const z={ job: state.jd.job, ztype: $('#ztype').value, label: $('#zlabel').value, radius: Number($('#zrad').value)||2.0, coords: c, data }; post('createZone', z).then(()=>{ closeModal(); toast('Zona creada','success'); load() }) }) }); $('#ztype').onchange=()=>{ document.querySelector('.garage-row').classList.toggle('hidden',$('#ztype').value!=='garage') }; } }
+  function renderJDZones(body) {
+   body.innerHTML = `<div class="toolbar"><button class="btn" id="addz">+ Añadir Zona</button></div><div id="zlist" class="panel"></div>`;
+   const list = document.getElementById('zlist');
+
+   function extrasText(z) {
+     if (!z || !z.data) return '';
+     if (z.ztype === 'garage') {
+       if (z.data.vehicles) return String(z.data.vehicles);
+       if (z.data.vehicle)  return String(z.data.vehicle);
+       return '';
+     }
+     if (z.ztype === 'stash') {
+       return `slots:${z.data.slots||50}, w:${z.data.weight||400000}`;
+     }
+     if (z.ztype === 'boss') {
+       return `min:${z.data.minGrade || z.data.gradeMin || 0}`;
+     }
+     if (z.ztype === 'crafting') {
+       return z.data.recipe || '';
+     }
+     return '';
+   }
+
+   function load() {
+     post('getZones', { job: state.jd.job })
+       .then(r => r.json())
+       .then(zs => {
+         let html = '<table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Etiqueta</th><th>Radio</th><th>Extras</th><th></th></tr></thead><tbody>';
+         (zs || []).forEach(z => {
+           html += `<tr>
+             <td>${z.id}</td>
+             <td>${z.ztype}</td>
+             <td>${z.label || ''}</td>
+             <td>${z.radius}</td>
+             <td>${extrasText(z)}</td>
+             <td><button class="btn danger" data-id="${z.id}">Borrar</button></td>
+           </tr>`;
+         });
+         html += '</tbody></table>';
+         list.innerHTML = html;
+         list.querySelectorAll('button[data-id]').forEach(b => {
+           b.onclick = () => post('deleteZone', { id: Number(b.dataset.id) })
+             .then(() => load());
+         });
+       });
+   }
+   load();
+
+   document.getElementById('addz').onclick = () => {
+     const base = `
+       <div class="row">
+         <div>
+           <label>Tipo</label>
+           <select id="ztype" class="input">
+             ${ (window.Config?.ZoneTypes || ['blip','boss','stash','garage','crafting','cloakroom','shop','collect','spawner','sell','alarm','register','anim','music','teleport'])
+                 .map(t => `<option>${t}</option>`).join('') }
+           </select>
+         </div>
+         <div><label>Etiqueta</label><input id="zlabel" class="input"/></div>
+       </div>
+       <div class="row">
+         <div><label>Radio</label><input id="zrad" class="input" value="2.0"/></div>
+         <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
+       </div>
+       <div id="zextra"></div>
+     `;
+     modal('Nueva Zona', base, () => {
+       // al guardar pedimos coords al cliente
+       post('getCoords', {}).then(r => r.json()).then(c => {
+         const t = document.getElementById('ztype').value;
+         const data = {};
+         if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
+         if (t === 'stash') { data.slots = Number(document.getElementById('zslots')?.value || 50);
+                              data.weight = Number(document.getElementById('zweight')?.value || 400000); }
+         if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
+                              data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
+         if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
+         const z = {
+           job: state.jd.job,
+           ztype: t,
+           label: document.getElementById('zlabel').value,
+           radius: Number(document.getElementById('zrad').value) || 2.0,
+           coords: c,
+           data
+         };
+         post('createZone', z).then(() => { closeModal(); load(); });
+       });
+     });
+
+     // campos dinámicos según el tipo seleccionado
+     const extraBox = document.getElementById('zextra');
+     function renderExtra() {
+       const t = document.getElementById('ztype').value;
+       if (t === 'boss') {
+         extraBox.innerHTML = `
+           <div class="row">
+             <div><label>Mín. rango</label><input id="zmin" class="input" value="0"/></div>
+           </div>`;
+       } else if (t === 'stash') {
+         extraBox.innerHTML = `
+           <div class="row">
+             <div><label>Slots</label><input id="zslots" class="input" value="50"/></div>
+             <div><label>Peso máximo</label><input id="zweight" class="input" value="400000"/></div>
+           </div>`;
+       } else if (t === 'garage') {
+         extraBox.innerHTML = `
+           <div><label>Vehículos (rango=modelo, separados por coma)</label>
+             <input id="zveh" class="input" placeholder="0=police, 2=police2, 4=ambulance3"/>
+           </div>
+           <div class="row">
+             <div><label>Modelo por defecto</label>
+               <input id="zvehdef" class="input" placeholder="police"/>
+             </div>
+           </div>`;
+       } else if (t === 'crafting') {
+         extraBox.innerHTML = `
+           <div><label>Receta / clave</label>
+             <input id="zrecipe" class="input" placeholder="bandage"/>
+           </div>`;
+       } else {
+         extraBox.innerHTML = '';
+       }
+     }
+     document.getElementById('ztype').onchange = renderExtra;
+     renderExtra();
+   };
+ }
   function renderJDActions(body){ body.innerHTML = '<p>Próximamente: switches para habilitar/inhabilitar acciones por trabajo.</p>' }
 
   // ====== MODALES ======
@@ -171,3 +295,19 @@ function post(name, data = {}) {
   }
   return {}
 })()
+
+
+ function toast(msg, kind='info') {
+   let box = document.getElementById('toasts');
+   if (!box) {
+     box = document.createElement('div');
+     box.id = 'toasts';
+     Object.assign(box.style, { position:'fixed', right:'18px', bottom:'18px', display:'flex', flexDirection:'column', gap:'8px', zIndex: 99999 });
+     document.body.appendChild(box);
+   }
+   const el = document.createElement('div');
+   el.textContent = msg;
+   Object.assign(el.style, { padding:'10px 14px', borderRadius:'10px', background: (kind==='error' ? '#7f1d1d' : (kind==='success' ? '#065f46' : '#1f2937')), color:'#e5e7eb', boxShadow:'0 10px 30px rgba(0,0,0,.25)' });
+   box.appendChild(el);
+   setTimeout(() => el.remove(), 2200);
+ }

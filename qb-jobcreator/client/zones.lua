@@ -42,7 +42,7 @@ local function canUseZone(z, requireBoss)
   return true
 end
 
--- Spawner unificado: primero comando, luego qb-garages y por último QBCore
+-- ==== SPAWN UNIFICADO ====
 local function spawnFromConfig(model, coords, heading)
   model = tostring(model or 'adder')
 
@@ -52,7 +52,7 @@ local function spawnFromConfig(model, coords, heading)
     return
   end
 
-  -- 2) qb-garages (server event)
+  -- 2) qb-garages (server event configurable)
   if Config.Garages and Config.Garages.UseQbGarages and GetResourceState(Config.Garages.QbResource or 'qb-garages') == 'started' then
     if Config.Garages.SpawnEvent and type(Config.Garages.SpawnEvent) == 'string' then
       TriggerServerEvent(Config.Garages.SpawnEvent, model, coords, heading or 0.0)
@@ -60,12 +60,50 @@ local function spawnFromConfig(model, coords, heading)
     end
   end
 
-  -- 3) fallback QBCore: SpawnVehicle
+  -- 3) Fallback QBCore
   QBCore.Functions.SpawnVehicle(model, function(veh)
-    SetVehicleNumberPlateText(veh, ('JOB%03d'):format(math.random(0,999)))
+    SetVehicleNumberPlateText(veh, ('%s%03d'):format(string.upper(string.sub((coords.job or 'JOB'),1,3)), math.random(0,999)))
     SetEntityHeading(veh, heading or 0.0)
     SetVehicleEngineOn(veh, true, true)
   end, vector3(coords.x, coords.y, coords.z), true)
+end
+
+-- ==== PARSER "rango=modelo" ====
+local function _split(s, sep)
+  local t = {}
+  for p in string.gmatch(s or '', '([^'..sep..']+)') do t[#t+1] = p end
+  return t
+end
+local function parseVehicles(vdata)
+  -- Acepta "0=police,2=police2" o array { {model,label,minGrade} }
+  local list = {}
+  if type(vdata) == 'string' then
+    for _, pair in ipairs(_split(vdata, ',')) do
+      local kv = _split(pair, '=')
+      local g  = tonumber((kv[1] or ''):gsub('%s','')) or 0
+      local m  = (kv[2] or ''):gsub('%s','')
+      if m ~= '' then list[#list+1] = { model = m, label = m, minGrade = g } end
+    end
+  elseif type(vdata) == 'table' then
+    for _, v in ipairs(vdata) do
+      if type(v) == 'table' and v.model then
+        list[#list+1] = { model = tostring(v.model), label = v.label or tostring(v.model), minGrade = tonumber(v.minGrade or v.grade or 0) or 0 }
+      end
+    end
+  end
+  table.sort(list, function(a,b) return (a.minGrade or 0) < (b.minGrade or 0) end)
+  return list
+end
+local function vehiclesForMyGrade(z)
+  local _, grade = playerJobData()
+  local list = parseVehicles(z.data and z.data.vehicles)
+  local allowed = {}
+  for _, v in ipairs(list) do if grade >= (v.minGrade or 0) then allowed[#allowed+1] = v end end
+  if #allowed == 0 then
+    local fallback = (z.data and (z.data.vehicle or z.data.default)) or 'adder'
+    allowed = { { model = fallback, label = fallback, minGrade = 0 } }
+  end
+  return allowed
 end
 
 local function addTargetForZone(z)
@@ -101,31 +139,14 @@ local function addTargetForZone(z)
     }
   -- garage  (ver §4 para modo avanzado)
   elseif z.ztype == 'garage' then
-  local vehicles = z.data and z.data.vehicles
-  if type(vehicles) == 'table' and #vehicles > 0 then
-    -- Lista por rango: { model, label, minGrade }
-    for _, v in ipairs(vehicles) do
-      table.insert(opts, {
-        label = v.label or v.model or 'Vehículo',
-        icon  = 'fa-solid fa-car',
-        canInteract = function()
-          local _, grade = playerJobData()
-          local min = tonumber(v.minGrade or v.grade or 0) or 0
-          return canUseZone(z, false) and grade >= min
-        end,
-        action = function()
-          spawnFromConfig(v.model, z.coords, z.coords.w or 0.0)
-        end
-      })
-    end
-  else
-    -- Fallback: un solo vehículo (data.vehicle)
+  -- crea una opción por cada vehículo permitido según tu rango
+  for _, v in ipairs(vehiclesForMyGrade(z)) do
     table.insert(opts, {
-      label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
+      label = v.label or v.model,
+      icon  = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        local model = (z.data and z.data.vehicle) or 'adder'
-        spawnFromConfig(model, z.coords, z.coords.w or 0.0)
+        spawnFromConfig(v.model, z.coords, z.coords.w or 0.0)
       end
     })
   end
