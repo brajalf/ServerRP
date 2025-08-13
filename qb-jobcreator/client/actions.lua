@@ -1,55 +1,38 @@
 QBCore = exports['qb-core']:GetCoreObject()
+local function started(r) return GetResourceState(r) == 'started' end
 
-local function resStarted(r) return GetResourceState(r) == 'started' end
+local A = {}
 
-local Actions = {}
-
--- === EMS ===
-Actions.revive = function()
-  if resStarted('qb-ambulancejob') or resStarted('hospital') then
-    -- la mayoría de forks aceptan este:
+-- EMS
+A.revive = function()
+  if started('qb-ambulancejob') or started('hospital') then
     TriggerEvent('hospital:client:Revive')
   else
-    QBCore.Functions.Notify('No hay recurso de hospital/ambulancia activo.', 'error')
+    QBCore.Functions.Notify('Recurso de hospital/ambulancia no activo.', 'error')
   end
 end
-
-Actions.heal = function()
-  if resStarted('qb-ambulancejob') then
+A.heal = function()
+  if started('qb-ambulancejob') then
     TriggerEvent('hospital:client:TreatWounds')
   else
-    QBCore.Functions.Notify('No hay recurso de hospital/ambulancia activo.', 'error')
+    QBCore.Functions.Notify('Recurso de hospital no activo.', 'error')
   end
 end
 
--- === POLICÍA ===
-Actions.cuff = function()
-  if resStarted('qb-policejob') then
-    TriggerServerEvent('police:server:CuffPlayer')     -- fallback genérico
-    TriggerEvent('police:client:CuffPlayer')           -- client event típico
-  else
-    QBCore.Functions.Notify('No hay recurso de policía activo.', 'error')
-  end
-end
+-- POLICÍA
+A.cuff      = function() TriggerServerEvent('police:server:CuffPlayer'); TriggerEvent('police:client:CuffPlayer') end
+A.escort    = function() TriggerServerEvent('police:server:EscortPlayer'); TriggerEvent('police:client:EscortPlayer') end
+A.putinveh  = function() TriggerEvent('police:client:PutPlayerInVehicle') end
+A.takeout   = function() TriggerEvent('police:client:SetPlayerOutVehicle') end
+A.bill      = function() TriggerEvent('qb-billing:client:CreateBill') end
 
-Actions.escort = function()
-  if resStarted('qb-policejob') then
-    TriggerServerEvent('police:server:EscortPlayer')
-    TriggerEvent('police:client:EscortPlayer')
-  end
-end
-
-Actions.putinveh = function() TriggerEvent('police:client:PutPlayerInVehicle') end
-Actions.takeoutveh = function() TriggerEvent('police:client:SetPlayerOutVehicle') end
-Actions.bill = function() TriggerEvent('qb-billing:client:CreateBill') end
-
--- === MECÁNICO ===
-Actions.repair = function() TriggerEvent('qb-mechanicjob:client:RepairVehicle') end
-Actions.clean  = function() TriggerEvent('qb-mechanicjob:client:CleanVehicle') end
-Actions.impound = function() TriggerEvent('police:client:ImpoundVehicle') end
+-- MECÁNICO
+A.repair    = function() TriggerEvent('qb-mechanicjob:client:RepairVehicle') end
+A.clean     = function() TriggerEvent('qb-mechanicjob:client:CleanVehicle') end
+A.impound   = function() TriggerEvent('police:client:ImpoundVehicle') end
 
 RegisterNetEvent('qb-jobcreator:client:doAction', function(action)
-  local fn = Actions[action]
+  local fn = A[action]
   if fn then fn() else QBCore.Functions.Notify('Acción no disponible: '..tostring(action), 'error') end
 end)
 

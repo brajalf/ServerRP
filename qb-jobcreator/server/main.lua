@@ -114,11 +114,9 @@ QBCore.Commands.Add('jobcreator', _L('open_creator'), {}, false, function(src)
   TriggerClientEvent('qb-jobcreator:client:openUI', src)
 end)
 
--- Apertura vía F7 solo si tiene permisos (admin/ACE). El boss NO abre por F7.
-RegisterNetEvent('qb-jobcreator:server:reqOpenPanel', function()
-  local src = source
-  if not ensurePerm(src) then return end
-  TriggerClientEvent('qb-jobcreator:client:openUI', src)
+RegisterNetEvent('qb-jobcreator:server:openBossPanel', function(job)
+  -- valida isBoss y que sea el job actual
+  TriggerClientEvent('qb-jobcreator:client:openBossUI', src, job)
 end)
 
 -- Apertura del panel del jefe desde zona 'boss' (restrictivo al job actual y solo si esBoss)

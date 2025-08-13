@@ -98,12 +98,6 @@ RegisterNUICallback('createZone', function(data, cb) TriggerServerEvent('qb-jobc
 RegisterNUICallback('deleteZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:deleteZone', data.id); cb({ ok = true }) end)
 RegisterNUICallback('getCoords', function(_, cb) local p = GetEntityCoords(PlayerPedId()); cb({ x = p.x, y = p.y, z = p.z }) end)
 
--- Comandos (F7 solo admin → server valida)
-RegisterCommand('jobpanel', function() TriggerServerEvent('qb-jobcreator:server:reqOpenPanel') end, false)
-RegisterCommand('jobpanel_close', function() ForceClose() end, false)
-RegisterKeyMapping('jobpanel', 'Abrir panel de trabajos (Admin)', 'keyboard', 'F7')
-
-
 -- Lista de cercanos (por si la UI lo usa)
 RegisterNUICallback('nearbyPlayers', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getNearbyPlayers', function(list)

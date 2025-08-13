@@ -120,6 +120,27 @@ local function vehiclesForMyGrade(z)
   return allowed
 end
 
+local function GiveKeysByPlate(plate)
+  plate = tostring(plate or ''):gsub('%s','')
+  if plate == '' then return end
+
+  -- qb-vehiclekeys (varía por fork)
+  if GetResourceState('qb-vehiclekeys') == 'started' then
+    TriggerEvent('qb-vehiclekeys:client:AddKeys', plate)               -- algunos forks
+    TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+    TriggerEvent('vehiclekeys:client:SetOwner', plate)                  -- otros forks
+  end
+  if GetResourceState('qs-vehiclekeys') == 'started' then
+    TriggerServerEvent('qs-vehiclekeys:server:AcquireVehicleKeys', plate)
+  end
+end
+
+local function PutPlayerInDriver(veh)
+  local ped = PlayerPedId()
+  TaskWarpPedIntoVehicle(ped, veh, -1)
+  SetVehicleEngineOn(veh, true, true)
+end
+
 -- =============================
 -- Targets por zona
 -- =============================
@@ -151,14 +172,59 @@ local function addTargetForZone(z)
     })
 
   elseif z.ztype == 'garage' then
-    local list = vehiclesForMyGrade(z)
-    for _, v in ipairs(list) do
-      table.insert(opts, {
-        label = v.label or v.model, icon = 'fa-solid fa-car',
-        canInteract = function() return canUseZone(z, false) end,
-        action = function() spawnFromConfig(v.model, z.coords, z.coords.w or 0.0) end
-      })
+  table.insert(opts, {
+    label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
+    canInteract = function() return canUseZone(z, false) end,
+    action = function()
+      local model = (z.data and z.data.vehicle) or 'adder'
+      -- usa tu spawn actual (QBCore) y luego llaves + dentro del auto
+      QBCore.Functions.SpawnVehicle(model, function(veh)
+        local plate = ('%s%03d'):format(string.upper(string.sub(z.job,1,3)), math.random(0,999))
+        SetVehicleNumberPlateText(veh, plate)
+        SetEntityHeading(veh, z.coords.w or 0.0)
+        PutPlayerInDriver(veh)
+        GiveKeysByPlate(plate)
+      end, vector3(z.coords.x, z.coords.y, z.coords.z), true)
     end
+  })
+
+  -- NUEVO: Guardar vehículo
+  table.insert(opts, {
+    label = 'Guardar vehículo', icon = 'fa-solid fa-warehouse',
+    canInteract = function()
+      local ped = PlayerPedId()
+      local veh = GetVehiclePedIsIn(ped, false)
+      return canUseZone(z, false) and veh ~= 0 and GetPedInVehicleSeat(veh, -1) == ped
+    end,
+    action = function()
+      -- si tienes qb-garages activo, usa su lógica de almacenar
+      if GetResourceState('qb-garages') == 'started' then
+        -- muchos forks exponen este client event:
+        TriggerEvent('qb-garages:client:storeVehicle')
+        return
+      end
+      -- fallback simple: borrar el vehículo
+      local ped = PlayerPedId()
+      local veh = GetVehiclePedIsIn(ped, false)
+      if veh ~= 0 then
+        TaskLeaveVehicle(ped, veh, 0); Wait(500)
+        SetVehicleAsNoLongerNeeded(veh); DeleteEntity(veh)
+        QBCore.Functions.Notify('Vehículo guardado.', 'success')
+      end
+    end
+  })
+
+  elseif z.ztype == 'actions' then
+  local my = (QBCore.Functions.GetPlayerData().job or {}).name
+  local allowed = (Config.PlayerActions or {})[my] or {}
+  for _, act in ipairs(allowed) do
+    table.insert(opts, {
+      label = ('Acción: %s'):format(act),
+      icon  = 'fa-solid fa-person',
+      canInteract = function() return canUseZone(z, false) end,
+      action = function() TriggerEvent('qb-jobcreator:client:doAction', act) end
+    })
+  end
 
   elseif z.ztype == 'crafting' then
     table.insert(opts, {
@@ -166,19 +232,6 @@ local function addTargetForZone(z)
       canInteract = function() return canUseZone(z, false) end,
       action = function() QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary') end
     })
-  end
-
-  if z.ztype == 'actions' then
-    local myJob = (QBCore.Functions.GetPlayerData().job or {}).name
-    local allowed = (Config.PlayerActions or {})[myJob] or {}
-    for _, act in ipairs(allowed) do
-      table.insert(opts, {
-        label = ('Acción: %s'):format(act),
-        icon  = 'fa-solid fa-person',
-        canInteract = function() return canUseZone(z, false) end,
-        action = function() TriggerEvent('qb-jobcreator:client:doAction', act) end
-      })
-    end
   end
 
   exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {

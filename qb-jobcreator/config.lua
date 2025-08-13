@@ -101,7 +101,7 @@ Config.Garages = {
 }
 
 Config.PlayerActions = Config.PlayerActions or {
-  police = { 'cuff', 'escort', 'putinveh', 'takeoutveh', 'bill' },
+  police    = { 'cuff', 'escort', 'putinveh', 'takeout', 'bill' },
   ambulance = { 'revive', 'heal' },
-  mechanic = { 'repair', 'clean', 'impound' },
+  mechanic  = { 'repair', 'clean', 'impound' },
 }
