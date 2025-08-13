@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hz MultiTrabajo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div id="multijob-ui" class="modern-container" style="display: none;">
+        <!-- Header Moderno -->
+        <div class="modern-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-placeholder">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="title-section">
+                        <h1>MultiTrabajo</h1>
+                        <span class="subtitle">Sistema de Empleos</span>
+                    </div>
+                </div>
+                <div class="close-btn" onclick="closeUI()">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido Principal Moderno -->
+        <div class="modern-content">
+            <!-- Trabajo Actual Rediseñado -->
+            <div class="current-job-modern">
+                <div class="job-card-modern">
+                    <div class="card-header">
+                        <div class="header-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <h2>Empleo Actual</h2>
+                    </div>
+                    
+                    <div class="job-info-grid">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Empresa</span>
+                                <span id="current-job-name" class="info-value">Cargando...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Rango</span>
+                                <span id="current-job-grade" class="info-value">Cargando...</span>
+                            </div>
+                        </div>
+                        
+
+                    </div>
+                    
+                    <!-- Botón de Duty Moderno -->
+                    <div class="duty-modern">
+                        <div class="duty-status-modern">
+                            <div class="status-indicator">
+                                <div id="duty-indicator" class="indicator-dot off"></div>
+                                <span id="duty-status" class="status-text">Fuera de Servicio</span>
+                            </div>
+                        </div>
+                        <button id="duty-toggle" class="duty-button-modern">
+                            <div class="button-content">
+                                <svg id="duty-icon" class="duty-icon-modern" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span id="duty-text">Entrar en Servicio</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas de tiempo por trabajo -->
+            <div class="job-time-stats" id="job-time-stats">
+                <!-- Estadísticas de tiempo se cargarán aquí -->
+            </div>
+            
+            <!-- Sección de Lista de Trabajos -->
+            <div class="jobs-section">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    <span>Tus Trabajos</span>
+                    <div class="job-counter">0 trabajos</div>
+                </div>
+                
+                <div class="jobs-container" id="jobs-container">
+                    <!-- Los trabajos se cargarán dinámicamente aquí -->
+                    <div class="no-jobs">
+                        <i class="fas fa-briefcase"></i>
+                        <p>Cargando trabajos...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de Historial de Cambios -->
+            <div class="history-section">
+                <div class="section-title">
+                    <i class="fas fa-history"></i>
+                    <span>Historial de Cambios</span>
+                    <button class="history-toggle-btn" id="history-toggle-btn">
+                        <i class="fas fa-eye"></i>
+                        Ver Historial
+                    </button>
+                </div>
+                
+                <div class="history-container" id="history-container" style="display: none;">
+                    <div class="history-list" id="history-list">
+                        <!-- El historial se cargará dinámicamente aquí -->
+                        <div class="no-history">
+                            <i class="fas fa-clock"></i>
+                            <p>No hay cambios registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenedor de Notificaciones -->
+    <div class="notifications-container"></div>
+    
+    <!-- Modal de Confirmación (se crea dinámicamente) -->
+    
+    <script src="script.js"></script>
+</body>
+</html>
