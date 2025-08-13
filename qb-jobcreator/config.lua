@@ -29,8 +29,8 @@ Config.Integrations = Config.Integrations or {
 -- Si usas un recurso de multitrabajo, activa esta sección para integrarlo.
 Config.MultiJob = Config.MultiJob or {
   Enabled  = true,               -- ponlo en false si no usas multitrabajo
-  Resource = 'hz-multitrabajo',
-  OpenCommand = 'multijob',-- nombre del recurso que expone exports (si aplica)
+  Resource = 'ps-multijob',
+  OpenCommand = 'jobmenu',-- nombre del recurso que expone exports (si aplica)
   -- Tabla OFFLINE opcional (si tu multitrabajo guarda asignaciones en BD)
   OfflineTable = {
     name = 'player_jobs',        -- tabla de tu recurso de multitrabajo
