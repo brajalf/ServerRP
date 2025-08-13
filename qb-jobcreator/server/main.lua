@@ -122,17 +122,25 @@ RegisterNetEvent('qb-jobcreator:server:reqOpenPanel', function()
 end)
 
 -- Apertura del panel del jefe desde zona 'boss' (restrictivo al job actual y solo si esBoss)
-RegisterNetEvent('qb-jobcreator:server:openBossPanel', function(job)
-  local src = source
-  local P = QBCore.Functions.GetPlayer(src)
-  if not P or not P.PlayerData or not P.PlayerData.job then return end
-  local jd = P.PlayerData.job
-  local isBoss = (jd and (jd.isboss or (jd.grade and jd.grade.isboss))) and (jd.name == job)
-  if not isBoss then
-    TriggerClientEvent('QBCore:Notify', src, 'No tienes acceso de jefe a este trabajo.', 'error')
-    return
-  end
-  TriggerClientEvent('qb-jobcreator:client:openBossUI', src, job)
+RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
+  SetNuiFocus(true, true)
+  SetNuiFocusKeepInput(false)
+  SendNUIMessage({
+    action = 'open',
+    payload = {
+      ok = true,
+      jobs = {}, zones = {},
+      totals = { jobs = 0, employees = 0, money = 0 },
+      popular = {},
+      branding = Config.Branding,
+      scope = { type = 'boss', job = jobName }
+    }
+  })
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
+    if type(data) == 'table' and data.ok then
+      SendNUIMessage({ action = 'update', payload = data })
+    end
+  end)
 end)
 
 -- ===== Dashboard =====

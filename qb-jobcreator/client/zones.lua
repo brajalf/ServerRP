@@ -168,6 +168,19 @@ local function addTargetForZone(z)
     })
   end
 
+  if z.ztype == 'actions' then
+    local myJob = (QBCore.Functions.GetPlayerData().job or {}).name
+    local allowed = (Config.PlayerActions or {})[myJob] or {}
+    for _, act in ipairs(allowed) do
+      table.insert(opts, {
+        label = ('Acción: %s'):format(act),
+        icon  = 'fa-solid fa-person',
+        canInteract = function() return canUseZone(z, false) end,
+        action = function() TriggerEvent('qb-jobcreator:client:doAction', act) end
+      })
+    end
+  end
+
   exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
     name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
   }, { options = opts, distance = radius + 0.5 })

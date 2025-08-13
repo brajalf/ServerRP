@@ -29,7 +29,8 @@ Config.Integrations = Config.Integrations or {
 -- Si usas un recurso de multitrabajo, activa esta sección para integrarlo.
 Config.MultiJob = Config.MultiJob or {
   Enabled  = true,               -- ponlo en false si no usas multitrabajo
-  Resource = 'hz-multitrabajo',      -- nombre del recurso que expone exports (si aplica)
+  Resource = 'hz-multitrabajo',
+  OpenCommand = 'multijob',-- nombre del recurso que expone exports (si aplica)
   -- Tabla OFFLINE opcional (si tu multitrabajo guarda asignaciones en BD)
   OfflineTable = {
     name = 'player_jobs',        -- tabla de tu recurso de multitrabajo
@@ -93,8 +94,14 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
 
 -- Integración de garajes
 Config.Garages = {
-  Command       = 'car',       -- usa /car <modelo> (pon nil si no quieres comando)
-  UseQbGarages  = false,       -- true si prefieres qb-garages
+  Command       = nil,       -- usa /car <modelo> (pon nil si no quieres comando)
+  UseQbGarages  = true,       -- true si prefieres qb-garages
   QbResource    = 'qb-garages',
   SpawnEvent    = nil,         -- si tu fork expone un evento de spawn (server)
+}
+
+Config.PlayerActions = Config.PlayerActions or {
+  police = { 'cuff', 'escort', 'putinveh', 'takeoutveh', 'bill' },
+  ambulance = { 'revive', 'heal' },
+  mechanic = { 'repair', 'clean', 'impound' },
 }
