@@ -3,9 +3,16 @@ const App = (() => {
   const $ = sel => document.querySelector(sel)
   const $$ = sel => document.querySelectorAll(sel)
 
+const RESOURCE = (typeof GetParentResourceName === 'function')
+  ? GetParentResourceName()
+  : (window.resourceName || 'qb-jobcreator');
+
 function post(name, data = {}) {
-  const res = (typeof GetParentResourceName === 'function') ? GetParentResourceName() : 'qb-jobcreator';
-  return fetch(`https://${res}/${name}`, { method: 'POST', body: JSON.stringify(data) });
+  return fetch(`https://${RESOURCE}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify(data)
+  });
 }
   function money(n){ return new Intl.NumberFormat('es-CO', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n||0) }
 
