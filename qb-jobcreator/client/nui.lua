@@ -1,8 +1,5 @@
 QBCore = exports['qb-core']:GetCoreObject()
 
--- NUI <-> Client bridge
--- Asegúrate de incluir este archivo en fxmanifest.lua (client_scripts)
-
 local function ok(cb, data)
   if cb then cb(data ~= nil and data or { ok = true }) end
 end
@@ -14,7 +11,7 @@ RegisterNUICallback('close', function(_, cb)
   ok(cb)
 end)
 
--- Dashboard completo
+-- Dashboard
 RegisterNUICallback('getDashboard', function(_, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
     ok(cb, data)
@@ -88,10 +85,8 @@ RegisterNUICallback('wash', function(data, cb)
   ok(cb)
 end)
 
--- Utilidad para el modal: coords actuales del jugador
+-- Utilidad: coords actuales (para crear zona desde el modal)
 RegisterNUICallback('getCoords', function(_, cb)
-  local ped = PlayerPedId()
-  local p = GetEntityCoords(ped)
-  local h = GetEntityHeading(ped)
-  ok(cb, { x = p.x, y = p.y, z = p.z, w = h })
+  local p = GetEntityCoords(PlayerPedId())
+  ok(cb, { x = p.x, y = p.y, z = p.z, w = GetEntityHeading(PlayerPedId()) })
 end)

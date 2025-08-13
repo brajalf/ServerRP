@@ -166,26 +166,29 @@ function post(name, data = {}) {
 
    function load() {
      post('getZones', { job: state.jd.job })
-       .then(r => r.json())
-       .then(zs => {
-         let html = '<table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Etiqueta</th><th>Radio</th><th>Extras</th><th></th></tr></thead><tbody>';
-         (zs || []).forEach(z => {
-           html += `<tr>
-             <td>${z.id}</td>
-             <td>${z.ztype}</td>
-             <td>${z.label || ''}</td>
-             <td>${z.radius}</td>
-             <td>${extrasText(z)}</td>
-             <td><button class="btn danger" data-id="${z.id}">Borrar</button></td>
-           </tr>`;
-         });
-         html += '</tbody></table>';
-         list.innerHTML = html;
-         list.querySelectorAll('button[data-id]').forEach(b => {
-           b.onclick = () => post('deleteZone', { id: Number(b.dataset.id) })
-             .then(() => load());
-         });
-       });
+      .then(r => r.json())
+      .then(zs => {
+        const seen = new Set();
+        const uniq = [];
+        (zs || []).forEach(z => { if (!seen.has(z.id)) { seen.add(z.id); uniq.push(z); } });
+
+        let html = '<table class="table"><thead>...';
+        uniq.forEach(z => {
+          html += `<tr>
+            <td>${z.id}</td>
+            <td>${z.ztype}</td>
+            <td>${z.label||''}</td>
+            <td>${z.radius}</td>
+            <td>${z.data?.vehicles || z.data?.vehicle || ''}</td>
+            <td><button class="btn danger" data-id="${z.id}">Borrar</button></td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        list.innerHTML = html;
+        list.querySelectorAll('button[data-id]').forEach(b => {
+          b.onclick = () => post('deleteZone', { id: Number(b.dataset.id) }).then(() => load());
+        });
+      });
    }
    load();
 

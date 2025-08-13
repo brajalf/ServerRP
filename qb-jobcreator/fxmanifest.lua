@@ -33,8 +33,8 @@ shared_scripts {
 client_scripts {
   'client/actions.lua',
   'client/zones.lua',
-  'client/nui.lua',
   'client/main.lua',
+  'client/nui.lua'
 }
 
 server_scripts {
