@@ -150,6 +150,21 @@ RegisterNetEvent('qb-inventory:server:openVending', function(data)
     OpenShop(src, 'vending')
 end)
 
+-- Compatibility event for resources using legacy inventory triggers
+RegisterNetEvent('inventory:server:OpenInventory', function(invType, id, data)
+    local src = source
+    if invType == 'shop' then
+        if type(data) == 'table' then
+            CreateShop({ name = id, label = id, items = data })
+        end
+        OpenShop(src, id)
+    elseif invType == 'otherplayer' then
+        OpenInventoryById(src, id)
+    else
+        OpenInventory(src, id, data)
+    end
+end)
+
 RegisterNetEvent('qb-inventory:server:closeInventory', function(inventory)
     local src = source
     local QBPlayer = QBCore.Functions.GetPlayer(src)
