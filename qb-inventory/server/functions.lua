@@ -125,6 +125,20 @@ end
 
 exports('SaveInventory', SaveInventory)
 
+-- Persists a stash's contents to the database.
+--- @param identifier string The stash identifier
+function SaveStash(identifier)
+    local stash = Inventories[identifier]
+    if not stash then return end
+    MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?', {
+        identifier,
+        json.encode(stash.items),
+        json.encode(stash.items)
+    })
+end
+
+exports('SaveStash', SaveStash)
+
 -- Sets the items in a inventory.
 --- @param identifier string The identifier of the player or inventory.
 --- @param items table The items to set in the inventory.

@@ -383,15 +383,24 @@ QBCore.Functions.CreateCallback('qb-inventory:server:attemptPurchase', function(
     end
 
     local price = shopInfo.items[itemInfo.slot].price * amount
+    local paid = false
     if Player.PlayerData.money.cash >= price then
         Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-        AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
-        TriggerEvent('qb-shops:server:UpdateShopItems', shop, itemInfo, amount)
-        cb(true)
-    else
+        paid = true
+    elseif Player.PlayerData.money.bank >= price then
+        Player.Functions.RemoveMoney('bank', price, 'shop-purchase')
+        paid = true
+    end
+
+    if not paid then
         TriggerClientEvent('QBCore:Notify', source, 'You do not have enough money', 'error')
         cb(false)
+        return
     end
+
+    AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
+    TriggerEvent('qb-shops:server:UpdateShopItems', shop, itemInfo, amount)
+    cb(true)
 end)
 
 QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source, cb, target, item, amount, slot, info)
@@ -546,18 +555,17 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
                 end
             end
         end
-    end
-end)
 
-
-exports('GetStashItems', GetStashItems)
-
-RegisterServerEvent('qb-inventory:server:SaveStashItems', function(stashId, items)
-    MySQL.insert('INSERT INTO stashitems (stash, items) VALUES (@stash, @items) ON DUPLICATE KEY UPDATE items = @items', {
-        ['@stash'] = stashId,
-        ['@items'] = json.encode(items)
-    })
-    if Stashes[stashId] then
-	Stashes[stashId].items = items
+        -- persist inventory changes
+        if type(fromId) == 'number' then
+            SaveInventory(fromId)
+        elseif Inventories[fromId] then
+            SaveStash(fromId)
+        end
+        if type(toId) == 'number' then
+            SaveInventory(toId)
+        elseif Inventories[toId] then
+            SaveStash(toId)
+        end
     end
 end)
