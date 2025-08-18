@@ -17,10 +17,10 @@ local function checkInjuryCause(cause)
 
     utils.debug(item, cause)
 
-    local count = exports.ox_inventory:Search('count', item)
+    local count = utils.getItemCount(item)
     if count < 1 then return utils.showNotification(locale("not_enough_" .. item)) end
 
-    local itemDurability = utils.getItem(item)?.metadata?.durability
+    local itemDurability = utils.getItem(item)?.info?.quality
 
     if itemDurability then
         if itemDurability < Config.ConsumeItemPerUse then

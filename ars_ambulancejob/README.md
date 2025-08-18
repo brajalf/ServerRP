@@ -9,7 +9,7 @@ Experience the intensity of emergency response in Arius Ambulance Job :ambulance
 
 :dart: **Dependencies**
 
--   ox_inventory
+-   qb-inventory
 -   ox_target / qb-target
 
 :loudspeaker: **Features:**
