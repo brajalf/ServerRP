@@ -304,6 +304,20 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
 end)
 
 RegisterNUICallback('GiveItem', function(data, cb)
+    local targetId = tonumber(data.plyXd)
+    if targetId then
+        local item = data.ItemInfoFullHd or data.item
+        local amount = data.NumberOfItem or data.amount
+        local slot = item and (item.slot or data.slot)
+        local info = item and (item.info or data.info)
+        if item and amount and slot then
+            QBCore.Functions.TriggerCallback('qb-inventory:server:giveItem', function(success)
+                cb(success)
+            end, targetId, item.name, amount, slot, info)
+            return
+        end
+    end
+
     local player, distance = QBCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
     if player ~= -1 and distance < 3 then
         local playerId = GetPlayerServerId(player)

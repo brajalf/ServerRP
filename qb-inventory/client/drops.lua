@@ -93,9 +93,10 @@ RegisterNUICallback('DropItem', function(item, cb)
         if dropId then
             while not NetworkDoesNetworkIdExist(dropId) do Wait(10) end
             local bag = NetworkGetEntityFromNetworkId(dropId)
-            SetModelAsNoLongerNeeded(bag)
+            SetEntityAsMissionEntity(bag, true, false)
             PlaceObjectOnGroundProperly(bag)
             FreezeEntityPosition(bag, true)
+            SetModelAsNoLongerNeeded(Config.ItemDropObject)
             local newDropId = 'drop-' .. dropId
             cb(newDropId)
         else
