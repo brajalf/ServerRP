@@ -1,6 +1,6 @@
-ESX = exports["es_extended"]:getSharedObject()
+local QBCore = exports['qb-core']:GetCoreObject()
 
-ESX.RegisterServerCallback('myDJ:requestPlaylistsAndSongs', function(source, cb)
+QBCore.Functions.CreateCallback('myDJ:requestPlaylistsAndSongs', function(source, cb)
 
     local playlists = {}
     local songs = {}
@@ -19,7 +19,7 @@ ESX.RegisterServerCallback('myDJ:requestPlaylistsAndSongs', function(source, cb)
     )
 end)
 
-ESX.RegisterServerCallback('myDJ:requestPlaylistById', function(source, cb, playlistId)
+QBCore.Functions.CreateCallback('myDJ:requestPlaylistById', function(source, cb, playlistId)
 
 	MySQL.Async.fetchAll('SELECT * from playlist_songs WHERE playlist = @playlistId', {
 		['@playlistId'] = playlistId,
@@ -30,7 +30,7 @@ ESX.RegisterServerCallback('myDJ:requestPlaylistById', function(source, cb, play
 	)
 end)
 
-ESX.RegisterServerCallback('myDJ:requestPlaylists', function(source, cb)
+QBCore.Functions.CreateCallback('myDJ:requestPlaylists', function(source, cb)
     MySQL.Async.fetchAll('SELECT id, label from playlists', {},
     function(result)
         cb(result)
@@ -38,7 +38,7 @@ ESX.RegisterServerCallback('myDJ:requestPlaylists', function(source, cb)
     )
 end)
 
-ESX.RegisterServerCallback('myDJ:requestPlaylistSongs', function(source, cb, playlistId)
+QBCore.Functions.CreateCallback('myDJ:requestPlaylistSongs', function(source, cb, playlistId)
     MySQL.Async.fetchAll('SELECT * from playlist_songs WHERE playlist = @playlist', {
         ['@playlistId'] = playlistId,
     },
@@ -48,7 +48,7 @@ ESX.RegisterServerCallback('myDJ:requestPlaylistSongs', function(source, cb, pla
     )
 end)
 
-ESX.RegisterServerCallback('myDJ:receiveRunningSongs', function(source, cb)
+QBCore.Functions.CreateCallback('myDJ:receiveRunningSongs', function(source, cb)
     cb(Config.DJPositions)
 end)
 
