@@ -15,7 +15,7 @@ Translation = {
 
 Config.Locale = 'en'
 
-Config.useESX = true -- can not be disabled without changing the callbacks
+Config.useQB = true -- can not be disabled without changing the callbacks
 Config.enableCommand = false
 
 Config.enableMarker = true -- purple marker at the DJ stations

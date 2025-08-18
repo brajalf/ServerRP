@@ -1,19 +1,22 @@
-ESX = exports["es_extended"]:getSharedObject()
+local QBCore = exports['qb-core']:GetCoreObject()
 
 xSound = exports.xsound
 
-if Config.useESX then
-   Citizen.CreateThread(function()
-      --[[   while ESX == nil do
-            TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-            Citizen.Wait(0)
-        end
+local PlayerData = {}
 
-        Citizen.Wait(100)]]
+if Config.useQB then
+    PlayerData = QBCore.Functions.GetPlayerData()
 
-        -- sync
+    RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+        PlayerData = QBCore.Functions.GetPlayerData()
+    end)
 
-        ESX.TriggerServerCallback('myDJ:receiveRunningSongs', function(DJPositions)
+    RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+        PlayerData.job = job
+    end)
+
+    Citizen.CreateThread(function()
+        QBCore.Functions.TriggerCallback('myDJ:receiveRunningSongs', function(DJPositions)
         
             if DJPositions ~= nil then
                 for k, v in pairs(DJPositions) do
@@ -76,7 +79,7 @@ Citizen.CreateThread(function()
         isNearDJ = false
 
         for k, v in pairs(Config.DJPositions) do
-            if (not Config.useESX or v.requiredJob == nil or ESX ~= nil and ESX.PlayerData.job ~= nil and ESX.PlayerData.job.name == v.requiredJob) then
+            if (not Config.useQB or v.requiredJob == nil or PlayerData.job ~= nil and PlayerData.job.name == v.requiredJob) then
                 local distance = Vdist(playerCoords, v.pos.x, v.pos.y, v.pos.z)
 
                 if distance < 2.0 then
@@ -128,7 +131,7 @@ Citizen.CreateThread(function()
                 SetNuiFocus(true, true)
                 isDjOpen = true
                 SendNUIMessage({type = 'open'})
-                ESX.TriggerServerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
+                QBCore.Functions.TriggerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
                     SendNUIMessage({type = 'getPlaylists', playlists = playlists, songs = songs})
                 end)
             end
@@ -143,7 +146,7 @@ AddEventHandler('myDj:open', function()
     SetNuiFocus(true, true)
     isDjOpen = true
     SendNUIMessage({type = 'open'})
-    ESX.TriggerServerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
+    QBCore.Functions.TriggerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
         SendNUIMessage({type = 'getPlaylists', playlists = playlists, songs = songs})
     end)
 end)
@@ -268,7 +271,7 @@ function volumeDown(DJName)
 end
 
 function playTitleFromPlaylist(DJName, DJPos, DJRange, link, playlistId)
-    ESX.TriggerServerCallback('myDJ:requestPlaylistById', function(playlistSongs)
+    QBCore.Functions.TriggerCallback('myDJ:requestPlaylistById', function(playlistSongs)
 		if playlistSongs ~= nil then
 			for k, v in pairs(playlistSongs) do
 				if v.link == link then
@@ -318,7 +321,7 @@ if Config.enableCommand then
         SetNuiFocus(true, true)
         isDjOpen = true
         SendNUIMessage({type = 'open'})
-        ESX.TriggerServerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
+        QBCore.Functions.TriggerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
             SendNUIMessage({type = 'getPlaylists', playlists = playlists, songs = songs})
         end)
     end, false)
@@ -429,7 +432,7 @@ RegisterNUICallback('addSongToPlaylist', function(data, cb)
     --TriggerServerEvent('myDJ:addSongToPlaylist', 1, 'data.link')
 
     Wait(100)
-    ESX.TriggerServerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
+    QBCore.Functions.TriggerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
         SendNUIMessage({type = 'getPlaylists', playlists = playlists, songs = songs})
     end)
 end)
