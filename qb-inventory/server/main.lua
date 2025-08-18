@@ -409,18 +409,8 @@ QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source,
         cb(false)
         return
     end
-    local playerPed = GetPlayerPed(source)
-
     local Target = QBCore.Functions.GetPlayer(target)
     if not Target or Target.PlayerData.metadata['isdead'] or Target.PlayerData.metadata['inlaststand'] or Target.PlayerData.metadata['ishandcuffed'] then
-        cb(false)
-        return
-    end
-    local targetPed = GetPlayerPed(target)
-
-    local pCoords = GetEntityCoords(playerPed)
-    local tCoords = GetEntityCoords(targetPed)
-    if #(pCoords - tCoords) > 5 then
         cb(false)
         return
     end
@@ -467,6 +457,8 @@ QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source,
     TriggerClientEvent('qb-inventory:client:giveAnim', target)
     TriggerClientEvent('qb-inventory:client:ItemBox', target, itemInfo, 'add', giveAmount)
     if Player(target).state.inv_busy then TriggerClientEvent('qb-inventory:client:updateInventory', target) end
+    SaveInventory(source)
+    SaveInventory(target)
     cb(true)
 end)
 
