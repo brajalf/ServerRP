@@ -16,6 +16,7 @@ local EndTextCommandSetBlipName = EndTextCommandSetBlipName
 local GetEntityCoords = GetEntityCoords
 local PlayerPedId = PlayerPedId
 local TriggerServerEvent = TriggerServerEvent
+local QBCore = exports['qb-core']:GetCoreObject()
 
 utils = {}
 peds = {}
@@ -104,10 +105,16 @@ function utils.getClosestHospital()
 end
 
 function utils.addRemoveItem(type, item, quantity)
-    local data = {}
-    data.toggle = type == "remove"
-    data.item = item
-    data.quantity = quantity
+    if item == 'money' then
+        TriggerServerEvent('ars_ambulancejob:addRemoveMoney', type ~= 'remove', quantity)
+        return
+    end
+
+    local data = {
+        toggle = type == 'remove',
+        item = item,
+        quantity = quantity
+    }
 
     utils.debug(type, item, quantity)
     utils.debug(data)
@@ -126,6 +133,19 @@ function utils.getItem(name)
     local item = lib.callback.await('ars_ambulancejob:getItem', false, name)
 
     return item
+end
+
+function utils.getItemCount(name)
+    local count = 0
+    local items = QBCore.Functions.GetPlayerData().items or {}
+
+    for _, v in pairs(items) do
+        if v.name == name then
+            count = count + (v.amount or 0)
+        end
+    end
+
+    return count
 end
 
 function utils.isBedOccupied(coords)

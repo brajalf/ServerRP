@@ -69,11 +69,10 @@ local function checkPatient(target)
             icon = 'medkit',
             iconColor = "#5BC0DE",
             onSelect = function()
-                local count = exports.ox_inventory:Search('count', "defibrillator")
+                local count = utils.getItemCount("defibrillator")
                 if count < 1 then return utils.showNotification(locale("not_enough_defibrillator")) end
 
-
-                local itemDurability = utils.getItem("defibrillator")?.metadata?.durability
+                local itemDurability = utils.getItem("defibrillator")?.info?.quality
 
                 if itemDurability then
                     if itemDurability < Config.ConsumeItemPerUse then return utils.showNotification(locale("no_durability")) end

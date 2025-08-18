@@ -19,15 +19,14 @@ local function createStashes()
                 end,
                 nearby = function(self)
                     if hasJob(Config.EmsJobs) then
-                        DrawMarker(2, self.coords.x, self.coords.y, self.coords.z, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.2,
-                            0.2, 0.2, 199, 208, 209, 100, true, true, 2, nil, nil, false)
+                        DrawMarker(2, self.coords.x, self.coords.y, self.coords.z, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.2, 0.2, 0.2, 199, 208, 209, 100, true, true, 2, nil, nil, false)
 
                         if IsControlJustReleased(0, 38) then
-                            exports.ox_inventory:openInventory('stash', id)
+                            TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, {maxweight = stash.weight * 1000, slots = stash.slots})
+                            TriggerEvent('inventory:client:SetCurrentStash', id)
                         end
                     end
-                end
-
+                end,
             })
         end
     end

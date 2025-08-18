@@ -1,6 +1,7 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+
 player = {}
 distressCalls = {}
-
 RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
     local data = {}
     data.target = source
@@ -78,25 +79,47 @@ RegisterNetEvent("ars_ambulancejob:callCompleted", function(call)
 end)
 
 RegisterNetEvent("ars_ambulancejob:removAddItem", function(data)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+
     if data.toggle then
-        exports.ox_inventory:RemoveItem(source, data.item, data.quantity)
+        Player.Functions.RemoveItem(data.item, data.quantity)
     else
-        exports.ox_inventory:AddItem(source, data.item, data.quantity)
+        Player.Functions.AddItem(data.item, data.quantity)
+    end
+end)
+
+RegisterNetEvent('ars_ambulancejob:addRemoveMoney', function(add, amount)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+
+    if add then
+        Player.Functions.AddMoney('cash', amount)
+    else
+        Player.Functions.RemoveMoney('cash', amount)
     end
 end)
 
 RegisterNetEvent("ars_ambulancejob:useItem", function(data)
     if not hasJob(source, Config.EmsJobs) then return end
 
-    local item = exports.ox_inventory:GetSlotWithItem(source, data.item)
-    local slot = item.slot
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
 
-    exports.ox_inventory:SetDurability(source, slot, item.metadata?.durability and (item.metadata?.durability - data.value) or (100 - data.value))
+    local item = Player.Functions.GetItemByName(data.item)
+    if not item then return end
+
+    local slot = item.slot
+    local quality = item.info and item.info.quality or 100
+    local newQuality = quality - data.value
+
+    exports['qb-inventory']:SetItemQuality(source, slot, newQuality)
 end)
 
 RegisterNetEvent("ars_ambulancejob:removeInventory", function()
     if player[source].isDead and Config.RemoveItemsOnRespawn then
-        exports.ox_inventory:ClearInventory(source)
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then Player.Functions.ClearInventory() end
     end
 end)
 
@@ -130,14 +153,13 @@ lib.callback.register('ars_ambulancejob:getDistressCalls', function(source)
 end)
 
 lib.callback.register('ars_ambulancejob:openMedicalBag', function(source)
-    exports.ox_inventory:RegisterStash("medicalBag_" .. source, "Medical Bag", 10, 50 * 1000)
-
     return "medicalBag_" .. source
 end)
 lib.callback.register('ars_ambulancejob:getItem', function(source, name)
-    local item = exports.ox_inventory:GetSlotWithItem(source, name)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return nil end
 
-    return item
+    return Player.Functions.GetItemByName(name)
 end)
 
 lib.callback.register('ars_ambulancejob:getMedicsOniline', function(source)
@@ -153,31 +175,5 @@ lib.callback.register('ars_ambulancejob:getMedicsOniline', function(source)
     end
     return count
 end)
-
-exports.ox_inventory:registerHook('swapItems', function(payload)
-    if string.find(payload.toInventory, "medicalBag_") then
-        if payload.fromSlot.name == Config.MedicBagItem then return false end
-    end
-end, {})
-
-AddEventHandler('onServerResourceStart', function(resourceName)
-    if resourceName == GetCurrentResourceName() then
-        for index, hospital in pairs(Config.Hospitals) do
-            local cfg = hospital
-
-            for id, stash in pairs(cfg.stash) do
-                exports.ox_inventory:RegisterStash(id, stash.label, stash.slots, stash.weight * 1000, cfg.stash.shared and true or nil)
-            end
-
-            for id, pharmacy in pairs(cfg.pharmacy) do
-                exports.ox_inventory:RegisterShop(id, {
-                    name = pharmacy.label,
-                    inventory = pharmacy.items,
-                })
-            end
-        end
-    end
-end)
-
 
 lib.versionCheck('Arius-Development/ars_ambulancejob')

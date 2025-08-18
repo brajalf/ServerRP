@@ -8,6 +8,7 @@ local SetEntityHeading   = SetEntityHeading
 local SetEntityHealth    = SetEntityHealth
 local TaskPlayAnim       = TaskPlayAnim
 local Wait               = Wait
+local QBCore            = exports['qb-core']:GetCoreObject()
 
 
 local function openParamedicMenu(ped, hospital)
@@ -18,7 +19,7 @@ local function openParamedicMenu(ped, hospital)
             {
                 title = locale("get_treated_paramedic"),
                 onSelect = function()
-                    local money = exports.ox_inventory:Search("count", "money")
+                    local money = QBCore.Functions.GetPlayerData().money and QBCore.Functions.GetPlayerData().money.cash or 0
 
                     if money >= Config.ParamedicTreatmentPrice then
                         utils.addRemoveItem("remove", "money", Config.ParamedicTreatmentPrice)
