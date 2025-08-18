@@ -636,7 +636,9 @@ function OpenInventory(source, identifier, data)
 
     local inventory = Inventories[identifier]
 
-    if inventory and inventory.isOpen then
+    -- Allow the same player to re-open a stash even if the inventory state wasn't
+    -- properly cleared on close. Only block other players from accessing it.
+    if inventory and inventory.isOpen and inventory.isOpen ~= source then
         TriggerClientEvent('QBCore:Notify', source, 'This inventory is currently in use', 'error')
         return
     end
