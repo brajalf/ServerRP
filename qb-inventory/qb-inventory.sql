@@ -1,7 +1,23 @@
-CREATE TABLE IF NOT EXISTS `inventories` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `identifier` varchar(255) NOT NULL,
-  `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`items`)),
-  PRIMARY KEY (`identifier`),
-  KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE IF NOT EXISTS `gloveboxitems` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `plate` varchar(255) DEFAULT NULL,
+  `items` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `plate` (`plate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `stashitems` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `stash` varchar(255) DEFAULT NULL,
+  `items` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `stash` (`stash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `trunkitems` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `plate` varchar(255) DEFAULT NULL,
+  `items` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `plate` (`plate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
