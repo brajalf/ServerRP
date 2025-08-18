@@ -1,6 +1,7 @@
 QBCore = exports['qb-core']:GetCoreObject()
 PlayerData = nil
 local hotbarShown = false
+local CurrentStash
 
 -- Handlers
 
@@ -21,6 +22,11 @@ end)
 
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
     PlayerData = val
+end)
+
+-- Legacy support: allow other resources to track the opened stash
+RegisterNetEvent('inventory:client:SetCurrentStash', function(stash)
+    CurrentStash = stash
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
