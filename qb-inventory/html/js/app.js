@@ -2835,10 +2835,13 @@ var requiredItemOpen = false;
 		$('.ui-draggable-dragging').remove();
 		$('.combine-option-container').hide();
 
-		if ($('#rob-money').length) {
-			$('#rob-money').remove();
-		}
-		$.post('https://qb-inventory/CloseInventory', JSON.stringify({}));
+                if ($('#rob-money').length) {
+                        $('#rob-money').remove();
+                }
+                const currentInventory = $('.other-inventory').attr('data-inventory');
+                $.post('https://qb-inventory/CloseInventory', JSON.stringify({
+                        name: currentInventory
+                }));
 
 		if (AttachmentScreenActive) {
 			$('#qbus-inventory').css({ left: '0vw' });
