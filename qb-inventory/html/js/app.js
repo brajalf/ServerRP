@@ -758,12 +758,35 @@ $(document).on('click', '.SwitchItem', function (e) {
 });
 
 function optionSwitch($fromSlot, $toSlot, $fromInv, $toInv, $toAmount, toData, fromData) {
-	fromData.slot = parseInt($toSlot);
+        var isItemShop = $fromInv.attr('data-inventory').split('-')[0] == 'itemshop';
+        if (isItemShop) {
+                var canBuy = false;
+                $.ajax({
+                        type: 'POST',
+                        url: 'https://qb-inventory/AttemptPurchase',
+                        data: JSON.stringify({
+                                item: fromData,
+                                amount: $toAmount,
+                                shop: $fromInv.attr('data-inventory')
+                        }),
+                        contentType: 'application/json',
+                        async: false,
+                        success: function(result) {
+                                canBuy = result;
+                        }
+                });
+                if (!canBuy) {
+                        InventoryError($fromInv, $fromSlot);
+                        return;
+                }
+        }
 
-	$toInv.find('[data-slot=' + $toSlot + ']').data('item', fromData);
+        fromData.slot = parseInt($toSlot);
 
-	$toInv.find('[data-slot=' + $toSlot + ']').addClass('item-drag');
-	$toInv.find('[data-slot=' + $toSlot + ']').removeClass('item-nodrag');
+        $toInv.find('[data-slot=' + $toSlot + ']').data('item', fromData);
+
+        $toInv.find('[data-slot=' + $toSlot + ']').addClass('item-drag');
+        $toInv.find('[data-slot=' + $toSlot + ']').removeClass('item-nodrag');
 
 	if ($toSlot < 6) {
 		var isValid = validURL(fromData.image);
@@ -898,24 +921,48 @@ function optionSwitch($fromSlot, $toSlot, $fromInv, $toInv, $toAmount, toData, f
 						'</p></div>'
 				);
 		}
-	}
-	$.post(
-		'https://qb-inventory/SetInventoryData',
-		JSON.stringify({
-			fromInventory: $fromInv.attr('data-inventory'),
-			toInventory: $toInv.attr('data-inventory'),
-			fromSlot: $fromSlot,
-			toSlot: $toSlot,
-			fromAmount: $toAmount,
-			toAmount: toData.amount
-		})
-	);
+        }
+        if (!isItemShop) {
+                $.post(
+                        'https://qb-inventory/SetInventoryData',
+                        JSON.stringify({
+                                fromInventory: $fromInv.attr('data-inventory'),
+                                toInventory: $toInv.attr('data-inventory'),
+                                fromSlot: $fromSlot,
+                                toSlot: $toSlot,
+                                fromAmount: $toAmount,
+                                toAmount: toData.amount
+                        })
+                );
+        }
 }
 
 function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
-	fromData = $fromInv.find('[data-slot=' + $fromSlot + ']').data('item');
-	toData = $toInv.find('[data-slot=' + $toSlot + ']').data('item');
-	var otherinventory = otherLabel.toLowerCase();
+        fromData = $fromInv.find('[data-slot=' + $fromSlot + ']').data('item');
+        toData = $toInv.find('[data-slot=' + $toSlot + ']').data('item');
+        var otherinventory = otherLabel.toLowerCase();
+        var isItemShop = $fromInv.attr('data-inventory').split('-')[0] == 'itemshop';
+        if (isItemShop) {
+                var canBuy = false;
+                $.ajax({
+                        type: 'POST',
+                        url: 'https://qb-inventory/AttemptPurchase',
+                        data: JSON.stringify({
+                                item: fromData,
+                                amount: $toAmount,
+                                shop: $fromInv.attr('data-inventory')
+                        }),
+                        contentType: 'application/json',
+                        async: false,
+                        success: function(result) {
+                                canBuy = result;
+                        }
+                });
+                if (!canBuy) {
+                        InventoryError($fromInv, $fromSlot);
+                        return;
+                }
+        }
 
 	if (otherinventory.split('-')[0] == 'dropped') {
 		if (toData !== null && toData !== undefined) {
@@ -1514,17 +1561,19 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 					}
 				}
 			}
-			$.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
-			$.post(
-				'https://qb-inventory/SetInventoryData',
-				JSON.stringify({
-					fromInventory: $fromInv.attr('data-inventory'),
-					toInventory: $toInv.attr('data-inventory'),
-					fromSlot: $fromSlot,
-					toSlot: $toSlot,
-					fromAmount: $toAmount
-				})
-			);
+                        $.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
+                        if (!isItemShop) {
+                                $.post(
+                                        'https://qb-inventory/SetInventoryData',
+                                        JSON.stringify({
+                                                fromInventory: $fromInv.attr('data-inventory'),
+                                                toInventory: $toInv.attr('data-inventory'),
+                                                fromSlot: $fromSlot,
+                                                toSlot: $toSlot,
+                                                fromAmount: $toAmount
+                                        })
+                                );
+                        }
 		} else {
 			if (fromData.amount == $toAmount) {
 				if (
@@ -1843,17 +1892,19 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 								.html(qualityLabel);
 						}
 					}
-					$.post(
-						'https://qb-inventory/SetInventoryData',
-						JSON.stringify({
-							fromInventory: $fromInv.attr('data-inventory'),
-							toInventory: $toInv.attr('data-inventory'),
-							fromSlot: $fromSlot,
-							toSlot: $toSlot,
-							fromAmount: $toAmount,
-							toAmount: toData.amount
-						})
-					);
+                                        if (!isItemShop) {
+                                                $.post(
+                                                        'https://qb-inventory/SetInventoryData',
+                                                        JSON.stringify({
+                                                                fromInventory: $fromInv.attr('data-inventory'),
+                                                                toInventory: $toInv.attr('data-inventory'),
+                                                                fromSlot: $fromSlot,
+                                                                toSlot: $toSlot,
+                                                                fromAmount: $toAmount,
+                                                                toAmount: toData.amount
+                                                        })
+                                                );
+                                        }
 				} else {
 					$fromInv
 						.find('[data-slot=' + $fromSlot + ']')
@@ -1879,16 +1930,18 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 								'<div class="item-slot-img"></div><div class="item-slot-label"><p>&nbsp;</p></div>'
 							);
 					}
-					$.post(
-						'https://qb-inventory/SetInventoryData',
-						JSON.stringify({
-							fromInventory: $fromInv.attr('data-inventory'),
-							toInventory: $toInv.attr('data-inventory'),
-							fromSlot: $fromSlot,
-							toSlot: $toSlot,
-							fromAmount: $toAmount,
-						})
-					);
+                                        if (!isItemShop) {
+                                                $.post(
+                                                        'https://qb-inventory/SetInventoryData',
+                                                        JSON.stringify({
+                                                                fromInventory: $fromInv.attr('data-inventory'),
+                                                                toInventory: $toInv.attr('data-inventory'),
+                                                                fromSlot: $fromSlot,
+                                                                toSlot: $toSlot,
+                                                                fromAmount: $toAmount,
+                                                        })
+                                                );
+                                        }
 				}
 				$.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
 			} else if (
@@ -2188,18 +2241,20 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 						}
 					}
 				}
-				$.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
-				$.post(
-					'https://qb-inventory/SetInventoryData',
-					JSON.stringify({
-						fromInventory: $fromInv.attr('data-inventory'),
-						toInventory: $toInv.attr('data-inventory'),
-						fromSlot: $fromSlot,
-						toSlot: $toSlot,
-						fromAmount: fromData.amount,
-						toAmount: $toAmount
-					})
-				);
+                                $.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
+                                if (!isItemShop) {
+                                        $.post(
+                                                'https://qb-inventory/SetInventoryData',
+                                                JSON.stringify({
+                                                        fromInventory: $fromInv.attr('data-inventory'),
+                                                        toInventory: $toInv.attr('data-inventory'),
+                                                        fromSlot: $fromSlot,
+                                                        toSlot: $toSlot,
+                                                        fromAmount: fromData.amount,
+                                                        toAmount: $toAmount
+                                                })
+                                        );
+                                }
 			} else {
 				InventoryError($fromInv, $fromSlot);
 			}
