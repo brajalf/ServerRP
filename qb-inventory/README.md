@@ -20,21 +20,9 @@ https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory
 - Import `qb-inventory.sql` in your database
 - Add the following code to your server.cfg/resouces.cfg
 
-# Migrating from old qb-inventory
-
-## Database
-### Upload the new `inventory.sql` file to create the new `inventories` table
-### Use the provided `migrate.sql` file to migrate all of your saved inventory data from stashes, trunks, etc
-### Once complete, you can delete `gloveboxitems` `stashitems` and `trunkitems` tables from your database
-```sql
-CREATE TABLE IF NOT EXISTS `inventories` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `identifier` VARCHAR(50) NOT NULL,
-  `items` LONGTEXT DEFAULT ('[]'),
-  PRIMARY KEY (`identifier`),
-  KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-```
+# Database
+Import `qb-inventory.sql` which creates the tables used for persisting stash,
+trunk and glovebox contents.
 
 # License
 

@@ -4,19 +4,41 @@ Drops = {}
 RegisteredShops = {}
 
 CreateThread(function()
-    MySQL.query('SELECT * FROM inventories', {}, function(result)
-        if result and #result > 0 then
-            for i = 1, #result do
-                local inventory = result[i]
-                local cacheKey = inventory.identifier
-                Inventories[cacheKey] = {
-                    items = json.decode(inventory.items) or {},
-                    isOpen = false
-                }
-            end
-            print(#result .. ' inventories successfully loaded')
-        end
-    end)
+    local total = 0
+
+    local stashResult = MySQL.query.await('SELECT * FROM stashitems') or {}
+    for i = 1, #stashResult do
+        local inv = stashResult[i]
+        Inventories[inv.stash] = {
+            items = json.decode(inv.items) or {},
+            isOpen = false
+        }
+        total = total + 1
+    end
+
+    local gloveResult = MySQL.query.await('SELECT * FROM gloveboxitems') or {}
+    for i = 1, #gloveResult do
+        local inv = gloveResult[i]
+        Inventories['glovebox-' .. inv.plate] = {
+            items = json.decode(inv.items) or {},
+            isOpen = false
+        }
+        total = total + 1
+    end
+
+    local trunkResult = MySQL.query.await('SELECT * FROM trunkitems') or {}
+    for i = 1, #trunkResult do
+        local inv = trunkResult[i]
+        Inventories['trunk-' .. inv.plate] = {
+            items = json.decode(inv.items) or {},
+            isOpen = false
+        }
+        total = total + 1
+    end
+
+    if total > 0 then
+        print(total .. ' inventories successfully loaded')
+    end
 end)
 
 CreateThread(function()
@@ -45,7 +67,7 @@ end)
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
     for inventory, data in pairs(Inventories) do
         if data.isOpen then
-            MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?', { inventory, json.encode(data.items), json.encode(data.items) })
+            SaveInventoryData(inventory, data.items)
         end
     end
 end)
@@ -189,7 +211,7 @@ RegisterNetEvent('qb-inventory:server:closeInventory', function(inventory)
     end
     if not Inventories[inventory] then return end
     Inventories[inventory].isOpen = false
-    MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?', { inventory, json.encode(Inventories[inventory].items), json.encode(Inventories[inventory].items) })
+    SaveInventoryData(inventory, Inventories[inventory].items)
 end)
 
 RegisterNetEvent('qb-inventory:server:useItem', function(item)

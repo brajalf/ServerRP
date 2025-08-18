@@ -125,16 +125,37 @@ end
 
 exports('SaveInventory', SaveInventory)
 
+-- Saves inventory data to the appropriate persistent table.
+--- @param identifier string The inventory identifier
+--- @param items table The items to save
+function SaveInventoryData(identifier, items)
+    local jsonItems = json.encode(items)
+    if identifier:find('trunk%-') then
+        local plate = identifier:gsub('trunk%-', '')
+        MySQL.prepare(
+            'INSERT INTO trunkitems (plate, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
+            { plate, jsonItems, jsonItems }
+        )
+    elseif identifier:find('glovebox%-') then
+        local plate = identifier:gsub('glovebox%-', '')
+        MySQL.prepare(
+            'INSERT INTO gloveboxitems (plate, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
+            { plate, jsonItems, jsonItems }
+        )
+    else
+        MySQL.prepare(
+            'INSERT INTO stashitems (stash, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
+            { identifier, jsonItems, jsonItems }
+        )
+    end
+end
+
 -- Persists a stash's contents to the database.
 --- @param identifier string The stash identifier
 function SaveStash(identifier)
     local stash = Inventories[identifier]
     if not stash then return end
-    MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?', {
-        identifier,
-        json.encode(stash.items),
-        json.encode(stash.items)
-    })
+    SaveInventoryData(identifier, stash.items)
 end
 
 exports('SaveStash', SaveStash)
@@ -540,18 +561,7 @@ function OpenInventoryById(source, targetId)
         slots = Config.MaxSlots,
         inventory = targetItems
     }
-    Wait(1500)
     Player(targetId).state.inv_busy = true
-    if other and type(other) == 'table' then
-    if other.items and not other.inventory then
-        other.inventory = other.items
-    end
-    -- Defaults útiles para la UI:
-    other.label = other.label or other.name or ''
-    other.name = other.name or id or other.stash or other.plate or ''
-    other.maxweight = other.maxweight or other.weight or 0
-    other.slots = other.slots or other.maxSlots or other.size or 0
-end
     TriggerClientEvent('qb-inventory:client:openInventory', source, playerItems, formattedInventory)
 end
 
@@ -564,7 +574,7 @@ function ClearStash(identifier)
     local inventory = Inventories[identifier]
     if not inventory then return end
     inventory.items = {}
-    MySQL.prepare('UPDATE inventories SET items = ? WHERE identifier = ?', { json.encode(inventory.items), identifier })
+    MySQL.prepare('DELETE FROM stashitems WHERE stash = ?', { identifier })
 end
 
 exports('ClearStash', ClearStash)
