@@ -14,7 +14,7 @@ local function trackDrop(id, bag)
                     icon = 'fas fa-backpack',
                     label = Lang:t('menu.o_bag'),
                     action = function()
-                        TriggerServerEvent('qb-inventory:server:openDrop', id)
+                        TriggerServerEvent('qb-inventory:server:OpenInventory', 'drop', id)
                         CurrentDrop = id
                     end,
                 },
@@ -89,21 +89,13 @@ end)
 
 -- NUI Callbacks
 
-RegisterNUICallback('DropItem', function(item, cb)
-    QBCore.Functions.TriggerCallback('qb-inventory:server:createDrop', function(dropId)
-        if dropId then
-            while not NetworkDoesNetworkIdExist(dropId) do Wait(10) end
-            local bag = NetworkGetEntityFromNetworkId(dropId)
-            SetEntityAsMissionEntity(bag, true, false)
-            PlaceObjectOnGroundProperly(bag)
-            FreezeEntityPosition(bag, true)
-            SetModelAsNoLongerNeeded(Config.ItemDropObject)
-            local newDropId = 'drop-' .. dropId
-            cb(newDropId)
-        else
-            cb(false)
-        end
-    end, item)
+RegisterNUICallback('DropItem', function(data, cb)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local radius = tonumber(data and data.radius) or 2.0
+    QBCore.Functions.TriggerCallback('qb-inventory:server:createOrReuseDrop', function(dropName)
+        cb(dropName)
+    end, vector3(coords.x, coords.y, coords.z), radius)
 end)
 
 -- Thread
@@ -148,7 +140,7 @@ CreateThread(function()
                 idle = 0
                 exports['qb-core']:DrawText('[E] ' .. Lang:t('menu.o_bag') .. ' / [G] Pick up bag')
                 if IsControlJustPressed(0, 38) then
-                    TriggerServerEvent('qb-inventory:server:openDrop', id)
+                    TriggerServerEvent('qb-inventory:server:OpenInventory', 'drop', id)
                     CurrentDrop = id
                     exports['qb-core']:HideText()
                 elseif IsControlJustPressed(0, 47) then

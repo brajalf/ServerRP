@@ -97,9 +97,9 @@ function SaveInventory(source, offline)
     if offline then
         PlayerData = source
     else
-        local Player = QBCore.Functions.GetPlayer(source)
-        if not Player then return end
-        PlayerData = Player.PlayerData
+        local QBPlayer = QBCore.Functions.GetPlayer(source)
+        if not QBPlayer then return end
+        PlayerData = QBPlayer.PlayerData
     end
 
     local items = PlayerData.items
@@ -212,19 +212,19 @@ exports('SetInventory', SetInventory)
 --- @return boolean|nil - Returns true if the value was set successfully, false otherwise.
 function SetItemData(source, itemName, key, val, slot)
     if not itemName or not key then return false end
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return end
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return end
     local item
     if slot then
-        item = Player.PlayerData.items[tonumber(slot)]
+        item = QBPlayer.PlayerData.items[tonumber(slot)]
         if not item or item.name:lower() ~= itemName:lower() then return false end
     else
         item = GetItemByName(source, itemName)
         if not item then return false end
     end
     item[key] = val
-    Player.PlayerData.items[item.slot] = item
-    Player.Functions.SetPlayerData('items', Player.PlayerData.items)
+    QBPlayer.PlayerData.items[item.slot] = item
+    QBPlayer.Functions.SetPlayerData('items', QBPlayer.PlayerData.items)
     return true
 end
 
@@ -277,9 +277,9 @@ exports('GetFirstSlotByItem', GetFirstSlotByItem)
 --- @param slot number The slot number of the item.
 --- @return table|nil - item data if found, or nil if not found.
 function GetItemBySlot(source, slot)
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return end
-    local items = Player.PlayerData.items
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return end
+    local items = QBPlayer.PlayerData.items
     return items[tonumber(slot)]
 end
 
@@ -306,9 +306,9 @@ exports('GetTotalWeight', GetTotalWeight)
 --- @param item string - The name of the item to retrieve.
 --- @return table|nil - item data if found, nil otherwise.
 function GetItemByName(source, item)
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return end
-    local items = Player.PlayerData.items
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return end
+    local items = QBPlayer.PlayerData.items
     local slot = GetFirstSlotByItem(items, tostring(item):lower())
     return items[slot]
 end
@@ -320,9 +320,9 @@ exports('GetItemByName', GetItemByName)
 --- @param item string The name of the item to search for.
 --- @return table|nil - containing the items with the specified name.
 function GetItemsByName(source, item)
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return end
-    local PlayerItems = Player.PlayerData.items
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return end
+    local PlayerItems = QBPlayer.PlayerData.items
     item = tostring(item):lower()
     local items = {}
     for _, slot in pairs(GetSlotsByItem(PlayerItems, item)) do
@@ -369,8 +369,8 @@ exports('GetSlots', GetSlots)
 --- @param items table|string The items to count. Can be either a table of item names or a single item name.
 --- @return number|nil - The total count of the specified items.
 function GetItemCount(source, items)
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return end
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return end
     local isTable = type(items) == 'table'
     local itemsSet = isTable and {} or nil
     if isTable then
@@ -379,7 +379,7 @@ function GetItemCount(source, items)
         end
     end
     local count = 0
-    for _, item in pairs(Player.PlayerData.items) do
+    for _, item in pairs(QBPlayer.PlayerData.items) do
         if (isTable and itemsSet[item.name]) or (not isTable and items == item.name) then
             count = count + item.amount
         end
@@ -396,18 +396,18 @@ exports('GetItemCount', GetItemCount)
 --- @return boolean - Returns true if the item can be added, false otherwise.
 --- @return string|nil - Returns a string indicating the reason why the item cannot be added (e.g., 'weight' or 'slots'), or nil if it can be added.
 function CanAddItem(identifier, item, amount)
-    local Player = QBCore.Functions.GetPlayer(identifier)
+    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
 
     local itemData = QBCore.Shared.Items[item:lower()]
     if not itemData then return false end
 
     local inventory, items
-    if Player then
+    if QBPlayer then
         inventory = {
             maxweight = Config.MaxWeight,
             slots = Config.MaxSlots
         }
-        items = Player.PlayerData.items
+        items = QBPlayer.PlayerData.items
     elseif Inventories[identifier] then
         inventory = Inventories[identifier]
         items = Inventories[identifier].items
@@ -452,10 +452,10 @@ function GetFreeWeight(source)
         warn('Source was not passed into GetFreeWeight')
         return 0
     end
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return 0 end
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return 0 end
 
-    local totalWeight = GetTotalWeight(Player.PlayerData.items)
+    local totalWeight = GetTotalWeight(QBPlayer.PlayerData.items)
     local freeWeight = Config.MaxWeight - totalWeight
     return freeWeight
 end
@@ -497,8 +497,8 @@ exports('ClearInventory', ClearInventory)
 --- @param amount number (optional) The minimum amount required for each item.
 --- @return boolean - Returns true if the player has the item(s) with the specified amount, false otherwise.
 function HasItem(source, items, amount)
-    local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return false end
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer then return false end
     local isTable = type(items) == 'table'
     local isArray = isTable and table.type(items) == 'array' or false
     local totalItems = isArray and #items or 0
@@ -508,7 +508,7 @@ function HasItem(source, items, amount)
         for _ in pairs(items) do totalItems = totalItems + 1 end
     end
 
-    for _, itemData in pairs(Player.PlayerData.items) do
+    for _, itemData in pairs(QBPlayer.PlayerData.items) do
         if isTable then
             for k, v in pairs(items) do
                 if itemData and itemData.name == (isArray and v or k) and ((amount and itemData.amount >= amount) or (not isArray and itemData.amount >= v) or (not amount and isArray)) then
@@ -634,9 +634,8 @@ function OpenShop(source, name)
         slots = #RegisteredShops[name].items,
         inventory = RegisteredShops[name].items
     }
-    if Player(source) then
-        Player(source).state.inv_busy = true
-    end
+    local pstate = (type(Player) == 'function' and Player(source) or nil)
+    if pstate then pstate.state.inv_busy = true end
     TriggerClientEvent('qb-inventory:client:openInventory', source, QBPlayer.PlayerData.items, formattedInventory)
 end
 
