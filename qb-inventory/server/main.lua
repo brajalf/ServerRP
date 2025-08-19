@@ -453,6 +453,17 @@ QBCore.Functions.CreateCallback('qb-inventory:server:attemptPurchase', function(
     cb(true)
 end)
 
+RegisterNetEvent('qb-inventory:server:AttemptPurchase', function(itemName, amount, price, info, payWithBank)
+    local src = source
+    if not itemName or not amount or not price then return end
+    local QBPlayer = QBCore.Functions.GetPlayer(src)
+    if not QBPlayer then return end
+    local account = (payWithBank and 'bank' or 'cash')
+    if not QBPlayer.Functions.RemoveMoney(account, price * amount, 'shop-purchase') then return end
+    QBPlayer.Functions.AddItem(itemName, amount, false, info)
+    TriggerClientEvent('qb-inventory:client:updateInventory', src)
+end)
+
 QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source, cb, target, item, amount, slot, info)
     local player = QBCore.Functions.GetPlayer(source)
     if not player or player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or player.PlayerData.metadata['ishandcuffed'] then
