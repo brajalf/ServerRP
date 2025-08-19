@@ -75,11 +75,9 @@ local function saveStash(name)
 end
 
 local function canFrisk(src, target)
-    local tstate = (type(Player) == 'function' and Player(target).state or nil)
-    if not tstate then return false end
-    if tstate.isDead then return true end
-    if tstate.handcuffed then return true end
-    if tstate.handsup then return true end
+    local st = (type(Player) == 'function' and Player(target).state or nil)
+    if not st then return false end
+    if st.isDead or st.handcuffed or st.handsup then return true end
     local QBPlayer = QBCore.Functions.GetPlayer(src)
     if QBPlayer and QBPlayer.PlayerData.job and QBPlayer.PlayerData.job.name == 'police' then return true end
     return false
@@ -269,8 +267,9 @@ RegisterNetEvent('inventory:server:OpenInventory', function(invType, id, data)
         end
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
-        if not canFrisk(src, id) then return end
-        OpenInventoryById(src, id)
+        local targetId = id
+        if not canFrisk(src, targetId) then return end
+        OpenInventoryById(src, targetId)
     elseif invType == 'drop' then
         openDrop(src, id)
     else
@@ -289,8 +288,9 @@ RegisterNetEvent('qb-inventory:server:OpenInventory', function(invType, id, data
         end
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
-        if not canFrisk(src, id) then return end
-        OpenInventoryById(src, id)
+        local targetId = id
+        if not canFrisk(src, targetId) then return end
+        OpenInventoryById(src, targetId)
     elseif invType == 'drop' then
         openDrop(src, id)
     else
