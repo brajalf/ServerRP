@@ -10,6 +10,8 @@
 - Weapon Attachments
 - Shops
 - Item Drops
+- Optional targetless item drop interaction (use `[E]`/`[G]` prompts when `Config.UseTarget` is false)
+- Optional targetless vending (use `[E]` prompts when `Config.UseTarget` is false)
 
 ## Documentation
 https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory

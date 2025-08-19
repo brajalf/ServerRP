@@ -376,17 +376,42 @@ end)
 -- Vending
 
 CreateThread(function()
-    exports['qb-target']:AddTargetModel(Config.VendingObjects, {
-        options = {
-            {
-                type = 'server',
-                event = 'qb-inventory:server:openVending',
-                icon = 'fa-solid fa-cash-register',
-                label = Lang:t('menu.vending'),
+    if Config.UseTarget then
+        exports['qb-target']:AddTargetModel(Config.VendingObjects, {
+            options = {
+                {
+                    type = 'server',
+                    event = 'qb-inventory:server:openVending',
+                    icon = 'fa-solid fa-cash-register',
+                    label = Lang:t('menu.vending'),
+                },
             },
-        },
-        distance = 2.5
-    })
+            distance = 2.5
+        })
+    else
+        while true do
+            local idle = 1000
+            local ped = PlayerPedId()
+            local coords = GetEntityCoords(ped)
+            for _, model in ipairs(Config.VendingObjects) do
+                local object = GetClosestObjectOfType(coords.x, coords.y, coords.z, 1.5, joaat(model), false, false, false)
+                if object ~= 0 then
+                    idle = 0
+                    exports['qb-core']:DrawText('[E] ' .. Lang:t('menu.vending'))
+                    if IsControlJustPressed(0, 38) then
+                        TriggerServerEvent('qb-inventory:server:openVending', { coords = GetEntityCoords(object) })
+                        exports['qb-core']:HideText()
+                        Wait(1000)
+                    end
+                    break
+                end
+            end
+            if idle ~= 0 then
+                exports['qb-core']:HideText()
+            end
+            Wait(idle)
+        end
+    end
 end)
 
 -- Commands
