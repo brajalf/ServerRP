@@ -821,6 +821,9 @@ function AddItem(identifier, item, amount, slot, info, reason)
         '**Reason:** ' .. addReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
+    if player and Player(identifier).state.inv_busy then
+        TriggerClientEvent('qb-inventory:client:updateInventory', identifier)
+    end
     return true
 end
 
@@ -908,6 +911,9 @@ function RemoveItem(identifier, item, amount, slot, reason)
         '**Reason:** ' .. removeReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
+    if player and Player(identifier).state.inv_busy then
+        TriggerClientEvent('qb-inventory:client:updateInventory', identifier)
+    end
     return true
 end
 

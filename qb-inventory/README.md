@@ -11,6 +11,11 @@
 - Shops
 - Item Drops
 - Optional targetless item drop interaction (use `[E]`/`[G]` prompts when `Config.UseTarget` is false)
+- Optional targetless vending (use `[E]` prompts when `Config.UseTarget` is false)
+- Optional targetless stashes for configured props (use `[E]` prompts when `Config.UseTarget` is false; configure models in `Config.StashObjects`)
+- Shop purchases immediately add items to your inventory and display an item box
+- Dropping or giving items saves your inventory so they no longer persist after being moved
+- Inventory UI automatically refreshes while open when items are added or removed
 
 ## Documentation
 https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory
