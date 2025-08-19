@@ -169,7 +169,7 @@ function SetInventory(identifier, items, reason)
 
     print('Setting inventory for ' .. identifier)
 
-    if not player and not Inventories[identifier] and not Drops[identifier] then
+    if not player and not Inventories[identifier] and not (Inventories['drop'] and Inventories['drop'][identifier]) then
         print('SetInventory: Inventory not found')
         return
     end
@@ -180,8 +180,8 @@ function SetInventory(identifier, items, reason)
             local logMessage = string.format('**%s (citizenid: %s | id: %s)** items set: %s', GetPlayerName(identifier), player.PlayerData.citizenid, identifier, json.encode(items))
             TriggerEvent('qb-log:server:CreateLog', 'playerinventory', 'SetInventory', 'blue', logMessage)
         end
-    elseif Drops[identifier] then
-        Drops[identifier].items = items
+    elseif Inventories['drop'] and Inventories['drop'][identifier] then
+        Inventories['drop'][identifier].items = items
     elseif Inventories[identifier] then
         Inventories[identifier].items = items
     end
@@ -344,12 +344,12 @@ function GetSlots(identifier)
     if player then
         inventory = player.PlayerData.items
         maxSlots = Config.MaxSlots
+    elseif Inventories['drop'] and Inventories['drop'][identifier] then
+        inventory = Inventories['drop'][identifier].items
+        maxSlots = Inventories['drop'][identifier].slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         maxSlots = Inventories[identifier].slots
-    elseif Drops[identifier] then
-        inventory = Drops[identifier].items
-        maxSlots = Drops[identifier].slots
     end
     if not inventory then return 0, maxSlots end
     local slotsUsed = 0
@@ -408,6 +408,9 @@ function CanAddItem(identifier, item, amount)
             slots = Config.MaxSlots
         }
         items = QBPlayer.PlayerData.items
+    elseif Inventories['drop'] and Inventories['drop'][identifier] then
+        inventory = Inventories['drop'][identifier]
+        items = inventory.items
     elseif Inventories[identifier] then
         inventory = Inventories[identifier]
         items = Inventories[identifier].items
@@ -535,8 +538,12 @@ exports('HasItem', HasItem)
 -- It also sets the inv_busy flag of the player identified by the given source to false.
 -- Finally, it triggers the 'qb-inventory:client:closeInv' event for the given source.
 function CloseInventory(source, identifier)
-    if identifier and Inventories[identifier] then
-        Inventories[identifier].isOpen = false
+    if identifier then
+        if Inventories['drop'] and Inventories['drop'][identifier] then
+            Inventories['drop'][identifier].isOpen = false
+        elseif Inventories[identifier] then
+            Inventories[identifier].isOpen = false
+        end
     end
     Player(source).state.inv_busy = false
     TriggerClientEvent('qb-inventory:client:closeInv', source)
@@ -703,6 +710,9 @@ exports('CreateInventory', CreateInventory)
 --- @param identifier string The identifier of the inventory to retrieve.
 --- @return table|nil - The inventory object if found, nil otherwise.
 function GetInventory(identifier)
+    if Inventories['drop'] and Inventories['drop'][identifier] then
+        return Inventories['drop'][identifier]
+    end
     return Inventories[identifier]
 end
 
@@ -739,14 +749,14 @@ function AddItem(identifier, item, amount, slot, info, reason)
         inventory = player.PlayerData.items
         inventoryWeight = Config.MaxWeight
         inventorySlots = Config.MaxSlots
+    elseif Inventories['drop'] and Inventories['drop'][identifier] then
+        inventory = Inventories['drop'][identifier].items
+        inventoryWeight = Inventories['drop'][identifier].maxweight
+        inventorySlots = Inventories['drop'][identifier].slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         inventoryWeight = Inventories[identifier].maxweight
         inventorySlots = Inventories[identifier].slots
-    elseif Drops[identifier] then
-        inventory = Drops[identifier].items
-        inventoryWeight = Drops[identifier].maxweight
-        inventorySlots = Drops[identifier].slots
     end
 
     if not inventory then
@@ -850,10 +860,10 @@ function RemoveItem(identifier, item, amount, slot, reason)
 
     if player then
         inventory = player.PlayerData.items
+    elseif Inventories['drop'] and Inventories['drop'][identifier] then
+        inventory = Inventories['drop'][identifier].items
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
-    elseif Drops[identifier] then
-        inventory = Drops[identifier].items
     end
 
     if not inventory then
@@ -923,6 +933,9 @@ end
 exports('RemoveItem', RemoveItem)
 
 function GetInventory(identifier)
+    if Inventories['drop'] and Inventories['drop'][identifier] then
+        return Inventories['drop'][identifier]
+    end
     return Inventories[identifier]
 end
 
