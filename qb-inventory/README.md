@@ -17,6 +17,17 @@
 - Dropping or giving items saves your inventory so they no longer persist after being moved
 - Inventory UI automatically refreshes while open when items are added or removed
 
+## Stable stash identifiers
+Always use a predictable name when opening stashes so multiple sessions reference the same storage. Avoid random values or rounded coordinates.
+
+```lua
+exports['qb-inventory']:OpenInventory(source, 'job-ambulance-main', {
+    label = 'Locker EMS',
+    maxweight = 50000,
+    slots = 30
+})
+```
+
 ## Documentation
 https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory
 
