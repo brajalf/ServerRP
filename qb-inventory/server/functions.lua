@@ -840,7 +840,7 @@ exports('AddItem', AddItem)
 --- @param reason string - The reason for removing the item. Defaults to 'No reason specified' if not provided.
 --- @return boolean - Returns true if the item was successfully removed, false otherwise.
 function RemoveItem(identifier, item, amount, slot, reason)
-    if not QBCore.Shared.Items[item:lower()] then
+    if type(item) ~= 'string' or not QBCore.Shared.Items[item:lower()] then
         print('RemoveItem: Invalid item')
         return false
     end
