@@ -49,6 +49,31 @@ local function removeDropIfEmpty(name)
     end
 end
 
+-- loads stash inventory from the database using a stable name
+local function loadStash(name)
+    if Inventories[name] then return end
+    local result = MySQL.prepare.await('SELECT items FROM stashitems WHERE stash = ?', { name })
+    Inventories[name] = {
+        items = result and json.decode(result) or {},
+        label = name,
+        maxweight = Config.StashSize.maxweight,
+        slots = Config.StashSize.slots,
+        isOpen = false
+    }
+end
+
+-- saves stash inventory back to the database without duplicating rows
+local function saveStash(name)
+    local inv = Inventories[name]
+    if not inv then return end
+    local jsonItems = json.encode(inv.items)
+    MySQL.prepare('INSERT INTO stashitems (stash, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?', {
+        name,
+        jsonItems,
+        jsonItems
+    })
+end
+
 local function canFrisk(src, target)
     local tstate = (type(Player) == 'function' and Player(target).state or nil)
     if not tstate then return false end
@@ -249,6 +274,9 @@ RegisterNetEvent('inventory:server:OpenInventory', function(invType, id, data)
     elseif invType == 'drop' then
         openDrop(src, id)
     else
+        if invType == 'stash' then
+            loadStash(id)
+        end
         OpenInventory(src, id, data)
     end
 end)
@@ -266,6 +294,9 @@ RegisterNetEvent('qb-inventory:server:OpenInventory', function(invType, id, data
     elseif invType == 'drop' then
         openDrop(src, id)
     else
+        if invType == 'stash' then
+            loadStash(id)
+        end
         OpenInventory(src, id, data)
     end
 end)
@@ -673,12 +704,12 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
         if type(fromId) == 'number' then
             SaveInventory(fromId)
         elseif Inventories[fromId] then
-            SaveStash(fromId)
+            saveStash(fromId)
         end
         if type(toId) == 'number' then
             SaveInventory(toId)
         elseif Inventories[toId] then
-            SaveStash(toId)
+            saveStash(toId)
         end
         if type(fromId) == 'string' and fromId:find('drop%-') then
             removeDropIfEmpty(fromId)

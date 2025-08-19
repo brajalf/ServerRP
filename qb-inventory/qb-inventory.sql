@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS `trunkitems` (
   PRIMARY KEY (`id`),
   KEY `plate` (`plate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- For existing setups, ensure stash names remain unique
+ALTER TABLE `stashitems` ADD UNIQUE KEY `uniq_stash` (`stash`);
