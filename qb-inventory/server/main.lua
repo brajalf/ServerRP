@@ -609,18 +609,17 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
     local QBPlayer = QBCore.Functions.GetPlayer(src)
     if not QBPlayer then return end
 
-    if fromInventory == 'player' and toInventory == 'player' and fromSlot ~= toSlot then
+    if fromInventory == 'player' and toInventory == 'player' then
         local items = QBPlayer.PlayerData.items
-        local a = items[fromSlot]
-        local b = items[toSlot]
-        if not a then return end
-        items[fromSlot] = b
-        items[toSlot] = a
-        if items[fromSlot] then items[fromSlot].slot = fromSlot end
-        if items[toSlot]   then items[toSlot].slot   = toSlot   end
-        QBPlayer.Functions.SetPlayerData('items', items)
-        TriggerClientEvent('qb-inventory:client:updateInventory', src)
-        return
+        local a, b = items[fromSlot], items[toSlot]
+        if a then
+            items[fromSlot], items[toSlot] = b, a
+            if items[fromSlot] then items[fromSlot].slot = fromSlot end
+            if items[toSlot]   then items[toSlot].slot   = toSlot   end
+            QBPlayer.Functions.SetPlayerData('items', items)
+            TriggerClientEvent('qb-inventory:client:updateInventory', src)
+            return
+        end
     end
 
     local fromItem = getItem(fromInventory, src, fromSlot)
