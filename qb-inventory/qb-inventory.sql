@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `stashitems` (
   `stash` varchar(255) DEFAULT NULL,
   `items` json DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `stash` (`stash`)
+  UNIQUE KEY `uniq_stash` (`stash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `trunkitems` (

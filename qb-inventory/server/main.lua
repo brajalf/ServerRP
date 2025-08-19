@@ -610,6 +610,7 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
                 end
             end
         end
+        -- update client inventory after moving items
         TriggerClientEvent('qb-inventory:client:updateInventory', src)
 
         -- persist inventory changes
