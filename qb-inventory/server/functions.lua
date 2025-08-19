@@ -634,6 +634,7 @@ function OpenShop(source, name)
         slots = #RegisteredShops[name].items,
         inventory = RegisteredShops[name].items
     }
+    -- mark player as busy to prevent overlapping inventory actions
     local pstate = (type(Player) == 'function' and Player(source) or nil)
     if pstate then pstate.state.inv_busy = true end
     TriggerClientEvent('qb-inventory:client:openInventory', source, QBPlayer.PlayerData.items, formattedInventory)
