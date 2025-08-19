@@ -4,6 +4,12 @@ Inventories['drop'] = Inventories['drop'] or {}
 local Drops = Drops or {}
 RegisteredShops = {}
 
+CreateThread(function()
+    -- Load ox_bridge after other server files so its exports override defaults
+    Wait(0)
+    dofile('server/ox_bridge.lua')
+end)
+
 local currentDrop = 0
 
 local function distance(a, b)
