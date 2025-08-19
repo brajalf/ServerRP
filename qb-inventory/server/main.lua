@@ -354,6 +354,10 @@ QBCore.Functions.CreateCallback('qb-inventory:server:createDrop', function(sourc
         else
             table.insert(Drops[newDropId].items, item)
         end
+        SaveInventory(src)
+        if Player(src).state.inv_busy then
+            TriggerClientEvent('qb-inventory:client:updateInventory', src)
+        end
         cb(dropId)
     else
         cb(false)
@@ -421,6 +425,11 @@ QBCore.Functions.CreateCallback('qb-inventory:server:attemptPurchase', function(
     end
 
     AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
+    SaveInventory(source)
+    if Player(source).state.inv_busy then
+        TriggerClientEvent('qb-inventory:client:updateInventory', source)
+    end
+    TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items[itemInfo.name], 'add', amount)
     TriggerEvent('qb-shops:server:UpdateShopItems', shop, itemInfo, amount)
     cb(true)
 end)
@@ -478,9 +487,10 @@ QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source,
     TriggerClientEvent('qb-inventory:client:ItemBox', source, itemInfo, 'remove', giveAmount)
     TriggerClientEvent('qb-inventory:client:giveAnim', target)
     TriggerClientEvent('qb-inventory:client:ItemBox', target, itemInfo, 'add', giveAmount)
-    if Player(target).state.inv_busy then TriggerClientEvent('qb-inventory:client:updateInventory', target) end
     SaveInventory(source)
     SaveInventory(target)
+    if Player(source).state.inv_busy then TriggerClientEvent('qb-inventory:client:updateInventory', source) end
+    if Player(target).state.inv_busy then TriggerClientEvent('qb-inventory:client:updateInventory', target) end
     cb(true)
 end)
 
