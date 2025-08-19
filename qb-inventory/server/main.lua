@@ -3,6 +3,8 @@ Inventories = {}
 Drops = {}
 RegisteredShops = {}
 
+local currentDrop = 0
+
 local function distance(a, b)
     local dx, dy, dz = a.x - b.x, a.y - b.y, a.z - b.z
     return (dx * dx + dy * dy + dz * dz) ^ 0.5
@@ -22,32 +24,25 @@ local function getNearestDrop(coords, radius)
 end
 
 local function CreateDrop(coords)
-    local bag = CreateObjectNoOffset(Config.ItemDropObject, coords.x, coords.y, coords.z, true, true, false)
-    PlaceObjectOnGroundProperly(bag)
-    FreezeEntityPosition(bag, true)
-    local dropId = NetworkGetNetworkIdFromEntity(bag)
-    local name = 'drop-' .. dropId
+    currentDrop = currentDrop + 1
+    local name = 'drop-' .. currentDrop
     Drops[name] = {
         name = name,
         label = 'Drop',
         items = {},
-        entityId = dropId,
         createdTime = os.time(),
         coords = coords,
         maxweight = Config.DropSize.maxweight,
         slots = Config.DropSize.slots,
         isOpen = false
     }
-    TriggerClientEvent('qb-inventory:client:setupDropTarget', -1, dropId)
     return name
 end
 
 local function removeDropIfEmpty(name)
     local drop = Drops[name]
     if drop and (not drop.items or next(drop.items) == nil) then
-        TriggerClientEvent('qb-inventory:client:removeDropTarget', -1, drop.entityId)
-        local entity = NetworkGetEntityFromNetworkId(drop.entityId)
-        if DoesEntityExist(entity) then DeleteEntity(entity) end
+        TriggerClientEvent('qb-inventory:client:RemoveDropProp', -1, name)
         Drops[name] = nil
     end
 end
@@ -94,8 +89,7 @@ CreateThread(function()
     while true do
         for k, v in pairs(Drops) do
             if v and (v.createdTime + (Config.CleanupDropTime * 60) < os.time()) and not Drops[k].isOpen then
-                local entity = NetworkGetEntityFromNetworkId(v.entityId)
-                if DoesEntityExist(entity) then DeleteEntity(entity) end
+                TriggerClientEvent('qb-inventory:client:RemoveDropProp', -1, k)
                 Drops[k] = nil
             end
         end
@@ -231,6 +225,8 @@ RegisterNetEvent('inventory:server:OpenInventory', function(invType, id, data)
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
         OpenInventoryById(src, id)
+    elseif invType == 'drop' then
+        openDrop(src, id)
     else
         OpenInventory(src, id, data)
     end
@@ -245,6 +241,8 @@ RegisterNetEvent('qb-inventory:server:OpenInventory', function(invType, id, data
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
         OpenInventoryById(src, id)
+    elseif invType == 'drop' then
+        openDrop(src, id)
     else
         OpenInventory(src, id, data)
     end
@@ -333,15 +331,13 @@ RegisterNetEvent('qb-inventory:server:useItem', function(item)
     end
 end)
 
-RegisterNetEvent('qb-inventory:server:openDrop', function(dropId)
-    local src = source
+local function openDrop(src, dropId)
     local QBPlayer = QBCore.Functions.GetPlayer(src)
     if not QBPlayer then return end
     local playerPed = GetPlayerPed(src)
     local playerCoords = GetEntityCoords(playerPed)
     local drop = Drops[dropId]
-    if not drop then return end
-    if drop.isOpen then return end
+    if not drop or drop.isOpen then return end
     local distance = #(playerCoords - drop.coords)
     if distance > 2.5 then return end
     local formattedInventory = {
@@ -352,7 +348,11 @@ RegisterNetEvent('qb-inventory:server:openDrop', function(dropId)
         inventory = drop.items
     }
     drop.isOpen = true
-    TriggerClientEvent('qb-inventory:client:openInventory', source, QBPlayer.PlayerData.items, formattedInventory)
+    TriggerClientEvent('qb-inventory:client:openInventory', src, QBPlayer.PlayerData.items, formattedInventory)
+end
+
+RegisterNetEvent('qb-inventory:server:openDrop', function(dropId)
+    openDrop(source, dropId)
 end)
 
 RegisterNetEvent('qb-inventory:server:updateDrop', function(dropId, coords)
@@ -381,6 +381,7 @@ QBCore.Functions.CreateCallback('qb-inventory:server:createOrReuseDrop', functio
         return
     end
     local newName = CreateDrop(coords)
+    TriggerClientEvent('qb-inventory:client:CreateDropProp', -1, newName, coords)
     cb(newName)
 end)
 

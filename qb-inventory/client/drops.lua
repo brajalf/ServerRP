@@ -3,6 +3,7 @@ local bagObject = nil
 local heldDrop = nil
 CurrentDrop = nil
 local ActiveDrops = {}
+local dropProps = {}
 
 -- Functions
 
@@ -57,10 +58,9 @@ end
 function GetDrops()
     QBCore.Functions.TriggerCallback('qb-inventory:server:GetCurrentDrops', function(drops)
         if not drops then return end
-        for k, v in pairs(drops) do
-            local bag = NetworkGetEntityFromNetworkId(v.entityId)
-            if DoesEntityExist(bag) then
-                trackDrop(k, bag)
+        for name, data in pairs(drops) do
+            if data.coords then
+                TriggerEvent('qb-inventory:client:CreateDropProp', name, data.coords)
             end
         end
     end)
@@ -68,23 +68,29 @@ end
 
 -- Events
 
-RegisterNetEvent('qb-inventory:client:removeDropTarget', function(dropId)
-    while not NetworkDoesNetworkIdExist(dropId) do Wait(10) end
-    local bag = NetworkGetEntityFromNetworkId(dropId)
-    while not DoesEntityExist(bag) do Wait(10) end
-    if Config.UseTarget then
-        exports['qb-target']:RemoveTargetEntity(bag)
-    else
-        ActiveDrops['drop-' .. dropId] = nil
-    end
+RegisterNetEvent('qb-inventory:client:CreateDropProp', function(name, coords)
+    if dropProps[name] then return end
+    local model = joaat('prop_paper_bag_small')
+    RequestModel(model) while not HasModelLoaded(model) do Wait(0) end
+    local obj = CreateObjectNoOffset(model, coords.x, coords.y, coords.z, false, false, false)
+    SetEntityAsMissionEntity(obj, true, true)
+    PlaceObjectOnGroundProperly(obj)
+    FreezeEntityPosition(obj, true)
+    dropProps[name] = obj
+    trackDrop(name, obj)
 end)
 
-RegisterNetEvent('qb-inventory:client:setupDropTarget', function(dropId)
-    while not NetworkDoesNetworkIdExist(dropId) do Wait(10) end
-    local bag = NetworkGetEntityFromNetworkId(dropId)
-    while not DoesEntityExist(bag) do Wait(10) end
-    local newDropId = 'drop-' .. dropId
-    trackDrop(newDropId, bag)
+RegisterNetEvent('qb-inventory:client:RemoveDropProp', function(name)
+    local obj = dropProps[name]
+    if obj and DoesEntityExist(obj) then
+        if Config.UseTarget then
+            exports['qb-target']:RemoveTargetEntity(obj)
+        else
+            ActiveDrops[name] = nil
+        end
+        DeleteObject(obj)
+    end
+    dropProps[name] = nil
 end)
 
 -- NUI Callbacks
