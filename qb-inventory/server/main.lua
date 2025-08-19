@@ -47,6 +47,17 @@ local function removeDropIfEmpty(name)
     end
 end
 
+local function canFrisk(src, target)
+    local tstate = (type(Player) == 'function' and Player(target).state or nil)
+    if not tstate then return false end
+    if tstate.isDead then return true end
+    if tstate.handcuffed then return true end
+    if tstate.handsup then return true end
+    local QBPlayer = QBCore.Functions.GetPlayer(src)
+    if QBPlayer and QBPlayer.PlayerData.job and QBPlayer.PlayerData.job.name == 'police' then return true end
+    return false
+end
+
 CreateThread(function()
     local total = 0
 
@@ -224,6 +235,7 @@ RegisterNetEvent('inventory:server:OpenInventory', function(invType, id, data)
         end
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
+        if not canFrisk(src, id) then return end
         OpenInventoryById(src, id)
     elseif invType == 'drop' then
         openDrop(src, id)
@@ -240,6 +252,7 @@ RegisterNetEvent('qb-inventory:server:OpenInventory', function(invType, id, data
         end
         OpenShop(src, id)
     elseif invType == 'otherplayer' then
+        if not canFrisk(src, id) then return end
         OpenInventoryById(src, id)
     elseif invType == 'drop' then
         openDrop(src, id)
