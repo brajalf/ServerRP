@@ -453,6 +453,11 @@ QBCore.Functions.CreateCallback('qb-inventory:server:attemptPurchase', function(
         end
     end
 
+    if account ~= 'cash' and account ~= 'bank' then
+        cb(false)
+        return
+    end
+
     local removed = QBPlayer.Functions.RemoveMoney(account, price, 'shop-purchase')
     if not removed then
         cb(false)
@@ -472,6 +477,7 @@ RegisterNetEvent('qb-inventory:server:AttemptPurchase', function(itemName, amoun
     local QBPlayer = QBCore.Functions.GetPlayer(src)
     if not QBPlayer then return end
     local account = (payWithBank and 'bank' or 'cash')
+    if account ~= 'cash' and account ~= 'bank' then return end
     if not QBPlayer.Functions.RemoveMoney(account, price * amount, 'shop-purchase') then return end
     QBPlayer.Functions.AddItem(itemName, amount, false, info)
     TriggerClientEvent('qb-inventory:client:updateInventory', src)
@@ -609,6 +615,7 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
     local toItem = getItem(toInventory, src, toSlot)
 
     local function removeItem(identifier, itemName, amount, slot, reason)
+        if type(itemName) ~= 'string' then return false end
         if type(identifier) == 'number' then
             local player = identifier == src and QBPlayer or QBCore.Functions.GetPlayer(identifier)
             if player then
