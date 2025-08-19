@@ -426,9 +426,7 @@ QBCore.Functions.CreateCallback('qb-inventory:server:attemptPurchase', function(
 
     AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
     SaveInventory(source)
-    if Player(source).state.inv_busy then
-        TriggerClientEvent('qb-inventory:client:updateInventory', source)
-    end
+    TriggerClientEvent('qb-inventory:client:updateInventory', source)
     TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items[itemInfo.name], 'add', amount)
     TriggerEvent('qb-shops:server:UpdateShopItems', shop, itemInfo, amount)
     cb(true)
@@ -579,6 +577,7 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
                 end
             end
         end
+        TriggerClientEvent('qb-inventory:client:updateInventory', src)
 
         -- persist inventory changes
         if type(fromId) == 'number' then
