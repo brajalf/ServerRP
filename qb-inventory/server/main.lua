@@ -1,6 +1,7 @@
 QBCore = exports['qb-core']:GetCoreObject()
-Inventories = {}
-Drops = {}
+Inventories = Inventories or {}
+Inventories['drop'] = Inventories['drop'] or {}
+local Drops = Drops or {}
 RegisteredShops = {}
 
 local currentDrop = 0
@@ -26,24 +27,25 @@ end
 local function CreateDrop(coords)
     currentDrop = currentDrop + 1
     local name = 'drop-' .. currentDrop
-    Drops[name] = {
+    Inventories['drop'][name] = {
         name = name,
         label = 'Drop',
         items = {},
         createdTime = os.time(),
-        coords = coords,
         maxweight = Config.DropSize.maxweight,
         slots = Config.DropSize.slots,
         isOpen = false
     }
+    Drops[name] = { coords = coords }
     return name
 end
 
 local function removeDropIfEmpty(name)
-    local drop = Drops[name]
-    if drop and (not drop.items or next(drop.items) == nil) then
-        TriggerClientEvent('qb-inventory:client:RemoveDropProp', -1, name)
+    local inv = Inventories['drop'] and Inventories['drop'][name]
+    if inv and (not inv.items or next(inv.items) == nil) then
+        Inventories['drop'][name] = nil
         Drops[name] = nil
+        TriggerClientEvent('qb-inventory:client:RemoveDropProp', -1, name)
     end
 end
 
@@ -98,9 +100,11 @@ end)
 
 CreateThread(function()
     while true do
-        for k, v in pairs(Drops) do
-            if v and (v.createdTime + (Config.CleanupDropTime * 60) < os.time()) and not Drops[k].isOpen then
+        local dropInventories = Inventories['drop'] or {}
+        for k, v in pairs(dropInventories) do
+            if v and (v.createdTime + (Config.CleanupDropTime * 60) < os.time()) and not v.isOpen then
                 TriggerClientEvent('qb-inventory:client:RemoveDropProp', -1, k)
+                Inventories['drop'][k] = nil
                 Drops[k] = nil
             end
         end
@@ -111,7 +115,12 @@ end)
 -- Handlers
 
 AddEventHandler('playerDropped', function()
-    for _, inv in pairs(Inventories) do
+    for name, inv in pairs(Inventories) do
+        if name ~= 'drop' and inv.isOpen == source then
+            inv.isOpen = false
+        end
+    end
+    for _, inv in pairs(Inventories['drop']) do
         if inv.isOpen == source then
             inv.isOpen = false
         end
@@ -120,7 +129,7 @@ end)
 
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
     for inventory, data in pairs(Inventories) do
-        if data.isOpen then
+        if inventory ~= 'drop' and data.isOpen then
             SaveInventoryData(inventory, data.items)
         end
     end
@@ -272,8 +281,8 @@ RegisterNetEvent('qb-inventory:server:closeInventory', function(inventory)
         Player(targetId).state.inv_busy = false
         return
     end
-    if Drops[inventory] then
-        Drops[inventory].isOpen = false
+    if Inventories['drop'] and Inventories['drop'][inventory] then
+        Inventories['drop'][inventory].isOpen = false
         removeDropIfEmpty(inventory)
         return
     end
@@ -349,18 +358,19 @@ local function openDrop(src, dropId)
     if not QBPlayer then return end
     local playerPed = GetPlayerPed(src)
     local playerCoords = GetEntityCoords(playerPed)
+    local inv = Inventories['drop'] and Inventories['drop'][dropId]
     local drop = Drops[dropId]
-    if not drop or drop.isOpen then return end
+    if not inv or not drop or inv.isOpen then return end
     local distance = #(playerCoords - drop.coords)
     if distance > 2.5 then return end
     local formattedInventory = {
         name = dropId,
         label = dropId,
-        maxweight = drop.maxweight,
-        slots = drop.slots,
-        inventory = drop.items
+        maxweight = inv.maxweight,
+        slots = inv.slots,
+        inventory = inv.items
     }
-    drop.isOpen = true
+    inv.isOpen = true
     TriggerClientEvent('qb-inventory:client:openInventory', src, QBPlayer.PlayerData.items, formattedInventory)
 end
 
@@ -369,7 +379,9 @@ RegisterNetEvent('qb-inventory:server:openDrop', function(dropId)
 end)
 
 RegisterNetEvent('qb-inventory:server:updateDrop', function(dropId, coords)
-    Drops[dropId].coords = coords
+    if Drops[dropId] then
+        Drops[dropId].coords = coords
+    end
 end)
 
 RegisterNetEvent('qb-inventory:server:snowball', function(action)
@@ -559,8 +571,8 @@ local function getItem(inventoryId, src, slot)
             items = targetPlayer.PlayerData.items
         end
     elseif inventoryId:find('drop-') == 1 then
-        if Drops[inventoryId] and Drops[inventoryId]['items'] then
-            items = Drops[inventoryId]['items']
+        if Inventories['drop'][inventoryId] and Inventories['drop'][inventoryId].items then
+            items = Inventories['drop'][inventoryId].items
         end
     else
         if Inventories[inventoryId] and Inventories[inventoryId]['items'] then
