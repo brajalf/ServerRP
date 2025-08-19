@@ -126,33 +126,33 @@ RegisterNetEvent('QBCore:Server:UpdateObject', function()
     QBCore = exports['qb-core']:GetCoreObject()
 end)
 
-AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'AddItem', function(item, amount, slot, info, reason)
-        return AddItem(Player.PlayerData.source, item, amount, slot, info, reason)
+AddEventHandler('QBCore:Server:PlayerLoaded', function(QBPlayer)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'AddItem', function(item, amount, slot, info, reason)
+        return AddItem(QBPlayer.PlayerData.source, item, amount, slot, info, reason)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'RemoveItem', function(item, amount, slot, reason)
-        return RemoveItem(Player.PlayerData.source, item, amount, slot, reason)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'RemoveItem', function(item, amount, slot, reason)
+        return RemoveItem(QBPlayer.PlayerData.source, item, amount, slot, reason)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'GetItemBySlot', function(slot)
-        return GetItemBySlot(Player.PlayerData.source, slot)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'GetItemBySlot', function(slot)
+        return GetItemBySlot(QBPlayer.PlayerData.source, slot)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'GetItemByName', function(item)
-        return GetItemByName(Player.PlayerData.source, item)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'GetItemByName', function(item)
+        return GetItemByName(QBPlayer.PlayerData.source, item)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'GetItemsByName', function(item)
-        return GetItemsByName(Player.PlayerData.source, item)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'GetItemsByName', function(item)
+        return GetItemsByName(QBPlayer.PlayerData.source, item)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'ClearInventory', function(filterItems)
-        ClearInventory(Player.PlayerData.source, filterItems)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'ClearInventory', function(filterItems)
+        ClearInventory(QBPlayer.PlayerData.source, filterItems)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'SetInventory', function(items)
-        SetInventory(Player.PlayerData.source, items)
+    QBCore.Functions.AddPlayerMethod(QBPlayer.PlayerData.source, 'SetInventory', function(items)
+        SetInventory(QBPlayer.PlayerData.source, items)
     end)
 end)
 
@@ -556,19 +556,28 @@ local function getIdentifier(inventoryId, src)
 end
 
 RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory, toInventory, fromSlot, toSlot, fromAmount, toAmount)
-    if toInventory:find('shop%-') then return end
-    if not fromInventory or not toInventory or not fromSlot or not toSlot or not fromAmount or not toAmount then return end
-    local src = source
-    local QBPlayer = QBCore.Functions.GetPlayer(src)
-    if not QBPlayer then return end
-
     fromSlot = tonumber(fromSlot)
     toSlot = tonumber(toSlot)
     fromAmount = tonumber(fromAmount) or 0
     toAmount = tonumber(toAmount)
+    if not fromInventory or not toInventory or not fromSlot or not toSlot or not toAmount then return end
+    if toInventory:find('shop%-') then return end
+    local src = source
+    local QBPlayer = QBCore.Functions.GetPlayer(src)
+    if not QBPlayer then return end
 
     local fromItem = getItem(fromInventory, src, fromSlot)
     local toItem = getItem(toInventory, src, toSlot)
+
+    local function removeItem(identifier, itemName, amount, slot, reason)
+        if type(identifier) == 'number' then
+            local player = identifier == src and QBPlayer or QBCore.Functions.GetPlayer(identifier)
+            if player then
+                return player.Functions.RemoveItem(itemName, amount, slot, reason)
+            end
+        end
+        return RemoveItem(identifier, itemName, amount, slot, reason)
+    end
 
     if fromItem then
         if not toItem and toAmount > fromItem.amount then return end
@@ -578,11 +587,11 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
         local toId = getIdentifier(toInventory, src)
 
         if toItem and fromItem.name == toItem.name then
-            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item') then
+            if removeItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item') then
                 AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item')
             end
         elseif not toItem and toAmount < fromAmount then
-            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item') then
+            if removeItem(fromId, fromItem.name, toAmount, fromSlot, 'split item') then
                 AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item')
             end
         else
@@ -590,12 +599,12 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
                 local fromItemAmount = fromItem.amount
                 local toItemAmount = toItem.amount
 
-                if RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item') and RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item') then
+                if removeItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item') and removeItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item') then
                     AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
                     AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
                 end
             else
-                if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item') then
+                if removeItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item') then
                     AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item')
                 end
             end
