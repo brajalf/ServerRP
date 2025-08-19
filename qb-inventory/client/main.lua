@@ -303,6 +303,12 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('DropItem', function(data, cb)
+    QBCore.Functions.TriggerCallback('qb-inventory:server:createDrop', function(dropName)
+        cb(dropName)
+    end, data)
+end)
+
 RegisterNUICallback('GiveItem', function(data, cb)
     local targetId = tonumber(data.plyXd)
     if targetId then

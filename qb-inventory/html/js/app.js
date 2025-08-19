@@ -923,6 +923,25 @@ function optionSwitch($fromSlot, $toSlot, $fromInv, $toInv, $toAmount, toData, f
 		}
         }
         if (!isItemShop) {
+                if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
+                        var newDrop = null;
+                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
+                        $.ajax({
+                                type: 'POST',
+                                url: 'https://qb-inventory/DropItem',
+                                data: JSON.stringify(dropData),
+                                contentType: 'application/json',
+                                async: false,
+                                success: function(result) {
+                                        newDrop = result;
+                                }
+                        });
+                        if (!newDrop) {
+                                InventoryError($toInv, $toSlot);
+                                return;
+                        }
+                        $('.other-inventory').attr('data-inventory', newDrop);
+                }
                 $.post(
                         'https://qb-inventory/SetInventoryData',
                         JSON.stringify({
@@ -1563,6 +1582,25 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 			}
                         $.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
                         if (!isItemShop) {
+                                if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
+                                        var newDrop = null;
+                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
+                                        $.ajax({
+                                                type: 'POST',
+                                                url: 'https://qb-inventory/DropItem',
+                                                data: JSON.stringify(dropData),
+                                                contentType: 'application/json',
+                                                async: false,
+                                                success: function(result) {
+                                                        newDrop = result;
+                                                }
+                                        });
+                                        if (!newDrop) {
+                                                InventoryError($toInv, $toSlot);
+                                                return;
+                                        }
+                                        $('.other-inventory').attr('data-inventory', newDrop);
+                                }
                                 $.post(
                                         'https://qb-inventory/SetInventoryData',
                                         JSON.stringify({
@@ -1893,6 +1931,25 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 						}
 					}
                                         if (!isItemShop) {
+                                                if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
+                                                        var newDrop = null;
+                                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
+                                                        $.ajax({
+                                                                type: 'POST',
+                                                                url: 'https://qb-inventory/DropItem',
+                                                                data: JSON.stringify(dropData),
+                                                                contentType: 'application/json',
+                                                                async: false,
+                                                                success: function(result) {
+                                                                        newDrop = result;
+                                                                }
+                                                        });
+                                                        if (!newDrop) {
+                                                                InventoryError($toInv, $toSlot);
+                                                                return;
+                                                        }
+                                                        $('.other-inventory').attr('data-inventory', newDrop);
+                                                }
                                                 $.post(
                                                         'https://qb-inventory/SetInventoryData',
                                                         JSON.stringify({
@@ -1931,6 +1988,25 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 							);
 					}
                                         if (!isItemShop) {
+                                                if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
+                                                        var newDrop = null;
+                                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
+                                                        $.ajax({
+                                                                type: 'POST',
+                                                                url: 'https://qb-inventory/DropItem',
+                                                                data: JSON.stringify(dropData),
+                                                                contentType: 'application/json',
+                                                                async: false,
+                                                                success: function(result) {
+                                                                        newDrop = result;
+                                                                }
+                                                        });
+                                                        if (!newDrop) {
+                                                                InventoryError($toInv, $toSlot);
+                                                                return;
+                                                        }
+                                                        $('.other-inventory').attr('data-inventory', newDrop);
+                                                }
                                                 $.post(
                                                         'https://qb-inventory/SetInventoryData',
                                                         JSON.stringify({
@@ -2243,6 +2319,25 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
 				}
                                 $.post('https://qb-inventory/PlayDropSound', JSON.stringify({}));
                                 if (!isItemShop) {
+                                        if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
+                                                var newDrop = null;
+                                                var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
+                                                $.ajax({
+                                                        type: 'POST',
+                                                        url: 'https://qb-inventory/DropItem',
+                                                        data: JSON.stringify(dropData),
+                                                        contentType: 'application/json',
+                                                        async: false,
+                                                        success: function(result) {
+                                                                newDrop = result;
+                                                        }
+                                                });
+                                                if (!newDrop) {
+                                                        InventoryError($toInv, $toSlot);
+                                                        return;
+                                                }
+                                                $('.other-inventory').attr('data-inventory', newDrop);
+                                        }
                                         $.post(
                                                 'https://qb-inventory/SetInventoryData',
                                                 JSON.stringify({
