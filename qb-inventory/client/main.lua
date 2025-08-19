@@ -304,9 +304,12 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
 end)
 
 RegisterNUICallback('DropItem', function(data, cb)
-    QBCore.Functions.TriggerCallback('qb-inventory:server:createDrop', function(dropName)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local radius = tonumber(data and data.radius) or 2.0
+    QBCore.Functions.TriggerCallback('qb-inventory:server:createOrReuseDrop', function(dropName)
         cb(dropName)
-    end, data)
+    end, vector3(coords.x, coords.y, coords.z), radius)
 end)
 
 RegisterNUICallback('GiveItem', function(data, cb)

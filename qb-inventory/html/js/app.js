@@ -925,11 +925,10 @@ function optionSwitch($fromSlot, $toSlot, $fromInv, $toInv, $toAmount, toData, f
         if (!isItemShop) {
                 if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
                         var newDrop = null;
-                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
                         $.ajax({
                                 type: 'POST',
                                 url: 'https://qb-inventory/DropItem',
-                                data: JSON.stringify(dropData),
+                                data: JSON.stringify(Object.assign({}, fromData, { radius: 2.0 })),
                                 contentType: 'application/json',
                                 async: false,
                                 success: function(result) {
@@ -1584,11 +1583,10 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
                         if (!isItemShop) {
                                 if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
                                         var newDrop = null;
-                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
                                         $.ajax({
                                                 type: 'POST',
                                                 url: 'https://qb-inventory/DropItem',
-                                                data: JSON.stringify(dropData),
+                                                data: JSON.stringify(Object.assign({}, fromData, { radius: 2.0 })),
                                                 contentType: 'application/json',
                                                 async: false,
                                                 success: function(result) {
@@ -1933,11 +1931,10 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
                                         if (!isItemShop) {
                                                 if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
                                                         var newDrop = null;
-                                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
                                                         $.ajax({
                                                                 type: 'POST',
                                                                 url: 'https://qb-inventory/DropItem',
-                                                                data: JSON.stringify(dropData),
+                                                                data: JSON.stringify(Object.assign({}, fromData, { radius: 2.0 })),
                                                                 contentType: 'application/json',
                                                                 async: false,
                                                                 success: function(result) {
@@ -1990,11 +1987,10 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
                                         if (!isItemShop) {
                                                 if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
                                                         var newDrop = null;
-                                                        var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
                                                         $.ajax({
                                                                 type: 'POST',
                                                                 url: 'https://qb-inventory/DropItem',
-                                                                data: JSON.stringify(dropData),
+                                                                data: JSON.stringify(Object.assign({}, fromData, { radius: 2.0 })),
                                                                 contentType: 'application/json',
                                                                 async: false,
                                                                 success: function(result) {
@@ -2321,11 +2317,10 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
                                 if (!isItemShop) {
                                         if ($toInv.attr('data-inventory') == 0 || $toInv.attr('data-inventory') == '0') {
                                                 var newDrop = null;
-                                                var dropData = Object.assign({}, fromData, { fromSlot: $fromSlot });
                                                 $.ajax({
                                                         type: 'POST',
                                                         url: 'https://qb-inventory/DropItem',
-                                                        data: JSON.stringify(dropData),
+                                                        data: JSON.stringify(Object.assign({}, fromData, { radius: 2.0 })),
                                                         contentType: 'application/json',
                                                         async: false,
                                                         success: function(result) {
