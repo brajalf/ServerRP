@@ -42,7 +42,6 @@ local Translations = {
         ['bin'] = 'Otevři kontejner',
         ['craft'] = 'Craft',
         ['o_bag'] = 'Otevři tašku',
-        ['stash'] = 'Otevřít úložiště',
     },
     interaction = {
         ['craft'] = '~g~E~w~ - Craft',

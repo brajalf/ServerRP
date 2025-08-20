@@ -42,7 +42,6 @@ local Translations = {
         ['bin'] = 'Open Dumpster',
         ['craft'] = 'Craft',
         ['o_bag'] = 'Open Bag',
-        ['stash'] = 'Open Stash',
     },
     interaction = {
         ['craft'] = '~g~E~w~ - Craft',

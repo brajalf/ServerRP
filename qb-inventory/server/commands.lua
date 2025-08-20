@@ -2,24 +2,24 @@
 
 QBCore.Commands.Add('giveitem', 'Give An Item (Admin Only)', { { name = 'id', help = 'Player ID' }, { name = 'item', help = 'Name of the item (not a label)' }, { name = 'amount', help = 'Amount of items' } }, false, function(source, args)
     local id = tonumber(args[1])
-    local QBPlayer = QBCore.Functions.GetPlayer(id)
+    local player = QBCore.Functions.GetPlayer(id)
     local amount = tonumber(args[3]) or 1
     local itemData = QBCore.Shared.Items[tostring(args[2]):lower()]
-    if QBPlayer then
+    if player then
         if itemData then
             -- check iteminfo
             local info = {}
             if itemData['name'] == 'id_card' then
-                info.citizenid = QBPlayer.PlayerData.citizenid
-                info.firstname = QBPlayer.PlayerData.charinfo.firstname
-                info.lastname = QBPlayer.PlayerData.charinfo.lastname
-                info.birthdate = QBPlayer.PlayerData.charinfo.birthdate
-                info.gender = QBPlayer.PlayerData.charinfo.gender
-                info.nationality = QBPlayer.PlayerData.charinfo.nationality
+                info.citizenid = player.PlayerData.citizenid
+                info.firstname = player.PlayerData.charinfo.firstname
+                info.lastname = player.PlayerData.charinfo.lastname
+                info.birthdate = player.PlayerData.charinfo.birthdate
+                info.gender = player.PlayerData.charinfo.gender
+                info.nationality = player.PlayerData.charinfo.nationality
             elseif itemData['name'] == 'driver_license' then
-                info.firstname = QBPlayer.PlayerData.charinfo.firstname
-                info.lastname = QBPlayer.PlayerData.charinfo.lastname
-                info.birthdate = QBPlayer.PlayerData.charinfo.birthdate
+                info.firstname = player.PlayerData.charinfo.firstname
+                info.lastname = player.PlayerData.charinfo.lastname
+                info.birthdate = player.PlayerData.charinfo.birthdate
                 info.type = 'Class C Driver License'
             elseif itemData['type'] == 'weapon' then
                 amount = 1
@@ -49,8 +49,8 @@ QBCore.Commands.Add('giveitem', 'Give An Item (Admin Only)', { { name = 'id', he
 end, 'admin')
 
 QBCore.Commands.Add('randomitems', 'Receive random items', {}, false, function(source)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    local playerInventory = QBPlayer.PlayerData.items
+    local player = QBCore.Functions.GetPlayer(source)
+    local playerInventory = player.PlayerData.items
     local filteredItems = {}
     for k, v in pairs(QBCore.Shared.Items) do
         if QBCore.Shared.Items[k]['type'] ~= 'weapon' then
@@ -73,8 +73,8 @@ QBCore.Commands.Add('randomitems', 'Receive random items', {}, false, function(s
         if emptySlot then
             if AddItem(source, randitem.name, amount, emptySlot, false, 'random items command') then
                 TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items[randitem.name], 'add')
-                QBPlayer = QBCore.Functions.GetPlayer(source)
-                playerInventory = QBPlayer.PlayerData.items
+                player = QBCore.Functions.GetPlayer(source)
+                playerInventory = player.PlayerData.items
                 if Player(source).state.inv_busy then TriggerClientEvent('qb-inventory:client:updateInventory', source) end
             end
             Wait(1000)

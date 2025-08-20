@@ -10,23 +10,6 @@
 - Weapon Attachments
 - Shops
 - Item Drops
-- Optional targetless item drop interaction (use `[E]`/`[G]` prompts when `Config.UseTarget` is false)
-- Optional targetless vending (use `[E]` prompts when `Config.UseTarget` is false)
-- Optional targetless stashes for configured props (use `[E]` prompts when `Config.UseTarget` is false; configure models in `Config.StashObjects`)
-- Shop purchases immediately add items to your inventory and display an item box
-- Dropping or giving items saves your inventory so they no longer persist after being moved
-- Inventory UI automatically refreshes while open when items are added or removed
-
-## Stable stash identifiers
-Always use a predictable name when opening stashes so multiple sessions reference the same storage. Avoid random values or rounded coordinates.
-
-```lua
-exports['qb-inventory']:OpenInventory(source, 'job-ambulance-main', {
-    label = 'Locker EMS',
-    maxweight = 50000,
-    slots = 30
-})
-```
 
 ## Documentation
 https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory
@@ -37,9 +20,21 @@ https://docs.qbcore.org/qbcore-documentation/qbcore-resources/qb-inventory
 - Import `qb-inventory.sql` in your database
 - Add the following code to your server.cfg/resouces.cfg
 
-# Database
-Import `qb-inventory.sql` which creates the tables used for persisting stash,
-trunk and glovebox contents.
+# Migrating from old qb-inventory
+
+## Database
+### Upload the new `inventory.sql` file to create the new `inventories` table
+### Use the provided `migrate.sql` file to migrate all of your saved inventory data from stashes, trunks, etc
+### Once complete, you can delete `gloveboxitems` `stashitems` and `trunkitems` tables from your database
+```sql
+CREATE TABLE IF NOT EXISTS `inventories` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `identifier` VARCHAR(50) NOT NULL,
+  `items` LONGTEXT DEFAULT ('[]'),
+  PRIMARY KEY (`identifier`),
+  KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+```
 
 # License
 

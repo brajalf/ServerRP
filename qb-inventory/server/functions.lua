@@ -97,9 +97,9 @@ function SaveInventory(source, offline)
     if offline then
         PlayerData = source
     else
-        local QBPlayer = QBCore.Functions.GetPlayer(source)
-        if not QBPlayer then return end
-        PlayerData = QBPlayer.PlayerData
+        local Player = QBCore.Functions.GetPlayer(source)
+        if not Player then return end
+        PlayerData = Player.PlayerData
     end
 
     local items = PlayerData.items
@@ -125,68 +125,33 @@ end
 
 exports('SaveInventory', SaveInventory)
 
--- Saves inventory data to the appropriate persistent table.
---- @param identifier string The inventory identifier
---- @param items table The items to save
-function SaveInventoryData(identifier, items)
-    local jsonItems = json.encode(items)
-    if identifier:find('trunk%-') then
-        local plate = identifier:gsub('trunk%-', '')
-        MySQL.prepare(
-            'INSERT INTO trunkitems (plate, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
-            { plate, jsonItems, jsonItems }
-        )
-    elseif identifier:find('glovebox%-') then
-        local plate = identifier:gsub('glovebox%-', '')
-        MySQL.prepare(
-            'INSERT INTO gloveboxitems (plate, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
-            { plate, jsonItems, jsonItems }
-        )
-    else
-        MySQL.prepare(
-            'INSERT INTO stashitems (stash, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
-            { identifier, jsonItems, jsonItems }
-        )
-    end
-end
-
--- Persists a stash's contents to the database.
---- @param identifier string The stash identifier
-function SaveStash(identifier)
-    local stash = Inventories[identifier]
-    if not stash then return end
-    SaveInventoryData(identifier, stash.items)
-end
-
-exports('SaveStash', SaveStash)
-
 -- Sets the items in a inventory.
 --- @param identifier string The identifier of the player or inventory.
 --- @param items table The items to set in the inventory.
 --- @param reason string The reason for setting the items.
 function SetInventory(identifier, items, reason)
-    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
+    local player = QBCore.Functions.GetPlayer(identifier)
 
     print('Setting inventory for ' .. identifier)
 
-    if not QBPlayer and not Inventories[identifier] and not (Inventories['drop'] and Inventories['drop'][identifier]) then
+    if not player and not Inventories[identifier] and not Drops[identifier] then
         print('SetInventory: Inventory not found')
         return
     end
 
-    if QBPlayer then
-        QBPlayer.Functions.SetPlayerData('items', items)
-        if not QBPlayer.Offline then
-            local logMessage = string.format('**%s (citizenid: %s | id: %s)** items set: %s', GetPlayerName(identifier), QBPlayer.PlayerData.citizenid, identifier, json.encode(items))
+    if player then
+        player.Functions.SetPlayerData('items', items)
+        if not player.Offline then
+            local logMessage = string.format('**%s (citizenid: %s | id: %s)** items set: %s', GetPlayerName(identifier), player.PlayerData.citizenid, identifier, json.encode(items))
             TriggerEvent('qb-log:server:CreateLog', 'playerinventory', 'SetInventory', 'blue', logMessage)
         end
-    elseif Inventories['drop'] and Inventories['drop'][identifier] then
-        Inventories['drop'][identifier].items = items
+    elseif Drops[identifier] then
+        Drops[identifier].items = items
     elseif Inventories[identifier] then
         Inventories[identifier].items = items
     end
 
-    local invName = QBPlayer and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
+    local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
     local setReason = reason or 'No reason specified'
     local resourceName = GetInvokingResource() or 'qb-inventory'
     TriggerEvent(
@@ -212,19 +177,19 @@ exports('SetInventory', SetInventory)
 --- @return boolean|nil - Returns true if the value was set successfully, false otherwise.
 function SetItemData(source, itemName, key, val, slot)
     if not itemName or not key then return false end
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
     local item
     if slot then
-        item = QBPlayer.PlayerData.items[tonumber(slot)]
+        item = Player.PlayerData.items[tonumber(slot)]
         if not item or item.name:lower() ~= itemName:lower() then return false end
     else
         item = GetItemByName(source, itemName)
         if not item then return false end
     end
     item[key] = val
-    QBPlayer.PlayerData.items[item.slot] = item
-    QBPlayer.Functions.SetPlayerData('items', QBPlayer.PlayerData.items)
+    Player.PlayerData.items[item.slot] = item
+    Player.Functions.SetPlayerData('items', Player.PlayerData.items)
     return true
 end
 
@@ -277,9 +242,9 @@ exports('GetFirstSlotByItem', GetFirstSlotByItem)
 --- @param slot number The slot number of the item.
 --- @return table|nil - item data if found, or nil if not found.
 function GetItemBySlot(source, slot)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
-    local items = QBPlayer.PlayerData.items
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    local items = Player.PlayerData.items
     return items[tonumber(slot)]
 end
 
@@ -306,9 +271,9 @@ exports('GetTotalWeight', GetTotalWeight)
 --- @param item string - The name of the item to retrieve.
 --- @return table|nil - item data if found, nil otherwise.
 function GetItemByName(source, item)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
-    local items = QBPlayer.PlayerData.items
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    local items = Player.PlayerData.items
     local slot = GetFirstSlotByItem(items, tostring(item):lower())
     return items[slot]
 end
@@ -320,9 +285,9 @@ exports('GetItemByName', GetItemByName)
 --- @param item string The name of the item to search for.
 --- @return table|nil - containing the items with the specified name.
 function GetItemsByName(source, item)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
-    local PlayerItems = QBPlayer.PlayerData.items
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    local PlayerItems = Player.PlayerData.items
     item = tostring(item):lower()
     local items = {}
     for _, slot in pairs(GetSlotsByItem(PlayerItems, item)) do
@@ -340,16 +305,16 @@ exports('GetItemsByName', GetItemsByName)
 --- @return number, number - The total count of used slots and the total count of free slots. If no inventory is found, returns 0 and the maximum slots.
 function GetSlots(identifier)
     local inventory, maxSlots
-    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
-    if QBPlayer then
-        inventory = QBPlayer.PlayerData.items
+    local player = QBCore.Functions.GetPlayer(identifier)
+    if player then
+        inventory = player.PlayerData.items
         maxSlots = Config.MaxSlots
-    elseif Inventories['drop'] and Inventories['drop'][identifier] then
-        inventory = Inventories['drop'][identifier].items
-        maxSlots = Inventories['drop'][identifier].slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         maxSlots = Inventories[identifier].slots
+    elseif Drops[identifier] then
+        inventory = Drops[identifier].items
+        maxSlots = Drops[identifier].slots
     end
     if not inventory then return 0, maxSlots end
     local slotsUsed = 0
@@ -369,8 +334,8 @@ exports('GetSlots', GetSlots)
 --- @param items table|string The items to count. Can be either a table of item names or a single item name.
 --- @return number|nil - The total count of the specified items.
 function GetItemCount(source, items)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
     local isTable = type(items) == 'table'
     local itemsSet = isTable and {} or nil
     if isTable then
@@ -379,7 +344,7 @@ function GetItemCount(source, items)
         end
     end
     local count = 0
-    for _, item in pairs(QBPlayer.PlayerData.items) do
+    for _, item in pairs(Player.PlayerData.items) do
         if (isTable and itemsSet[item.name]) or (not isTable and items == item.name) then
             count = count + item.amount
         end
@@ -396,21 +361,18 @@ exports('GetItemCount', GetItemCount)
 --- @return boolean - Returns true if the item can be added, false otherwise.
 --- @return string|nil - Returns a string indicating the reason why the item cannot be added (e.g., 'weight' or 'slots'), or nil if it can be added.
 function CanAddItem(identifier, item, amount)
-    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
+    local Player = QBCore.Functions.GetPlayer(identifier)
 
     local itemData = QBCore.Shared.Items[item:lower()]
     if not itemData then return false end
 
     local inventory, items
-    if QBPlayer then
+    if Player then
         inventory = {
             maxweight = Config.MaxWeight,
             slots = Config.MaxSlots
         }
-        items = QBPlayer.PlayerData.items
-    elseif Inventories['drop'] and Inventories['drop'][identifier] then
-        inventory = Inventories['drop'][identifier]
-        items = inventory.items
+        items = Player.PlayerData.items
     elseif Inventories[identifier] then
         inventory = Inventories[identifier]
         items = Inventories[identifier].items
@@ -455,10 +417,10 @@ function GetFreeWeight(source)
         warn('Source was not passed into GetFreeWeight')
         return 0
     end
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return 0 end
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return 0 end
 
-    local totalWeight = GetTotalWeight(QBPlayer.PlayerData.items)
+    local totalWeight = GetTotalWeight(Player.PlayerData.items)
     local freeWeight = Config.MaxWeight - totalWeight
     return freeWeight
 end
@@ -466,7 +428,7 @@ end
 exports('GetFreeWeight', GetFreeWeight)
 
 function ClearInventory(source, filterItems)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    local player = QBCore.Functions.GetPlayer(source)
     local savedItemData = {}
     if filterItems then
         if type(filterItems) == 'string' then
@@ -479,9 +441,9 @@ function ClearInventory(source, filterItems)
             end
         end
     end
-    QBPlayer.Functions.SetPlayerData('items', savedItemData)
-    if not QBPlayer.Offline then
-        local logMessage = string.format('**%s (citizenid: %s | id: %s)** inventory cleared', GetPlayerName(source), QBPlayer.PlayerData.citizenid, source)
+    player.Functions.SetPlayerData('items', savedItemData)
+    if not player.Offline then
+        local logMessage = string.format('**%s (citizenid: %s | id: %s)** inventory cleared', GetPlayerName(source), player.PlayerData.citizenid, source)
         TriggerEvent('qb-log:server:CreateLog', 'playerinventory', 'ClearInventory', 'red', logMessage)
         local ped = GetPlayerPed(source)
         local weapon = GetSelectedPedWeapon(ped)
@@ -500,8 +462,8 @@ exports('ClearInventory', ClearInventory)
 --- @param amount number (optional) The minimum amount required for each item.
 --- @return boolean - Returns true if the player has the item(s) with the specified amount, false otherwise.
 function HasItem(source, items, amount)
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return false end
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
     local isTable = type(items) == 'table'
     local isArray = isTable and table.type(items) == 'array' or false
     local totalItems = isArray and #items or 0
@@ -511,7 +473,7 @@ function HasItem(source, items, amount)
         for _ in pairs(items) do totalItems = totalItems + 1 end
     end
 
-    for _, itemData in pairs(QBPlayer.PlayerData.items) do
+    for _, itemData in pairs(Player.PlayerData.items) do
         if isTable then
             for k, v in pairs(items) do
                 if itemData and itemData.name == (isArray and v or k) and ((amount and itemData.amount >= amount) or (not isArray and itemData.amount >= v) or (not amount and isArray)) then
@@ -538,12 +500,8 @@ exports('HasItem', HasItem)
 -- It also sets the inv_busy flag of the player identified by the given source to false.
 -- Finally, it triggers the 'qb-inventory:client:closeInv' event for the given source.
 function CloseInventory(source, identifier)
-    if identifier then
-        if Inventories['drop'] and Inventories['drop'][identifier] then
-            Inventories['drop'][identifier].isOpen = false
-        elseif Inventories[identifier] then
-            Inventories[identifier].isOpen = false
-        end
+    if identifier and Inventories[identifier] then
+        Inventories[identifier].isOpen = false
     end
     Player(source).state.inv_busy = false
     TriggerClientEvent('qb-inventory:client:closeInv', source)
@@ -568,6 +526,7 @@ function OpenInventoryById(source, targetId)
         slots = Config.MaxSlots,
         inventory = targetItems
     }
+    Wait(1500)
     Player(targetId).state.inv_busy = true
     TriggerClientEvent('qb-inventory:client:openInventory', source, playerItems, formattedInventory)
 end
@@ -581,7 +540,7 @@ function ClearStash(identifier)
     local inventory = Inventories[identifier]
     if not inventory then return end
     inventory.items = {}
-    MySQL.prepare('DELETE FROM stashitems WHERE stash = ?', { identifier })
+    MySQL.prepare('UPDATE inventories SET items = ? WHERE identifier = ?', { json.encode(inventory.items), identifier })
 end
 
 exports('ClearStash', ClearStash)
@@ -622,8 +581,8 @@ exports('CreateShop', CreateShop)
 --- @param name string The identifier of the inventory to open.
 function OpenShop(source, name)
     if not name then return end
-    local QBPlayer = QBCore.Functions.GetPlayer(source)
-    if not QBPlayer then return end
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
     if not RegisteredShops[name] then return end
     local playerPed = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(playerPed)
@@ -641,10 +600,7 @@ function OpenShop(source, name)
         slots = #RegisteredShops[name].items,
         inventory = RegisteredShops[name].items
     }
-    -- mark player as busy to prevent overlapping inventory actions
-    local pstate = (type(Player) == 'function' and Player(source) or nil)
-    if pstate then pstate.state.inv_busy = true end
-    TriggerClientEvent('qb-inventory:client:openInventory', source, QBPlayer.PlayerData.items, formattedInventory)
+    TriggerClientEvent('qb-inventory:client:openInventory', source, Player.PlayerData.items, formattedInventory)
 end
 
 exports('OpenShop', OpenShop)
@@ -670,9 +626,7 @@ function OpenInventory(source, identifier, data)
 
     local inventory = Inventories[identifier]
 
-    -- Allow the same player to re-open a stash even if the inventory state wasn't
-    -- properly cleared on close. Only block other players from accessing it.
-    if inventory and inventory.isOpen and inventory.isOpen ~= source then
+    if inventory and inventory.isOpen then
         TriggerClientEvent('QBCore:Notify', source, 'This inventory is currently in use', 'error')
         return
     end
@@ -710,9 +664,6 @@ exports('CreateInventory', CreateInventory)
 --- @param identifier string The identifier of the inventory to retrieve.
 --- @return table|nil - The inventory object if found, nil otherwise.
 function GetInventory(identifier)
-    if Inventories['drop'] and Inventories['drop'][identifier] then
-        return Inventories['drop'][identifier]
-    end
     return Inventories[identifier]
 end
 
@@ -743,20 +694,20 @@ function AddItem(identifier, item, amount, slot, info, reason)
         return false
     end
     local inventory, inventoryWeight, inventorySlots
-    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
+    local player = QBCore.Functions.GetPlayer(identifier)
 
-    if QBPlayer then
-        inventory = QBPlayer.PlayerData.items
+    if player then
+        inventory = player.PlayerData.items
         inventoryWeight = Config.MaxWeight
         inventorySlots = Config.MaxSlots
-    elseif Inventories['drop'] and Inventories['drop'][identifier] then
-        inventory = Inventories['drop'][identifier].items
-        inventoryWeight = Inventories['drop'][identifier].maxweight
-        inventorySlots = Inventories['drop'][identifier].slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         inventoryWeight = Inventories[identifier].maxweight
         inventorySlots = Inventories[identifier].slots
+    elseif Drops[identifier] then
+        inventory = Drops[identifier].items
+        inventoryWeight = Drops[identifier].maxweight
+        inventorySlots = Drops[identifier].slots
     end
 
     if not inventory then
@@ -819,8 +770,8 @@ function AddItem(identifier, item, amount, slot, info, reason)
         end
     end
 
-    if QBPlayer then QBPlayer.Functions.SetPlayerData('items', inventory) end
-    local invName = QBPlayer and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
+    if player then player.Functions.SetPlayerData('items', inventory) end
+    local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
     local addReason = reason or 'No reason specified'
     local resourceName = GetInvokingResource() or 'qb-inventory'
     TriggerEvent(
@@ -834,9 +785,6 @@ function AddItem(identifier, item, amount, slot, info, reason)
         '**Reason:** ' .. addReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
-    if QBPlayer and Player(identifier).state.inv_busy then
-        TriggerClientEvent('qb-inventory:client:updateInventory', identifier)
-    end
     return true
 end
 
@@ -850,20 +798,20 @@ exports('AddItem', AddItem)
 --- @param reason string - The reason for removing the item. Defaults to 'No reason specified' if not provided.
 --- @return boolean - Returns true if the item was successfully removed, false otherwise.
 function RemoveItem(identifier, item, amount, slot, reason)
-    if type(item) ~= 'string' or not QBCore.Shared.Items[item:lower()] then
+    if not QBCore.Shared.Items[item:lower()] then
         print('RemoveItem: Invalid item')
         return false
     end
 
     local inventory
-    local QBPlayer = QBCore.Functions.GetPlayer(identifier)
+    local player = QBCore.Functions.GetPlayer(identifier)
 
-    if QBPlayer then
-        inventory = QBPlayer.PlayerData.items
-    elseif Inventories['drop'] and Inventories['drop'][identifier] then
-        inventory = Inventories['drop'][identifier].items
+    if player then
+        inventory = player.PlayerData.items
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
+    elseif Drops[identifier] then
+        inventory = Drops[identifier].items
     end
 
     if not inventory then
@@ -907,9 +855,9 @@ function RemoveItem(identifier, item, amount, slot, reason)
         inventory[itemKey] = inventoryItem
     end
 
-    if QBPlayer then QBPlayer.Functions.SetPlayerData('items', inventory) end
+    if player then player.Functions.SetPlayerData('items', inventory) end
 
-    local invName = QBPlayer and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
+    local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
     local removeReason = reason or 'No reason specified'
     local resourceName = GetInvokingResource() or 'qb-inventory'
 
@@ -924,18 +872,12 @@ function RemoveItem(identifier, item, amount, slot, reason)
         '**Reason:** ' .. removeReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
-    if QBPlayer and Player(identifier).state.inv_busy then
-        TriggerClientEvent('qb-inventory:client:updateInventory', identifier)
-    end
     return true
 end
 
 exports('RemoveItem', RemoveItem)
 
 function GetInventory(identifier)
-    if Inventories['drop'] and Inventories['drop'][identifier] then
-        return Inventories['drop'][identifier]
-    end
     return Inventories[identifier]
 end
 

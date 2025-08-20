@@ -9,22 +9,20 @@ shared_scripts {
     '@qb-core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
-    'config.lua',
-    'shared/**/*.lua',
+    'config/*.lua',
 }
 
 client_scripts {
-    'client/**/*.lua',
+    'client/main.lua',
+    'client/drops.lua',
+    'client/vehicles.lua',
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/ox_compat.lua',
-    'server/commands.lua',
-    'server/functions.lua',
     'server/main.lua',
-    'server/origen_compat.lua',
-    'server/ox_bridge.lua',
+    'server/functions.lua',
+    'server/commands.lua',
 }
 
 ui_page 'html/index.html'
@@ -32,11 +30,7 @@ ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/main.css',
-    'html/css/*.css',
-    'html/js/*.js',
-    'html/assets/*.*',
-    'html/sounds/*.*',
-    'html/ammo_images/*.png',
+    'html/app.js',
     'html/images/*.png',
 }
 

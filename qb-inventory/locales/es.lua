@@ -42,7 +42,6 @@ local Translations = {
         ['bin'] = 'Abrir Contenedor de Basura',
         ['craft'] = 'Crear',
         ['o_bag'] = 'Abrir Bolsa',
-        ['stash'] = 'Abrir Alijo',
     },
     interaction = {
         ['craft'] = '~g~E~w~ - Fabricar',

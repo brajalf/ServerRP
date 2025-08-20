@@ -36,11 +36,6 @@ Config = {
         'prop_vend_coffe_01',
     },
 
-    StashObjects = {
-        'prop_cs_rub_box_01',
-        'prop_ld_suitcase_01',
-    },
-
     VendingItems = {
         { name = 'kurkakola',    price = 4, amount = 50 },
         { name = 'water_bottle', price = 4, amount = 50 },

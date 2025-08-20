@@ -1,7 +1,6 @@
 QBCore = exports['qb-core']:GetCoreObject()
 PlayerData = nil
 local hotbarShown = false
-local CurrentStash
 
 -- Handlers
 
@@ -22,11 +21,6 @@ end)
 
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
     PlayerData = val
-end)
-
--- Legacy support: allow other resources to track the opened stash
-RegisterNetEvent('inventory:client:SetCurrentStash', function(stash)
-    CurrentStash = stash
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
@@ -174,86 +168,15 @@ RegisterNetEvent('qb-inventory:server:RobPlayer', function(TargetId)
 end)
 
 RegisterNetEvent('qb-inventory:client:openInventory', function(items, other)
-    local QBCore = exports['qb-core']:GetCoreObject()
-    local ped = PlayerPedId()
-    local ply  = QBCore.Functions.GetPlayerData()
-
-    -- helpers seguros
-    local function s(v) return v and tostring(v) or '' end
-    local function n(v) return (type(v) == 'number' and v) or (tonumber(v) or 0) end
-
-    -- 🔧 NORMALIZADOR: adapta “other” a lo que la UI origen entiende
-    local function NormalizeOtherForOrigen(o)
-        if type(o) ~= 'table' then return o end
-        local t = o.type or o.invType or o.inventoryType
-        if not t then
-            -- intenta deducirlo por campos típicos
-            if o.isShop or o.shop or o.items and o.prices then t = 'shop'
-            elseif o.isStash or o.stash then t = 'stash'
-            elseif o.isOtherPlayer or o.otherplayer then t = 'otherplayer'
-            elseif o.isTrunk then t = 'trunk'
-            elseif o.isGlovebox then t = 'glovebox'
-            elseif o.isCraft or o.crafting then t = 'crafting'
-            else t = 'stash' end
-        end
-
-        local inv = o.inventory or o.items or o.contents or {}
-        local slots = o.slots or o.maxSlots or o.size or 0
-        local weight = o.maxweight or o.weight or 0
-
-        local name = o.name or o.id or o.identifier or o.stash or ''
-        local label = o.label or o.title or o.text or name
-        local plate = o.plate or (o.VehicleInfo and o.VehicleInfo.plate) or nil
-
-        return {
-            type = s(t),
-            name = s(name),
-            label = s(label),
-            slots = n(slots),
-            maxweight = n(weight),
-            inventory = inv,             -- 👈 clave para la UI “origen”
-            plate = plate and s(plate) or nil,
-        }
-    end
-
-    -- salud 0..100
-    local health = n(GetEntityHealth(ped) - 100)
-    if health < 0 then health = 0 end
-
-    -- JOB objeto (la UI usa .label y .type)
-    local jobName  = s(ply and ply.job and ply.job.name)
-    local jobLabel = s(ply and ply.job and (ply.job.label or ply.job.name))
-    local jobType  = s(ply and ply.job and ply.job.type)
-    if jobType == '' then
-        if jobName == 'mechanic' then
-            jobType = 'mechanic'
-        elseif jobName == 'cardealer' or jobName == 'concesionario' then
-            jobType = 'compraventa'
-        end
-    end
-
-    local payload = {
-        action    = 'open',
-        inventory = items,
-        slots     = Config.MaxSlots,
-        maxweight = Config.MaxWeight,
-        other     = (other and NormalizeOtherForOrigen(other)) or nil,
-
-        -- extras para la UI origen
-        health    = health,
-        armor     = n(GetPedArmour(ped)),
-        hunger    = n(ply and ply.metadata and ply.metadata.hunger),
-        thirst    = n(ply and ply.metadata and ply.metadata.thirst),
-        job       = { name = jobName, label = jobLabel, type = jobType },
-        ang       = s(ply and ply.gang and ply.gang.name),
-        inVehicle = IsPedInAnyVehicle(ped, false),
-    }
-
     SetNuiFocus(true, true)
-    SendNUIMessage(payload)
+    SendNUIMessage({
+        action = 'open',
+        inventory = items,
+        slots = Config.MaxSlots,
+        maxweight = Config.MaxWeight,
+        other = other
+    })
 end)
-
-
 
 RegisterNetEvent('qb-inventory:client:giveAnim', function()
     if IsPedInAnyVehicle(PlayerPedId(), false) then return end
@@ -276,7 +199,7 @@ end)
 
 RegisterNUICallback('CloseInventory', function(data, cb)
     SetNuiFocus(false, false)
-    if data and data.name then
+    if data.name then
         if data.name:find('trunk-') then
             CloseTrunk()
         end
@@ -284,14 +207,9 @@ RegisterNUICallback('CloseInventory', function(data, cb)
     elseif CurrentDrop then
         TriggerServerEvent('qb-inventory:server:closeInventory', CurrentDrop)
         CurrentDrop = nil
-    else
-        -- Inventario personal: forzamos limpiar inv_busy en el server
-        -- Pasamos un identificador tipo shop- para que el server retorne sin tocar stashes/drops
-        TriggerServerEvent('qb-inventory:server:closeInventory', 'shop-close')
     end
     cb('ok')
 end)
-
 
 RegisterNUICallback('UseItem', function(data, cb)
     TriggerServerEvent('qb-inventory:server:useItem', data.item)
@@ -303,30 +221,7 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback('DropItem', function(data, cb)
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    local radius = tonumber(data and data.radius) or 2.0
-    QBCore.Functions.TriggerCallback('qb-inventory:server:createOrReuseDrop', function(dropName)
-        cb(dropName)
-    end, vector3(coords.x, coords.y, coords.z), radius)
-end)
-
 RegisterNUICallback('GiveItem', function(data, cb)
-    local targetId = tonumber(data.plyXd)
-    if targetId then
-        local item = data.ItemInfoFullHd or data.item
-        local amount = data.NumberOfItem or data.amount
-        local slot = item and (item.slot or data.slot)
-        local info = item and (item.info or data.info)
-        if item and amount and slot then
-            QBCore.Functions.TriggerCallback('qb-inventory:server:giveItem', function(success)
-                cb(success)
-            end, targetId, item.name, amount, slot, info)
-            return
-        end
-    end
-
     local player, distance = QBCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
     if player ~= -1 and distance < 3 then
         local playerId = GetPlayerServerId(player)
@@ -385,112 +280,25 @@ end)
 -- Vending
 
 CreateThread(function()
-    if Config.UseTarget then
-        exports['qb-target']:AddTargetModel(Config.VendingObjects, {
-            options = {
-                {
-                    type = 'server',
-                    event = 'qb-inventory:server:openVending',
-                    icon = 'fa-solid fa-cash-register',
-                    label = Lang:t('menu.vending'),
-                },
+    exports['qb-target']:AddTargetModel(Config.VendingObjects, {
+        options = {
+            {
+                type = 'server',
+                event = 'qb-inventory:server:openVending',
+                icon = 'fa-solid fa-cash-register',
+                label = Lang:t('menu.vending'),
             },
-            distance = 2.5
-        })
-    else
-        while true do
-            local idle = 1000
-            local ped = PlayerPedId()
-            local coords = GetEntityCoords(ped)
-            for _, model in ipairs(Config.VendingObjects) do
-                local object = GetClosestObjectOfType(coords.x, coords.y, coords.z, 1.5, joaat(model), false, false, false)
-                if object ~= 0 then
-                    idle = 0
-                    exports['qb-core']:DrawText('[E] ' .. Lang:t('menu.vending'))
-                    if IsControlJustPressed(0, 38) then
-                        TriggerServerEvent('qb-inventory:server:openVending', { coords = GetEntityCoords(object) })
-                        exports['qb-core']:HideText()
-                        Wait(1000)
-                    end
-                    break
-                end
-            end
-            if idle ~= 0 then
-                exports['qb-core']:HideText()
-            end
-            Wait(idle)
-        end
-    end
-end)
-
--- Stashes
-
-CreateThread(function()
-    if not Config.StashObjects or #Config.StashObjects == 0 then return end
-    if Config.UseTarget then
-        exports['qb-target']:AddTargetModel(Config.StashObjects, {
-            options = {
-                {
-                    icon = 'fas fa-box-open',
-                    label = Lang:t('menu.stash'),
-                    action = function(entity)
-                        local coords = GetEntityCoords(entity)
-                        local model = GetEntityModel(entity)
-                        local id = string.format('stash-%s-%s-%s-%s', model, math.floor(coords.x), math.floor(coords.y), math.floor(coords.z))
-                        TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, {
-                            label = Lang:t('menu.stash'),
-                            slots = Config.StashSize.slots,
-                            maxweight = Config.StashSize.maxweight,
-                        })
-                    end,
-                },
-            },
-            distance = 2.5
-        })
-    else
-        while true do
-            local idle = 1000
-            local ped = PlayerPedId()
-            local coords = GetEntityCoords(ped)
-            for _, model in ipairs(Config.StashObjects) do
-                local object = GetClosestObjectOfType(coords.x, coords.y, coords.z, 1.5, joaat(model), false, false, false)
-                if object ~= 0 then
-                    idle = 0
-                    exports['qb-core']:DrawText('[E] ' .. Lang:t('menu.stash'))
-                    if IsControlJustPressed(0, 38) then
-                        local ocoords = GetEntityCoords(object)
-                        local id = string.format('stash-%s-%s-%s-%s', model, math.floor(ocoords.x), math.floor(ocoords.y), math.floor(ocoords.z))
-                        TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, {
-                            label = Lang:t('menu.stash'),
-                            slots = Config.StashSize.slots,
-                            maxweight = Config.StashSize.maxweight,
-                        })
-                        exports['qb-core']:HideText()
-                        Wait(1000)
-                    end
-                    break
-                end
-            end
-            if idle ~= 0 then
-                exports['qb-core']:HideText()
-            end
-            Wait(idle)
-        end
-    end
+        },
+        distance = 2.5
+    })
 end)
 
 -- Commands
 
 RegisterCommand('openInv', function()
-    if IsNuiFocused() or IsPauseMenuActive() then
-        if IsNuiFocused() then
-            TriggerEvent('qb-inventory:client:closeInv')  -- manda action:'close' al NUI -> Inventory.Close()
-        end
-        return
-    end
+    if IsNuiFocused() or IsPauseMenuActive() then return end
     ExecuteCommand('inventory')
 end, false)
-
 
 RegisterCommand('toggleHotbar', function()
     ExecuteCommand('hotbar')
