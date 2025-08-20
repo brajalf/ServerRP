@@ -3690,8 +3690,4 @@ $(document).on('click', '.new-inventory-bg', function () {
 
 
 // ORIGEN_ESC_CLOSE: asegurar que ESC cierre y avise al server
-$(document).on('keydown', function (e) {
-  if (e.which === 27) {
-    try { Inventory.Close(); } catch (err) {}
-  }
-});
+$(document).on('keydown', function(e){ if (e.which === 27) { try { Inventory.Close(); } catch(e){} } });
