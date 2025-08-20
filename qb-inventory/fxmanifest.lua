@@ -9,22 +9,17 @@ shared_scripts {
     '@qb-core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
-    'config/*.lua',
+    'config.lua',
+    'shared/**/*.lua',
 }
 
 client_scripts {
-    'client/main.lua',
-    'client/drops.lua',
-    'client/vehicles.lua',
-    'client/origen_compat.lua',
+    'client/**/*.lua',
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/main.lua',
-    'server/functions.lua',
-    'server/commands.lua',
-    'server/origen_compat.lua',
+    'server/**/*.lua',
 }
 
 ui_page 'html/index.html'

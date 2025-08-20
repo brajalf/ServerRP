@@ -1,14 +1,17 @@
+local resource = GetCurrentResourceName()
+local function include(relpath)
+    local code = LoadResourceFile(resource, relpath)
+    assert(type(code) == 'string', ('include: no existe %s'):format(relpath))
+    local fn, err = load(code, '@' .. relpath)
+    assert(fn, err)
+    return fn()
+end
+
 QBCore = exports['qb-core']:GetCoreObject()
 Inventories = Inventories or {}
 Inventories['drop'] = Inventories['drop'] or {}
 local Drops = Drops or {}
 RegisteredShops = {}
-
-CreateThread(function()
-    -- Load ox_bridge after other server files so its exports override defaults
-    Wait(0)
-    dofile('server/ox_bridge.lua')
-end)
 
 local currentDrop = 0
 
@@ -43,6 +46,7 @@ local function CreateDrop(coords)
         isOpen = false
     }
     Drops[name] = { coords = coords }
+    TriggerClientEvent('qb-inventory:client:CreateDropProp', -1, name, coords)
     return name
 end
 
@@ -443,7 +447,6 @@ QBCore.Functions.CreateCallback('qb-inventory:server:createOrReuseDrop', functio
         return
     end
     local newName = CreateDrop(coords)
-    TriggerClientEvent('qb-inventory:client:CreateDropProp', -1, newName, coords)
     cb(newName)
 end)
 
@@ -533,8 +536,8 @@ RegisterNetEvent('qb-inventory:server:AttemptPurchase', function(itemName, amoun
 end)
 
 QBCore.Functions.CreateCallback('qb-inventory:server:giveItem', function(source, cb, target, item, amount, slot, info)
-    local player = QBCore.Functions.GetPlayer(source)
-    if not player or player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or player.PlayerData.metadata['ishandcuffed'] then
+    local QBPlayer = QBCore.Functions.GetPlayer(source)
+    if not QBPlayer or QBPlayer.PlayerData.metadata['isdead'] or QBPlayer.PlayerData.metadata['inlaststand'] or QBPlayer.PlayerData.metadata['ishandcuffed'] then
         cb(false)
         return
     end
@@ -665,9 +668,9 @@ RegisterNetEvent('qb-inventory:server:SetInventoryData', function(fromInventory,
     local function removeItem(identifier, itemName, amount, slot, reason)
         if type(itemName) ~= 'string' then return false end
         if type(identifier) == 'number' then
-            local player = identifier == src and QBPlayer or QBCore.Functions.GetPlayer(identifier)
-            if player then
-                return player.Functions.RemoveItem(itemName, amount, slot, reason)
+            local targetPlayer = identifier == src and QBPlayer or QBCore.Functions.GetPlayer(identifier)
+            if targetPlayer then
+                return targetPlayer.Functions.RemoveItem(itemName, amount, slot, reason)
             end
         end
         return RemoveItem(identifier, itemName, amount, slot, reason)
