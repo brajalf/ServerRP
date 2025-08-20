@@ -19,7 +19,12 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/**/*.lua',
+    'server/ox_compat.lua',
+    'server/commands.lua',
+    'server/functions.lua',
+    'server/main.lua',
+    'server/origen_compat.lua',
+    'server/ox_bridge.lua',
 }
 
 ui_page 'html/index.html'
