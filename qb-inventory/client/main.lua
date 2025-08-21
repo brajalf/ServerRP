@@ -1,6 +1,6 @@
--- Client-side logic for the qb-inventory compatibility wrapper.
--- Maps common qb-core inventory calls to ox_inventory for compatibility.
-
+----------------------------------------------------------------
+-- qb-inventory (compat for ox) - CLIENT
+----------------------------------------------------------------
 local function normalize(items)
     if not items then return {} end
     local out = {}
@@ -22,15 +22,12 @@ local function normalize(items)
     return out
 end
 
--- Exports de cliente esperados por scripts QB
 exports('HasItem', function(items, amount, metadata)
     local list = normalize(items)
     local needed = amount or 1
     for _, it in ipairs(list) do
         local cnt = exports.ox_inventory:Search('count', string.lower(it.name), metadata or it.metadata)
-        if cnt >= (it.amount or needed) then
-            return true
-        end
+        if cnt >= (it.amount or needed) then return true end
     end
     return false
 end)
@@ -42,7 +39,6 @@ exports('GetItem', function(name, metadata, returnSlots)
     return exports.ox_inventory:Search('count', string.lower(name), metadata)
 end)
 
--- Stubs de UI de qb-inventory que algunos scripts llaman
 exports('ItemBox', function(...) end)
 exports('ShowHotbar', function(...) end)
 exports('HideHotbar', function(...) end)
@@ -54,4 +50,4 @@ end)
 RegisterNetEvent('qb-inventory:client:OpenShop', function(id)
     exports.ox_inventory:openInventory('shop', id)
 end)
-
+----------------------------------------------------------------
