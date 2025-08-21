@@ -1,8 +1,9 @@
+----------------------------------------------------------------
+-- qb-inventory (compat for ox) - SERVER
+----------------------------------------------------------------
 local QBCore = exports['qb-core']:GetCoreObject()
 
--- =========================
--- Utils
--- =========================
+-- =============== Utils ===============
 local function normalize(items)
     if not items then return {} end
     local out = {}
@@ -24,9 +25,7 @@ local function normalize(items)
     return out
 end
 
--- =========================
--- Exports básicos (qb → ox)
--- =========================
+-- =============== Exports qb → ox ===============
 exports('AddItem', function(source, name, amount, metadata, slot)
     return exports.ox_inventory:AddItem(source, string.lower(name), amount or 1, metadata, slot)
 end)
@@ -40,9 +39,7 @@ exports('HasItem', function(source, items, amount, metadata)
     local needed = amount or 1
     for _, it in ipairs(list) do
         local cnt = exports.ox_inventory:Search(source, 'count', string.lower(it.name), metadata or it.metadata)
-        if cnt >= (it.amount or needed) then
-            return true
-        end
+        if cnt >= (it.amount or needed) then return true end
     end
     return false
 end)
@@ -65,22 +62,31 @@ exports('SetMetadata', function(source, name, metadata, amount, slot)
     return exports.ox_inventory:SetMetadata(source, string.lower(name), metadata, amount, slot)
 end)
 
--- =========================
--- STASHES
--- =========================
+-- =============== Helper apertura server ===============
+local function openInvServer(src, invType, identifier)
+    -- Nunca uses OpenInventory (ya no existe).
+    if invType == 'stash' then
+        return exports.ox_inventory:forceOpenInventory(src, 'stash', identifier)
+    elseif invType == 'trunk' then
+        return exports.ox_inventory:forceOpenInventory(src, 'trunk', identifier)
+    elseif invType == 'glovebox' then
+        return exports.ox_inventory:forceOpenInventory(src, 'glovebox', identifier)
+    elseif invType == 'shop' then
+        TriggerClientEvent('qb-inventory:client:OpenShop', src, identifier)
+        return true
+    else
+        print(('[qb-inv compat] invType no manejado: %s'):format(tostring(invType)))
+        return false
+    end
+end
+
+-- =============== STASHES ===============
 local RegisteredStashes = {}
 
 exports('CreateStash', function(id, label, slots, weight, owner, groups)
     if RegisteredStashes[id] then return true end
     RegisteredStashes[id] = true
-    return exports.ox_inventory:RegisterStash(
-        id,
-        label or id,
-        slots or 50,
-        weight or 400000,
-        owner,
-        groups
-    )
+    return exports.ox_inventory:RegisterStash(id, label or id, slots or 50, weight or 400000, owner, groups)
 end)
 
 exports('OpenStash', function(source, id)
@@ -88,48 +94,44 @@ exports('OpenStash', function(source, id)
         exports.ox_inventory:RegisterStash(id, id, 50, 400000, true)
         RegisteredStashes[id] = true
     end
-    return exports.ox_inventory:forceOpenInventory(source, 'stash', id)
+    return openInvServer(source, 'stash', id)
 end)
 
--- Handler genérico que muchos scripts QB llaman
+-- Handler clásico que muchos scripts QB llaman
 RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, identifier, extraData)
     local src = source
     if inventoryType == 'stash' then
         local stashId = identifier or ('stash_' .. src)
         if not RegisteredStashes[stashId] then
-            exports.ox_inventory:RegisterStash(stashId, stashId, (extraData and extraData.slots) or 50, (extraData and extraData.weight) or 400000, extraData and extraData.owner, extraData and extraData.groups)
+            exports.ox_inventory:RegisterStash(
+                stashId, stashId,
+                (extraData and extraData.slots) or 50,
+                (extraData and extraData.weight) or 400000,
+                extraData and extraData.owner,
+                extraData and extraData.groups
+            )
             RegisteredStashes[stashId] = true
         end
-        exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
-
+        openInvServer(src, 'stash', stashId)
     elseif inventoryType == 'trunk' then
-        exports.ox_inventory:forceOpenInventory(src, 'trunk', identifier)
-
+        openInvServer(src, 'trunk', identifier)
     elseif inventoryType == 'glovebox' then
-        exports.ox_inventory:forceOpenInventory(src, 'glovebox', identifier)
-
+        openInvServer(src, 'glovebox', identifier)
     elseif inventoryType == 'shop' then
-        TriggerClientEvent('qb-inventory:client:OpenShop', src, identifier)
-
+        openInvServer(src, 'shop', identifier)
     else
-        print(('[qb-inventory compat] OpenInventory tipo no manejado: %s'):format(tostring(inventoryType)))
+        print(('[qb-inv compat] OpenInventory tipo no manejado: %s'):format(tostring(inventoryType)))
     end
 end)
 
--- =========================
--- SHOPS
--- =========================
+-- =============== SHOPS ===============
 local Shops = {}
 
-local function qbProductsToOxInventory(products)
+local function qbProductsToOx(products)
     local inv = {}
     for _, p in pairs(products or {}) do
         if p.name then
-            inv[#inv+1] = {
-                name = string.lower(p.name),
-                price = tonumber(p.price) or 0,
-                metadata = p.info
-            }
+            inv[#inv+1] = { name = string.lower(p.name), price = tonumber(p.price) or 0, metadata = p.info }
         end
     end
     return inv
@@ -139,7 +141,7 @@ exports('RegisterShop', function(id, label, account, products, locations, groups
     Shops[id] = true
     return exports.ox_inventory:RegisterShop(id, {
         name = label or id,
-        inventory = qbProductsToOxInventory(products),
+        inventory = qbProductsToOx(products),
         locations = locations,
         groups = groups
     })
@@ -147,7 +149,7 @@ end)
 
 exports('OpenShop', function(source, id)
     if not Shops[id] then
-        print(('[qb-inventory compat] OpenShop no registrado: %s'):format(tostring(id)))
+        print(('[qb-inv compat] OpenShop no registrado: %s'):format(tostring(id)))
         return false
     end
     TriggerClientEvent('qb-inventory:client:OpenShop', source, id)
@@ -159,3 +161,4 @@ RegisterNetEvent('qb-inventory:server:OpenShop', function(id)
     if not Shops[id] then return end
     TriggerClientEvent('qb-inventory:client:OpenShop', src, id)
 end)
+----------------------------------------------------------------
