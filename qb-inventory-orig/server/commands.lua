@@ -118,18 +118,14 @@ RegisterCommand('inventory', function(source)
     if not QBPlayer then return end
     if not QBPlayer or QBPlayer.PlayerData.metadata['isdead'] or QBPlayer.PlayerData.metadata['inlaststand'] or QBPlayer.PlayerData.metadata['ishandcuffed'] then return end
     QBCore.Functions.TriggerClientCallback('qb-inventory:client:vehicleCheck', source, function(inventory, class)
-        if not inventory then return OpenInventory(source) end
+        if not inventory then
+            return exports.ox_inventory:forceOpenInventory(source, 'player', source)
+        end
         if inventory:find('trunk-') then
-            OpenInventory(source, inventory, {
-                slots = VehicleStorage[class] and VehicleStorage[class].trunkSlots or VehicleStorage.default.slots,
-                maxweight = VehicleStorage[class] and VehicleStorage[class].trunkWeight or VehicleStorage.default.maxWeight
-            })
+            exports.ox_inventory:forceOpenInventory(source, 'trunk', inventory)
             return
         elseif inventory:find('glovebox-') then
-            OpenInventory(source, inventory, {
-                slots = VehicleStorage[class] and VehicleStorage[class].gloveboxSlots or VehicleStorage.default.slots,
-                maxweight = VehicleStorage[class] and VehicleStorage[class].gloveboxWeight or VehicleStorage.default.maxWeight
-            })
+            exports.ox_inventory:forceOpenInventory(source, 'glovebox', inventory)
             return
         end
     end)
