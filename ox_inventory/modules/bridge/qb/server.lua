@@ -312,11 +312,23 @@ export('qb-inventory.CloseInventory', function(playerId, inventoryId)
 end)
 
 export('qb-inventory.OpenInventory', function(playerId, invId, data)
+    -- When no id is supplied open the players own inventory
+    if not invId then
+        return server.forceOpenInventory(playerId, 'player', playerId)
+    end
+
+    -- Create a stash when it does not yet exist so legacy qb callbacks work
     local inventory = Inventory(invId)
 
-    if not inventory then return end
+    if not inventory then
+        data = data or {}
+        inventory = Inventory.Create(invId, data.label or invId, 'stash', data.slots or shared.playerslots, 0,
+            data.maxweight or shared.playerweight, data.owner, nil, data.groups)
+    end
 
-    server.forceOpenInventory(playerId, inventory.type, inventory.id)
+    if inventory then
+        server.forceOpenInventory(playerId, inventory.type, inventory.id)
+    end
 end)
 
 export('qb-inventory.OpenInventoryById', function(playerId, targetId)
@@ -350,4 +362,35 @@ export('qb-inventory.HasItem', function(source, items, amount)
     end
 
     return count >= amount
+end)
+
+-- qb-inventory compatibility helpers for creating and managing stashes
+export('qb-inventory.CreateInventory', function(identifier, data)
+    data = data or {}
+    return Inventory.Create(identifier, data.label or identifier, 'stash', data.slots or shared.playerslots, 0,
+        data.maxweight or shared.playerweight, data.owner, nil, data.groups) and true
+end)
+
+export('qb-inventory.RemoveInventory', function(identifier)
+    return Inventory.Remove(identifier) and true
+end)
+
+export('qb-inventory.GetInventory', function(identifier)
+    local inv = Inventory(identifier)
+    if not inv then return nil end
+    return {
+        items = inv.items,
+        isOpen = next(inv.openedBy) ~= nil,
+        label = inv.label,
+        maxweight = inv.maxWeight,
+        slots = inv.slots
+    }
+end)
+
+export('qb-inventory.ClearStash', function(identifier)
+    local inv = Inventory(identifier)
+    if not inv then return end
+    inv.items = {}
+    inv.weight = 0
+    Inventory.Save(inv)
 end)
