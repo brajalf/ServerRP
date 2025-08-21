@@ -1,15 +1,20 @@
 fx_version 'cerulean'
 game 'gta5'
+lua54 'yes'
 
-name 'qb-inventory compatibility wrapper'
+name 'qb-inventory (compat for ox)'
+description 'Compatibility layer: exposes qb-inventory API using ox_inventory backend'
 version '1.0.0'
 
-description 'Compatibility layer for ox_inventory'
+shared_scripts {
+    '@qb-core/shared.lua'
+}
 
 client_scripts {
     'client/main.lua'
 }
 
 server_scripts {
+    '@oxmysql/lib/MySQL.lua',
     'server/main.lua'
 }
