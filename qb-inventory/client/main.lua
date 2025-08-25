@@ -3,6 +3,8 @@
 ----------------------------------------------------------------
 local normalize = require 'qb-inventory.shared.normalize'
 
+local currentStash
+
 exports('HasItem', function(items, amount, metadata)
     local list = normalize(items)
     local needed = amount or 1
@@ -35,10 +37,15 @@ exports('HideHotbar', function()
 end)
 exports('CloseInventory', function()
     TriggerEvent('ox_inventory:closeInventory')
+    currentStash = nil
 end)
 
 -- Abrir shop en cliente
 RegisterNetEvent('qb-inventory:client:OpenShop', function(id)
     exports.ox_inventory:openInventory('shop', id)
+end)
+
+RegisterNetEvent('inventory:client:SetCurrentStash', function(name)
+    currentStash = name
 end)
 ----------------------------------------------------------------
