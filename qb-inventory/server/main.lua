@@ -46,7 +46,11 @@ end)
 
 exports('GetItem', function(source, name, metadata)
     local slots = exports.ox_inventory:Search(source, 'slots', string.lower(name), metadata)
-    if slots and #slots > 0 then return slots[1] end
+    if slots and #slots > 0 then
+        slots[1].info = slots[1].metadata
+        slots[1].amount = slots[1].count
+        return slots[1]
+    end
     return nil
 end)
 
