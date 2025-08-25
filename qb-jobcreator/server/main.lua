@@ -463,3 +463,103 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   LoadAll()
 end)
 
+-- ===== Acciones seguras de zonas =====
+local function findZoneById(id)
+  for _, z in ipairs(Runtime.Zones) do
+    if z.id == id then return z end
+  end
+end
+
+local function playerInJobZone(src, zone, ztype)
+  if not zone or (ztype and zone.ztype ~= ztype) then return false end
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player or not Player.PlayerData then return false end
+  local jd = Player.PlayerData.job or {}
+  local cid = Player.PlayerData.citizenid
+  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return false end
+  local coords = GetEntityCoords(GetPlayerPed(src))
+  local dist = #(coords - vector3(zone.coords.x, zone.coords.y, zone.coords.z))
+  if dist > (zone.radius or 2.0) + 0.1 then return false end
+  return true, zone, Player
+end
+
+RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
+  local src = source
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'stash')
+  if not ok then return end
+  local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
+  local slots = tonumber(zone.data and zone.data.slots) or 50
+  local weight = tonumber(zone.data and zone.data.weight) or 400000
+  TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
+  pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, weight, true) end)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
+  local src = source
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'shop')
+  if not ok then return end
+  local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
+  local items = {}
+  for _, p in pairs(zone.data and zone.data.items or {}) do
+    if p.name then
+      items[#items+1] = {
+        name = string.lower(p.name),
+        price = tonumber(p.price) or 0,
+        metadata = p.info,
+        count = p.count or p.amount
+      }
+    end
+  end
+  pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'collect')
+  if not ok then return end
+  local item = (zone.data and zone.data.item) or 'material'
+  local amount = tonumber(zone.data and zone.data.amount) or 1
+  Player.Functions.AddItem(item, amount)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'sell')
+  if not ok then return end
+  local data = zone.data or {}
+  local item   = data.item or 'material'
+  local price  = tonumber(data.price) or 10
+  local max    = tonumber(data.max) or 10
+  local toSociety = data.toSociety ~= false
+  local invItem = Player.Functions.GetItemByName(item)
+  local count = (invItem and invItem.amount) or 0
+  local qty = math.min(count, max)
+  if qty <= 0 then return end
+  Player.Functions.RemoveItem(item, qty)
+  local reward = price * qty
+  if toSociety then
+    SocietyAdd(zone.job, reward)
+  else
+    Player.Functions.AddMoney('cash', reward, 'jobcreator-sell')
+  end
+end)
+
+RegisterNetEvent('qb-jobcreator:server:charge', function(zoneId, targetId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'register')
+  if not ok then return end
+  local Target = QBCore.Functions.GetPlayer(tonumber(targetId) or -1)
+  if not Target then return end
+  local amt = tonumber(zone.data and zone.data.amount) or 0
+  if amt <= 0 then return end
+  local method = (zone.data and zone.data.method) or 'bank'
+  local toSociety = zone.data and zone.data.toSociety ~= false
+  local account = method == 'cash' and 'cash' or 'bank'
+  if not Target.Functions.RemoveMoney(account, amt, 'jobcreator-charge') then return end
+  if toSociety then
+    SocietyAdd(zone.job, amt)
+  else
+    Player.Functions.AddMoney('cash', amt, 'jobcreator-charge')
+  end
+end)
+
