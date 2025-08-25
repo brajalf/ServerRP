@@ -75,7 +75,9 @@ export('qb-inventory.HasItem', function(items, amount)
 
     if type(items) == 'table' then
         for _, v in pairs(items) do
-            if Inventory.GetItemCount(v) < amount then
+            local name = v.name or v
+            local meta = v.metadata
+            if Inventory.GetItemCount(name, meta) < amount then
                 return false
             end
         end
