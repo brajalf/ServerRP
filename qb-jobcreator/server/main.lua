@@ -4,6 +4,21 @@ QBCore = exports['qb-core']:GetCoreObject()
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
 
+local function SanitizeShopItems(items)
+  local list = {}
+  if type(items) ~= 'table' then return list end
+  for _, it in ipairs(items) do
+    if type(it) == 'table' and type(it.name) == 'string' and it.name ~= '' then
+      local name = it.name:lower()
+      local price = math.floor(tonumber(it.price) or 0)
+      local count = math.floor(tonumber(it.count or it.amount or 1) or 1)
+      local info = type(it.info) == 'table' and it.info or nil
+      list[#list+1] = { name = name, price = price, count = count, info = info }
+    end
+  end
+  return list
+end
+
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = { label = job.label, grades = job.grades }
@@ -87,10 +102,12 @@ local function LoadAll()
     InjectJobToCore(j)
   end
   for _, z in ipairs(DB.GetZones()) do
+    local data = json.decode(z.data or '{}') or {}
+    if z.ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
     Runtime.Zones[#Runtime.Zones+1] = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
       coords = json.decode(z.coords or '{}') or {}, radius = z.radius or 2.0,
-      data = json.decode(z.data or '{}') or {}
+      data = data
     }
   end
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
@@ -291,6 +308,8 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     return
   end
   _lastCreate[src] = { sig = sig, t = now }
+  zone.data = zone.data or {}
+  if zone.ztype == 'shop' then zone.data.items = SanitizeShopItems(zone.data.items) end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
   if not id then return end
@@ -302,6 +321,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
+  if nz.ztype == 'shop' then nz.data.items = SanitizeShopItems(nz.data.items) end
   Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
   if nz.ztype == 'music' then
@@ -506,19 +526,22 @@ end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
 RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
-  local src = source; local job
-  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
+  local src = source; local job; local ztype
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype break end end
   if not allowAdminOrBoss(src, job or '') then return end
+  if type(data) == 'table' and ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
   if r then
     for idx, z in ipairs(Runtime.Zones) do
       if z.id == id then
+        local nd = json.decode(r.data or '{}') or {}
+        if ztype == 'shop' then nd.items = SanitizeShopItems(nd.items) end
         Runtime.Zones[idx] = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,
           coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
-          data = json.decode(r.data or '{}') or {}
+          data = nd
         }
         break
       end
@@ -563,16 +586,9 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
   local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'shop')
   if not ok then return end
   local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
-  local items = {}
-  for _, p in pairs(zone.data and zone.data.items or {}) do
-    if p.name then
-      items[#items+1] = {
-        name = string.lower(p.name),
-        price = tonumber(p.price) or 0,
-        metadata = p.info,
-        count = p.count or p.amount
-      }
-    end
+  local items = SanitizeShopItems(zone.data and zone.data.items or {})
+  for _, it in ipairs(items) do
+    it.metadata = it.info; it.info = nil
   end
   pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
 end)

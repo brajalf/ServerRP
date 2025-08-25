@@ -13,6 +13,43 @@ const App = (() => {
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  let collectShopItems = () => [];
+
+  function renderShopItemsSection(box, items = []) {
+    box.innerHTML = `
+      <div id="shop-items"></div>
+      <div class="row"><button class="btn" id="addShopItem">+ Añadir artículo</button></div>`;
+    const wrap = box.querySelector('#shop-items');
+    function addRow(data = {}) {
+      const row = document.createElement('div');
+      row.className = 'row shop-item';
+      row.innerHTML = `
+        <div><input class="input siname" placeholder="Ítem" value="${data.name || ''}"/></div>
+        <div><input class="input siprice" placeholder="Precio" type="number" value="${data.price || 0}"/></div>
+        <div><input class="input sicount" placeholder="Cantidad" type="number" value="${data.count || 1}"/></div>
+        <div><input class="input siinfo" placeholder='Metadata JSON' value='${data.info ? JSON.stringify(data.info) : ''}'/></div>
+        <div><button class="btn danger del">X</button></div>`;
+      wrap.appendChild(row);
+      row.querySelector('.del').onclick = () => row.remove();
+    }
+    (items || []).forEach(addRow);
+    box.querySelector('#addShopItem').onclick = () => addRow();
+    collectShopItems = () => {
+      const list = [];
+      wrap.querySelectorAll('.shop-item').forEach((r) => {
+        const name = r.querySelector('.siname').value.trim();
+        if (!name) return;
+        const price = Number(r.querySelector('.siprice').value) || 0;
+        const count = Number(r.querySelector('.sicount').value) || 1;
+        const infoTxt = r.querySelector('.siinfo').value.trim();
+        let info;
+        if (infoTxt) { try { info = JSON.parse(infoTxt); } catch { info = infoTxt; } }
+        list.push({ name, price, count, info });
+      });
+      return list;
+    };
+  }
+
   // === Resource-aware NUI fetch helper ===
   const RESOURCE = (typeof GetParentResourceName === 'function')
     ? GetParentResourceName()
@@ -483,10 +520,12 @@ const App = (() => {
     body.innerHTML = `<div class="toolbar"><button class="btn" id="addz">+ Añadir Zona</button></div><div id="zlist" class="panel"></div>`;
     const list = document.getElementById('zlist');
 
+    let zonesCache = [];
     function load() {
       postJ('getZones', { job: state.jd.job }).then((zs) => {
       const seen = Object.create(null), uniq = [];
       (zs || []).forEach((z) => { const k = String(z.id); if (!seen[k]) { seen[k] = 1; uniq.push(z); } });
+      zonesCache = uniq;
 
       let html = `
         <table class="table">
@@ -497,7 +536,7 @@ const App = (() => {
           <td>${z.id}</td><td>${z.ztype}</td><td>${z.label||''}</td>
           <td>${z.radius}</td>
           <td>${(z.data && (z.data.vehicles || z.data.vehicle || '')) || ''}</td>
-          <td><button class="btn danger" data-id="${z.id}">Borrar</button></td>
+          <td>${z.ztype === 'shop' ? `<button class="btn" data-edit="${z.id}">Editar</button>` : ''}<button class="btn danger" data-id="${z.id}">Borrar</button></td>
         </tr>`;
       });
       html += '</tbody></table>';
@@ -506,9 +545,23 @@ const App = (() => {
       list.querySelectorAll('button[data-id]').forEach((b) => {
         b.onclick = () => post('deleteZone', { id: Number(b.dataset.id) }).then(() => load());
       });
+      list.querySelectorAll('button[data-edit]').forEach((b) => {
+        b.onclick = () => editShop(Number(b.dataset.edit));
+      });
     });
     }
     load();
+
+    function editShop(id) {
+      const zone = zonesCache.find((z) => z.id === id);
+      if (!zone) return;
+      const base = `<div id="zextra"></div>`;
+      modal('Editar Tienda', base, () => {
+        const data = { items: collectShopItems() };
+        post('updateZone', { id, data }).then(() => { closeModal(); load(); });
+      });
+      renderShopItemsSection(document.getElementById('zextra'), (zone.data && zone.data.items) || []);
+    }
 
     document.getElementById('addz').onclick = () => {
       const base = `
@@ -539,7 +592,7 @@ const App = (() => {
                               data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
           if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
-          if (t === 'shop')  { try{ data.items = JSON.parse(document.getElementById('zshop')?.value||'[]') }catch{} }
+          if (t === 'shop')  { data.items = collectShopItems(); }
           if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
                                 data.amount = Number(document.getElementById('zamt')?.value||1);
                                 data.time = Number(document.getElementById('ztime')?.value||3000);
@@ -582,6 +635,7 @@ const App = (() => {
       const inp = (id, label, ph='') => `<div><label>${label}</label><input id="${id}" class="input" placeholder="${ph}"/></div>`;
       const ta  = (id, label, ph='') => `<div style="flex:1"><label>${label}</label><textarea id="${id}" class="input" style="height:120px" placeholder='${ph}'></textarea></div>`;
 
+      collectShopItems = () => [];
       if (t === 'boss') {
         box.innerHTML = row(inp('zmin','Mín. rango','0'));
       } else if (t === 'stash') {
@@ -602,7 +656,7 @@ const App = (() => {
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {
-        box.innerHTML = ta('zshop','Items JSON','[{"name":"bandage","price":50,"amount":50}]');
+        renderShopItemsSection(box, []);
       } else if (t === 'collect') {
         box.innerHTML = row(inp('zitem','Ítem','material') + inp('zamt','Cantidad','1')) +
                         row(inp('ztime','Tiempo (ms)','3000') + inp('zdict','Anim dict','') + inp('zanm','Anim nombre',''));
