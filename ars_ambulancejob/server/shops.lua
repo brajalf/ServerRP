@@ -100,17 +100,10 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     end
 end)
 
-if GetResourceState('ox_inventory') == 'started' or GetResourceState('qb-inventory') == 'started' then
-    registerPharmacies()
-end
-
-
-
--- main
-
-
 AddEventHandler('onResourceStart', function(resource)
-    if resource == 'ox_inventory' or resource == 'qb-inventory' then
+    if resource ~= GetCurrentResourceName() then return end
+
+    if GetResourceState('ox_inventory') == 'started' or GetResourceState('qb-inventory') == 'started' then
         registerPharmacies()
     end
 end)
