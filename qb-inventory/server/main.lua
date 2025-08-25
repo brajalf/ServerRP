@@ -124,32 +124,48 @@ RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, ident
     end
 end)
 
--- =============== SHOPS ===============
+-- =========================
+-- SHOPS  (QB → OX con cuentas de QBCore)
+-- =========================
 local Shops = {}
 
 local function qbProductsToOx(products)
     local inv = {}
     for _, p in pairs(products or {}) do
         if p.name then
-            inv[#inv+1] = { name = string.lower(p.name), price = tonumber(p.price) or 0, metadata = p.info }
+            inv[#inv+1] = {
+                name     = string.lower(p.name),
+                price    = tonumber(p.price) or 0,
+                metadata = p.info,
+                count    = p.amount -- stock opcional (si tu Config lo usa)
+            }
         end
     end
     return inv
 end
 
+-- Registra una tienda en OX pero guardamos el "account" para cobro
 exports('RegisterShop', function(id, label, account, products, locations, groups)
-    Shops[id] = true
-    return exports.ox_inventory:RegisterShop(id, {
-        name = label or id,
+    Shops[id] = {
+        account = account or 'cash' -- 'cash' o 'bank'
+    }
+
+    -- NOTA: ox_inventory usará su lógica, pero nos aseguramos de pasar inventario y props.
+    -- El 'account' lo guardamos aparte y lo usamos al comprar (ver handler más abajo).
+    exports.ox_inventory:RegisterShop(id, {
+        name      = label or id,
         inventory = qbProductsToOx(products),
         locations = locations,
-        groups = groups
+        groups    = groups
     })
+
+    return true
 end)
 
+-- Abrir shop (server -> client)
 exports('OpenShop', function(source, id)
     if not Shops[id] then
-        print(('[qb-inv compat] OpenShop no registrado: %s'):format(tostring(id)))
+        print(('[qb-inventory compat] OpenShop no registrado: %s'):format(tostring(id)))
         return false
     end
     TriggerClientEvent('qb-inventory:client:OpenShop', source, id)
@@ -161,4 +177,43 @@ RegisterNetEvent('qb-inventory:server:OpenShop', function(id)
     if not Shops[id] then return end
     TriggerClientEvent('qb-inventory:client:OpenShop', src, id)
 end)
-----------------------------------------------------------------
+
+-- ============== Cobro manual seguro (cash/bank de QBCore) ==============
+-- Este handler intercepta la compra y realiza el cobro con dinero de QBCore,
+-- luego entrega el ítem usando ox_inventory.
+-- Llama a este evento desde tus scripts de shop si no ves que cobre bien por defecto.
+-- Ejemplo de uso en cliente: TriggerServerEvent('qb-inventory:server:BuyItem', shopId, itemName, price, count, metadata)
+RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price, count, metadata)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local shop = Shops[shopId]
+    if not Player or not shop then return end
+
+    itemName = string.lower(itemName)
+    price    = tonumber(price) or 0
+    count    = tonumber(count) or 1
+    if price <= 0 or count <= 0 then return end
+
+    -- Verificar saldo
+    local acc = shop.account == 'bank' and 'bank' or 'cash'
+    local bal = Player.PlayerData.money[acc] or 0
+    local total = price * count
+    if bal < total then
+        TriggerClientEvent('QBCore:Notify', src, 'No tienes suficiente dinero', 'error')
+        return
+    end
+
+    -- Cobrar
+    Player.Functions.RemoveMoney(acc, total, ('Shop purchase %s x%s'):format(itemName, count))
+
+    -- Entregar
+    local ok = exports.ox_inventory:AddItem(src, itemName, count, metadata)
+    if not ok then
+        -- Reembolsar si no cabe
+        Player.Functions.AddMoney(acc, total, ('Refund %s x%s'):format(itemName, count))
+        TriggerClientEvent('QBCore:Notify', src, 'No tienes espacio en el inventario', 'error')
+        return
+    end
+
+    TriggerClientEvent('QBCore:Notify', src, ('Compraste %s x%s'):format(itemName, count), 'success')
+end)
