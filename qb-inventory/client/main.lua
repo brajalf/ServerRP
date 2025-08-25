@@ -20,9 +20,19 @@ exports('GetItem', function(name, metadata, returnSlots)
     return exports.ox_inventory:Search('count', string.lower(name), metadata)
 end)
 
-exports('ItemBox', function(...) end)
-exports('ShowHotbar', function(...) end)
-exports('HideHotbar', function(...) end)
+exports('ItemBox', function(items, type, amount)
+    for _, item in ipairs(normalize(items)) do
+        TriggerEvent('ox_inventory:itemNotify', { item, type, amount or item.amount })
+    end
+end)
+
+exports('ShowHotbar', function()
+    SendNUIMessage({ action = 'toggleHotbar', state = true })
+end)
+
+exports('HideHotbar', function()
+    SendNUIMessage({ action = 'toggleHotbar', state = false })
+end)
 exports('CloseInventory', function()
     TriggerEvent('ox_inventory:closeInventory')
 end)
