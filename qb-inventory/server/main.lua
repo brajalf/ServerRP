@@ -97,10 +97,13 @@ exports('OpenStash', function(source, id)
     return openInvServer(source, 'stash', id)
 end)
 
--- Handler clásico que muchos scripts QB llaman
+-- Handler clásico (muchos scripts QB lo llaman)
 RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, identifier, extraData)
     local src = source
-    if inventoryType == 'stash' then
+    if inventoryType == 'shop' then
+        TriggerClientEvent('qb-inventory:client:OpenShop', src, identifier)
+        return
+    elseif inventoryType == 'stash' then
         local stashId = identifier or ('stash_' .. src)
         if not RegisteredStashes[stashId] then
             exports.ox_inventory:RegisterStash(
@@ -117,8 +120,6 @@ RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, ident
         openInvServer(src, 'trunk', identifier)
     elseif inventoryType == 'glovebox' then
         openInvServer(src, 'glovebox', identifier)
-    elseif inventoryType == 'shop' then
-        openInvServer(src, 'shop', identifier)
     else
         print(('[qb-inv compat] OpenInventory tipo no manejado: %s'):format(tostring(inventoryType)))
     end
