@@ -94,7 +94,11 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     end
 
     if GetResourceState('ox_inventory') == 'started' then
-        exports.ox_inventory:openInventory(src, 'shop', name)
+        if exports.ox_inventory.forceOpenInventory then
+            exports.ox_inventory:forceOpenInventory(src, 'shop', { id = name })
+        else
+            TriggerClientEvent('ox_inventory:openInventory', src, 'shop', { id = name })
+        end
     else
         exports['qb-inventory']:OpenShop(src, name)
     end
