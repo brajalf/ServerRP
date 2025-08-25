@@ -195,11 +195,7 @@ local function addTargetForZone(z)
       label = 'Abrir Almacén', icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        local stashId = ('jc_%s_%s'):format(z.job, z.id)
-        local slots = Tnum(z.data and z.data.slots or 50)
-        local weight = Tnum(z.data and z.data.weight or 400000)
-        TriggerServerEvent('inventory:server:OpenInventory', 'stash', stashId, { maxweight = weight, slots = slots })
-        TriggerEvent('inventory:client:SetCurrentStash', stashId)
+        TriggerServerEvent('qb-jobcreator:server:openStash', z.id)
       end
     })
 
@@ -251,10 +247,7 @@ local function addTargetForZone(z)
       label = 'Abrir tienda', icon = 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        -- espera items en z.data.items: { {name='bandage', price=50, amount=50}, ... }
-        local items = (z.data and z.data.items) or {}
-        local sid = ('jc_shop_%s_%s'):format(z.job, z.id)
-        TriggerServerEvent('inventory:server:OpenInventory', 'shop', sid, { label = z.label or 'Tienda', items = items })
+        TriggerServerEvent('qb-jobcreator:server:openShop', z.id)
       end
     })
 
@@ -264,12 +257,10 @@ local function addTargetForZone(z)
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local data = z.data or {}
-        local item   = data.item or 'material'
-        local amount = tonumber(data.amount) or 1
         local time   = tonumber(data.time) or 3000
         if data.dict and data.anim then Play(data.dict, data.anim, time) end
         if Progress('Recolectando...', time) then
-          TriggerServerEvent('qb-jobcreator:server:collect', z.job, item, amount)
+          TriggerServerEvent('qb-jobcreator:server:collect', z.id)
         end
       end
     })
@@ -294,11 +285,7 @@ local function addTargetForZone(z)
       label = 'Vender material', icon = 'fa-solid fa-sack-dollar',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        local data = z.data or {}
-        local item   = data.item or 'material'
-        local price  = tonumber(data.price) or 10
-        local max    = tonumber(data.max) or 10
-        TriggerServerEvent('qb-jobcreator:server:sellItem', z.job, item, price, max, data.toSociety ~= false)
+        TriggerServerEvent('qb-jobcreator:server:sell', z.id)
       end
     })
 
@@ -309,9 +296,7 @@ local function addTargetForZone(z)
       action = function()
         local sid = GetClosestPlayerToMe(3.0)
         if not sid then QBCore.Functions.Notify('No hay clientes cerca.', 'error'); return end
-        local amt = tonumber((z.data and z.data.amount) or 100) or 100 -- o abre un input NUI si quieres
-        local method = (z.data and z.data.method) or 'bank'          -- 'cash' o 'bank'
-        TriggerServerEvent('qb-jobcreator:server:charge', z.job, sid, amt, method, z.data and z.data.toSociety ~= false)
+        TriggerServerEvent('qb-jobcreator:server:charge', z.id, sid)
       end
     })
 
