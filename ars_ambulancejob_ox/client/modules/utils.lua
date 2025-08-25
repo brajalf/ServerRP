@@ -16,6 +16,7 @@ local EndTextCommandSetBlipName = EndTextCommandSetBlipName
 local GetEntityCoords = GetEntityCoords
 local PlayerPedId = PlayerPedId
 local TriggerServerEvent = TriggerServerEvent
+local PlaceObjectOnGroundProperly = PlaceObjectOnGroundProperly
 
 utils = {}
 peds = {}
@@ -47,6 +48,8 @@ function utils.createPed(name, ...)
     if not model then return end
 
     local ped = CreatePed(0, model, ...)
+
+    PlaceObjectOnGroundProperly(ped)
 
     SetEntityInvincible(ped, true)
     SetModelAsNoLongerNeeded(model)
