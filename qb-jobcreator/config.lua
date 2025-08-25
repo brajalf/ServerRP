@@ -22,7 +22,17 @@ Config.Integrations = Config.Integrations or {
   UseQbManagement = false,   -- fondos de sociedad; si no, fallback propio en DB
   UseQbInventory  = true,
   UseBossMenu     = true,
+  -- Eventos de hospital. Ajusta los nombres según el script que uses
+  -- qb-ambulancejob (por defecto):
+  --   Revivir -> 'hospital:client:Revive'
+  --   Curar   -> 'hospital:client:TreatWounds'
+  -- esx_ambulancejob:
+  --   Revivir -> 'esx_ambulancejob:revive'
+  --   Curar   -> 'esx_ambulancejob:treat'
   HospitalReviveEvent = 'hospital:client:Revive',
+  HospitalHealEvent   = 'hospital:client:TreatWounds',
+  -- Recursos a verificar antes de disparar los eventos
+  HospitalResources   = { 'qb-ambulancejob', 'hospital' },
 }
 
 -- ===== Multi‑trabajo =====
@@ -64,7 +74,7 @@ Config.DefaultGrades = Config.DefaultGrades or {
 }
 
 -- Acciones habilitables
-Config.PlayerActions = Config.PlayerActions or {
+Config.PlayerActionsDefaults = Config.PlayerActionsDefaults or {
   search   = true,
   handcuff = true,
   drag     = true,
@@ -100,7 +110,7 @@ Config.Garages = {
   SpawnEvent    = nil,         -- si tu fork expone un evento de spawn (server)
 }
 
-Config.PlayerActions = Config.PlayerActions or {
+Config.PlayerActionsByJob = Config.PlayerActionsByJob or {
   police    = { 'cuff', 'escort', 'putinveh', 'takeout', 'bill' },
   ambulance = { 'revive', 'heal' },
   mechanic  = { 'repair', 'clean', 'impound' },

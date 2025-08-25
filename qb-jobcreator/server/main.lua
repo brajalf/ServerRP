@@ -208,13 +208,18 @@ end)
 -- ===== CRUD de trabajos =====
 RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
   local src = source; if not ensurePerm(src) then return end
+  local name = string.lower((data.name or ''):gsub('%s+',''))
   local job = {
-    name = string.lower((data.name or ''):gsub('%s+','')),
+    name = name,
     label = data.label or 'Trabajo',
     type = data.type or 'generic',
     whitelisted = data.whitelisted or false,
     grades = next(data.grades or {}) and data.grades or Config.DefaultGrades,
-    actions = { player = Config.PlayerActions, vehicle = Config.VehicleActions }
+    actions = {
+      defaults = Config.PlayerActionsDefaults,
+      player   = Config.PlayerActionsByJob[name] or {},
+      vehicle  = Config.VehicleActions
+    }
   }
   if job.name == '' then return end
   Runtime.Jobs[job.name] = job
@@ -225,8 +230,16 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteJob', function(name)
   local src = source; if not ensurePerm(src) then return end
-  Runtime.Jobs[name] = nil; QBCore.Shared.Jobs[name] = nil; DB.DeleteJob(name)
-  LoadAll()
+  Runtime.Jobs[name] = nil
+  QBCore.Shared.Jobs[name] = nil
+  DB.DeleteJob(name)
+  local zones = {}
+  for _, z in ipairs(Runtime.Zones) do
+    if z.job ~= name then zones[#zones+1] = z end
+  end
+  Runtime.Zones = zones
+  TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:duplicateJob', function(name, newName)
@@ -269,16 +282,29 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     return
   end
   _lastCreate[src] = { sig = sig, t = now }
-
-  DB.SaveZone(zone)
-  LoadAll()
+  local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
+    { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
+  if not id then return end
+  local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
+  local r = row and row[1]
+  if not r then return end
+  Runtime.Zones[#Runtime.Zones+1] = {
+    id = r.id, job = r.job, ztype = r.ztype, label = r.label,
+    coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
+    data = json.decode(r.data or '{}') or {}
+  }
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
   local src = source; local job
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
   if not allowAdminOrBoss(src, job or '') then return end
-  DB.DeleteZone(id); LoadAll()
+  DB.DeleteZone(id)
+  for i = #Runtime.Zones, 1, -1 do
+    if Runtime.Zones[i].id == id then table.remove(Runtime.Zones, i) break end
+  end
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 -- ===== Empleados =====
@@ -460,6 +486,120 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
   if not allowAdminOrBoss(src, job or '') then return end
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
-  LoadAll()
+  local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
+  local r = row and row[1]
+  if r then
+    for idx, z in ipairs(Runtime.Zones) do
+      if z.id == id then
+        Runtime.Zones[idx] = {
+          id = r.id, job = r.job, ztype = r.ztype, label = r.label,
+          coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
+          data = json.decode(r.data or '{}') or {}
+        }
+        break
+      end
+    end
+    TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
+  end
+end)
+
+-- ===== Acciones seguras de zonas =====
+local function findZoneById(id)
+  for _, z in ipairs(Runtime.Zones) do
+    if z.id == id then return z end
+  end
+end
+
+local function playerInJobZone(src, zone, ztype)
+  if not zone or (ztype and zone.ztype ~= ztype) then return false end
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player or not Player.PlayerData then return false end
+  local jd = Player.PlayerData.job or {}
+  local cid = Player.PlayerData.citizenid
+  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return false end
+  local coords = GetEntityCoords(GetPlayerPed(src))
+  local dist = #(coords - vector3(zone.coords.x, zone.coords.y, zone.coords.z))
+  if dist > (zone.radius or 2.0) + 0.1 then return false end
+  return true, zone, Player
+end
+
+RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
+  local src = source
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'stash')
+  if not ok then return end
+  local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
+  local slots = tonumber(zone.data and zone.data.slots) or 50
+  local weight = tonumber(zone.data and zone.data.weight) or 400000
+  TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
+  pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, weight, true) end)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
+  local src = source
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'shop')
+  if not ok then return end
+  local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
+  local items = {}
+  for _, p in pairs(zone.data and zone.data.items or {}) do
+    if p.name then
+      items[#items+1] = {
+        name = string.lower(p.name),
+        price = tonumber(p.price) or 0,
+        metadata = p.info,
+        count = p.count or p.amount
+      }
+    end
+  end
+  pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'collect')
+  if not ok then return end
+  local item = (zone.data and zone.data.item) or 'material'
+  local amount = tonumber(zone.data and zone.data.amount) or 1
+  Player.Functions.AddItem(item, amount)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'sell')
+  if not ok then return end
+  local data = zone.data or {}
+  local item   = data.item or 'material'
+  local price  = tonumber(data.price) or 10
+  local max    = tonumber(data.max) or 10
+  local toSociety = data.toSociety ~= false
+  local invItem = Player.Functions.GetItemByName(item)
+  local count = (invItem and invItem.amount) or 0
+  local qty = math.min(count, max)
+  if qty <= 0 then return end
+  Player.Functions.RemoveItem(item, qty)
+  local reward = price * qty
+  if toSociety then
+    SocietyAdd(zone.job, reward)
+  else
+    Player.Functions.AddMoney('cash', reward, 'jobcreator-sell')
+  end
+end)
+
+RegisterNetEvent('qb-jobcreator:server:charge', function(zoneId, targetId)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'register')
+  if not ok then return end
+  local Target = QBCore.Functions.GetPlayer(tonumber(targetId) or -1)
+  if not Target then return end
+  local amt = tonumber(zone.data and zone.data.amount) or 0
+  if amt <= 0 then return end
+  local method = (zone.data and zone.data.method) or 'bank'
+  local toSociety = zone.data and zone.data.toSociety ~= false
+  local account = method == 'cash' and 'cash' or 'bank'
+  if not Target.Functions.RemoveMoney(account, amt, 'jobcreator-charge') then return end
+  if toSociety then
+    SocietyAdd(zone.job, amt)
+  else
+    Player.Functions.AddMoney('cash', amt, 'jobcreator-charge')
+  end
 end)
 
