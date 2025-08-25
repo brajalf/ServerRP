@@ -25,11 +25,11 @@ function toggleClothes(toggle, clothes)
         utils.debug("Job Grade " .. jobGrade)
 
         if Config.ClothingScript and Config.ClothingScript ~= 'core' then
-            local model = exports[Config.ClothingScript]:getPedModel(playerPed)
+            local model = GetEntityModel(playerPed)
 
-            if model == 'mp_m_freemode_01' then
+            if model == GetHashKey('mp_m_freemode_01') then
                 data = clothes.male[jobGrade] or clothes.male[1]
-            elseif model == 'mp_f_freemode_01' then
+            elseif model == GetHashKey('mp_f_freemode_01') then
                 data = clothes.female[jobGrade] or clothes.female[1]
             end
 
