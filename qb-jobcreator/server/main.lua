@@ -463,3 +463,39 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   LoadAll()
 end)
 
+RegisterNetEvent('qb-jobcreator:server:craft', function(item)
+  local src = source
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player then return end
+  local recipe = Config.CraftingRecipes and Config.CraftingRecipes[item]
+  if not recipe then return end
+  local jobName = Player.PlayerData.job and Player.PlayerData.job.name
+  if recipe.jobs then
+    local allowed = false
+    for _, j in ipairs(recipe.jobs) do if j == jobName then allowed = true break end end
+    if not allowed then
+      TriggerClientEvent('QBCore:Notify', src, 'No tienes la profesi\xc3\xb3n correcta', 'error')
+      return
+    end
+  end
+  for _, need in ipairs(recipe.needs or {}) do
+    local have = Player.Functions.GetItemByName(need.item)
+    local amount = have and have.amount or 0
+    if amount < (need.qty or 1) then
+      TriggerClientEvent('QBCore:Notify', src, 'Faltan ingredientes', 'error')
+      return
+    end
+  end
+  for _, need in ipairs(recipe.needs or {}) do
+    Player.Functions.RemoveItem(need.item, need.qty or 1)
+    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[need.item], 'remove')
+  end
+  local amount = recipe.amount or 1
+  if Player.Functions.AddItem(item, amount) then
+    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], 'add')
+    TriggerClientEvent('QBCore:Notify', src, 'Hecho', 'success')
+  else
+    TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
+  end
+end)
+

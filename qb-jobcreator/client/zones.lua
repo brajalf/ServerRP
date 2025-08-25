@@ -52,6 +52,48 @@ local function canUseZone(z, requireBoss)
   return true
 end
 
+local function openCraftingMenu()
+  if GetResourceState('qb-menu') ~= 'started' then
+    QBCore.Functions.Notify('qb-menu no est\xc3\xa1 disponible', 'error')
+    return
+  end
+  local jobName = playerJobData()
+  local menu = {
+    { header = 'Crafteo', isMenuHeader = true }
+  }
+  for item, recipe in pairs(Config.CraftingRecipes or {}) do
+    local allowed = true
+    if recipe.jobs then
+      allowed = false
+      for _, j in ipairs(recipe.jobs) do if j == jobName then allowed = true break end end
+    end
+    if allowed then
+      local lbl = recipe.label or (QBCore.Shared.Items[item] and QBCore.Shared.Items[item].label) or item
+      local needs = {}
+      if recipe.needs then
+        for _, need in ipairs(recipe.needs) do
+          local nlabel = (QBCore.Shared.Items[need.item] and QBCore.Shared.Items[need.item].label) or need.item
+          needs[#needs+1] = string.format('%dx %s', need.qty, nlabel)
+        end
+      end
+      menu[#menu+1] = {
+        header = lbl,
+        txt = table.concat(needs, ', '),
+        params = { event = 'qb-jobcreator:client:craft', args = item }
+      }
+    end
+  end
+  if #menu == 1 then
+    QBCore.Functions.Notify('No hay recetas disponibles', 'error')
+    return
+  end
+  exports['qb-menu']:openMenu(menu)
+end
+
+RegisterNetEvent('qb-jobcreator:client:craft', function(item)
+  TriggerServerEvent('qb-jobcreator:server:craft', item)
+end)
+
 -- =====================================
 -- Helpers vehículo (llaves, asiento, guardar)
 -- =====================================
@@ -376,7 +418,7 @@ local function addTargetForZone(z)
     table.insert(opts, {
       label = 'Craftear', icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
-      action = function() QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary') end
+      action = function() openCraftingMenu() end
     })
   end
 
