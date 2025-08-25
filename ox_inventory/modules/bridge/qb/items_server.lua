@@ -13,7 +13,11 @@ AddEventHandler('ox_inventory:itemList', function(ItemList)
                 weight      = tonumber(v.weight) or 0,
                 stack       = (v.unique == nil) and true or (not v.unique),
                 close       = true,
-                description = v.description
+                description = v.description,
+                image       = v.image,
+                client      = v.client,
+                server      = v.server,
+                consume     = v.consume
             }
         end
     end
