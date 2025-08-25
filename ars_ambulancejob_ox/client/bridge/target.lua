@@ -172,7 +172,23 @@ elseif GetResourceState('qb-target') == 'started' then
             }
         end
 
-        exports['qb-target']:AddBoxZone("name" .. coords, coords, 1.5, 1.6, {}, { options = options })
+        local zoneName = ("zone_%d_%d_%d"):format(
+            math.floor(coords.x * 100),
+            math.floor(coords.y * 100),
+            math.floor(coords.z * 100)
+        )
+        local heading = coords.w or 0.0
+        local minZ = coords.z - 1.0
+        local maxZ = coords.z + 1.0
+
+        exports['qb-target']:AddBoxZone(zoneName, coords, 1.5, 1.6, {
+            heading = heading,
+            minZ = minZ,
+            maxZ = maxZ
+        }, {
+            options = options,
+            distance = 2.0
+        })
     end
 
     function addGlobalPlayer(_options)
