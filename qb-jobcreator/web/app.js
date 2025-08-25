@@ -554,7 +554,7 @@ const App = (() => {
                               data.dict = document.getElementById('zdict')?.value||'';
                               data.anim = document.getElementById('zanm')?.value||'';
                               data.time = Number(document.getElementById('ztime')?.value||5000); }
-          if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); data.distance = Number(document.getElementById('zdist')?.value||20); }
+          if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
           if (t === 'teleport') { data.to = { x:Number(document.getElementById('tox')?.value||0), y:Number(document.getElementById('toy')?.value||0), z:Number(document.getElementById('toz')?.value||0), w:Number(document.getElementById('tow')?.value||0) }; }
           const z = {
             job: state.jd.job,
@@ -606,7 +606,8 @@ const App = (() => {
       } else if (t === 'anim') {
         box.innerHTML = row(inp('zsc','Scenario','PROP_HUMAN_SEAT_CHAIR')) + row(inp('zdict','Anim dict','') + inp('zanm','Anim nombre','') + inp('ztime','Duración (ms)','5000'));
       } else if (t === 'music') {
-        box.innerHTML = row(inp('zurl','YouTube/URL','https://...') + inp('zvol','Volumen (0-1)','0.5') + inp('zdist','Distancia','20'));
+        box.innerHTML = row(inp('zname','Nombre DJ','') + inp('zrange','Radio','20')) +
+                        row(inp('zurl','YouTube/URL','https://...') + inp('zvol','Volumen (0-1)','0.5'));
       } else if (t === 'teleport') {
         box.innerHTML = row(inp('tox','To X','') + inp('toy','To Y','') + inp('toz','To Z','') + inp('tow','Heading',''));
       } else {

@@ -1,5 +1,50 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
+local function loadJobCreatorZones()
+    MySQL.Async.fetchAll('SELECT * FROM jobcreator_zones WHERE ztype = @z', {['@z'] = 'music'}, function(rows)
+        for _, r in ipairs(rows or {}) do
+            local coords = json.decode(r.coords or '{}') or {}
+            local data = json.decode(r.data or '{}') or {}
+            local name = data.name or data.djName or ('jc_ms_'..r.job..'_'..r.id)
+            local range = tonumber(data.range or data.distance or r.radius) or 20.0
+            Config.DJPositions[#Config.DJPositions+1] = {
+                name = name,
+                pos = vector3(coords.x or 0.0, coords.y or 0.0, coords.z or 0.0),
+                requiredJob = r.job ~= '' and r.job or nil,
+                range = range,
+                volume = 1.0
+            }
+        end
+    end)
+end
+
+AddEventHandler('onResourceStart', function(res)
+    if res ~= GetCurrentResourceName() then return end
+    loadJobCreatorZones()
+end)
+
+RegisterNetEvent('myDj:addZone', function(z)
+    if not z or not z.name or not z.pos then return end
+    for _, v in ipairs(Config.DJPositions) do if v.name == z.name then return end end
+    Config.DJPositions[#Config.DJPositions+1] = {
+        name = z.name,
+        pos = z.pos,
+        requiredJob = z.requiredJob,
+        range = z.range or 20.0,
+        volume = 1.0
+    }
+end)
+
+RegisterNetEvent('myDj:removeZone', function(name)
+    if not name then return end
+    for i = #Config.DJPositions, 1, -1 do
+        if Config.DJPositions[i].name == name then
+            table.remove(Config.DJPositions, i)
+            break
+        end
+    end
+end)
+
 QBCore.Functions.CreateCallback('myDJ:requestPlaylistsAndSongs', function(source, cb)
 
     local playlists = {}

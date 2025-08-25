@@ -24,10 +24,12 @@ Config.DJPositions = {
     {
         name = 'bahama',
         pos = vector3(116.81999969482422, -1281.7900390625, 29.26000022888183),
-        requiredJob = nil, 
-        range = 25.0, 
+        requiredJob = nil,
+        range = 25.0,
         volume = 1.0 --[[ do not touch the volume! --]]
     }
 
     --{name = 'bahama', pos = vector3(-1381.01, -616.17, 31.5), requiredJob = 'DJ', range = 25.0}
 }
+
+-- Zones created with qb-jobcreator (type 'music') will be added automatically on start.
