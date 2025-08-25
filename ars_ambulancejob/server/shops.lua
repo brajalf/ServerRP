@@ -1,7 +1,10 @@
+codex/replace-openinventory-with-custom-event
 local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:GetCoreObject() or nil
 local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
 
 if GetResourceState('ox_inventory') == 'started' then
+local function registerPharmacies()
+ main
     for _, hospital in pairs(Config.Hospitals) do
         if hospital.pharmacy then
             for name, pharmacy in pairs(hospital.pharmacy) do
@@ -22,7 +25,7 @@ if GetResourceState('ox_inventory') == 'started' then
         end
     end
 end
-
+ codex/replace-openinventory-with-custom-event
 RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     local src = source
     local pharmacy
@@ -56,4 +59,14 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
         TriggerEvent('inventory:server:OpenInventory', 'shop', name, pharmacy.items)
     end
 end)
+if GetResourceState('ox_inventory') == 'started' then
+    registerPharmacies()
+else
+    AddEventHandler('onResourceStart', function(resource)
+        if resource == 'ox_inventory' then
+            registerPharmacies()
+        end
+    end)
+end
+ main
 
