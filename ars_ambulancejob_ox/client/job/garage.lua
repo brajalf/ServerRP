@@ -3,6 +3,7 @@ local CreateVehicle            = CreateVehicle
 local SetModelAsNoLongerNeeded = SetModelAsNoLongerNeeded
 local NetworkFadeInEntity      = NetworkFadeInEntity
 local TaskEnterVehicle         = TaskEnterVehicle
+local GetVehicleNumberPlateText = GetVehicleNumberPlateText
 local GetPedInVehicleSeat      = GetPedInVehicleSeat
 local IsControlJustReleased    = IsControlJustReleased
 local TaskLeaveVehicle         = TaskLeaveVehicle
@@ -42,6 +43,10 @@ local function openCarList(garage)
                     lib.setVehicleProperties(vehicle, v.modifications)
 
                     TaskEnterVehicle(playerPed, vehicle, -1, -1, 1.0, 1, 0)
+                    local plate = GetVehicleNumberPlateText(vehicle)
+                    TriggerEvent('vehiclekeys:client:SetOwner', plate)
+                    TriggerEvent('qb-vehiclekeys:client:GiveKeys', plate)
+                    TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
                 end
             })
         end
