@@ -1,35 +1,88 @@
 QBCore = exports['qb-core']:GetCoreObject()
 local function started(r) return GetResourceState(r) == 'started' end
+local function anyStarted(rs)
+  for _, r in ipairs(rs or {}) do if started(r) then return true end end
+end
 
 local A = {}
 
 -- EMS
 A.revive = function()
-  if started('qb-ambulancejob') or started('hospital') then
-    TriggerEvent('hospital:client:Revive')
+  if anyStarted(Config.Integrations.HospitalResources) then
+    TriggerEvent(Config.Integrations.HospitalReviveEvent)
   else
     QBCore.Functions.Notify('Recurso de hospital/ambulancia no activo.', 'error')
   end
 end
 A.heal = function()
-  if started('qb-ambulancejob') then
-    TriggerEvent('hospital:client:TreatWounds')
+  if anyStarted(Config.Integrations.HospitalResources) then
+    TriggerEvent(Config.Integrations.HospitalHealEvent)
   else
     QBCore.Functions.Notify('Recurso de hospital no activo.', 'error')
   end
 end
 
 -- POLICÍA
-A.cuff      = function() TriggerServerEvent('police:server:CuffPlayer'); TriggerEvent('police:client:CuffPlayer') end
-A.escort    = function() TriggerServerEvent('police:server:EscortPlayer'); TriggerEvent('police:client:EscortPlayer') end
-A.putinveh  = function() TriggerEvent('police:client:PutPlayerInVehicle') end
-A.takeout   = function() TriggerEvent('police:client:SetPlayerOutVehicle') end
-A.bill      = function() TriggerEvent('qb-billing:client:CreateBill') end
+A.cuff = function()
+  if started('police') then
+    TriggerServerEvent('police:server:CuffPlayer')
+    TriggerEvent('police:client:CuffPlayer')
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
+end
+A.escort = function()
+  if started('police') then
+    TriggerServerEvent('police:server:EscortPlayer')
+    TriggerEvent('police:client:EscortPlayer')
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
+end
+A.putinveh = function()
+  if started('police') then
+    TriggerEvent('police:client:PutPlayerInVehicle')
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
+end
+A.takeout = function()
+  if started('police') then
+    TriggerEvent('police:client:SetPlayerOutVehicle')
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
+end
+A.bill = function()
+  if started('qb-billing') then
+    TriggerEvent('qb-billing:client:CreateBill')
+  else
+    QBCore.Functions.Notify('Recurso de facturación no activo.', 'error')
+  end
+end
 
 -- MECÁNICO
-A.repair    = function() TriggerEvent('qb-mechanicjob:client:RepairVehicle') end
-A.clean     = function() TriggerEvent('qb-mechanicjob:client:CleanVehicle') end
-A.impound   = function() TriggerEvent('police:client:ImpoundVehicle') end
+A.repair = function()
+  if started('qb-mechanicjob') then
+    TriggerEvent('qb-mechanicjob:client:RepairVehicle')
+  else
+    QBCore.Functions.Notify('Recurso de mecánico no activo.', 'error')
+  end
+end
+A.clean = function()
+  if started('qb-mechanicjob') then
+    TriggerEvent('qb-mechanicjob:client:CleanVehicle')
+  else
+    QBCore.Functions.Notify('Recurso de mecánico no activo.', 'error')
+  end
+end
+A.impound = function()
+  if started('police') then
+    TriggerEvent('police:client:ImpoundVehicle')
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
+end
 
 RegisterNetEvent('qb-jobcreator:client:doAction', function(action)
   local pd = QBCore.Functions.GetPlayerData() or {}
@@ -57,16 +110,28 @@ end
 
 RegisterNetEvent('qb-jobcreator:client:act:putinveh', function()
   local tgt = GetClosestPlayer(2.0); if not tgt then return end
-  TriggerServerEvent('police:server:PutPlayerInVehicle', tgt)
+  if started('police') then
+    TriggerServerEvent('police:server:PutPlayerInVehicle', tgt)
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
 end)
 
 RegisterNetEvent('qb-jobcreator:client:act:outveh', function()
   local tgt = GetClosestPlayer(2.0); if not tgt then return end
-  TriggerServerEvent('police:server:TakeOutPlayerFromVehicle', tgt)
+  if started('police') then
+    TriggerServerEvent('police:server:TakeOutPlayerFromVehicle', tgt)
+  else
+    QBCore.Functions.Notify('Recurso de policía no activo.', 'error')
+  end
 end)
 
 RegisterNetEvent('qb-jobcreator:client:act:bill', function()
   local tgt = GetClosestPlayer(2.0); if not tgt then return end
   -- Hook a tu sistema de facturas (ej. qb-banking / okokBilling)
-  TriggerEvent('qb-billing:client:OpenBillMenu', tgt)
+  if started('qb-billing') then
+    TriggerEvent('qb-billing:client:OpenBillMenu', tgt)
+  else
+    QBCore.Functions.Notify('Recurso de facturación no activo.', 'error')
+  end
 end)
