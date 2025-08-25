@@ -44,6 +44,12 @@ function DB.GetJobs()
   return exec('SELECT * FROM jobcreator_jobs') or {}
 end
 
+function DB.GetJob(name)
+  local r = exec('SELECT * FROM jobcreator_jobs WHERE name=?', { name })
+  if r and r[1] then return r[1] end
+  return nil
+end
+
 function DB.DeleteJob(name)
   exec('DELETE FROM jobcreator_jobs WHERE name=?', { name })
   exec('DELETE FROM jobcreator_zones WHERE job=?', { name })
@@ -51,11 +57,18 @@ function DB.DeleteJob(name)
 end
 
 function DB.SaveZone(zone)
-  exec([[INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)]],
+  return MySQL.insert.await([[INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)]],
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
 end
 
 function DB.GetZones() return exec('SELECT * FROM jobcreator_zones') or {} end
+
+function DB.GetZone(id)
+  local r = exec('SELECT * FROM jobcreator_zones WHERE id=?', { id })
+  if r and r[1] then return r[1] end
+  return nil
+end
+
 function DB.DeleteZone(id) exec('DELETE FROM jobcreator_zones WHERE id=?', { id }) end
 
 -- ====== Cuentas ======
