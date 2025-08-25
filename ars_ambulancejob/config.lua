@@ -118,15 +118,15 @@ Config.Hospitals = {
 					pos = vector3(-462.8, -1014.48, 23.72),
 				},
 				items = {
-					{ name = 'medicalbag',    price = 50 },
-					{ name = 'bandage',       price = 50 },
-					{ name = 'defibrillator', price = 50 },
-					{ name = 'tweezers',      price = 50 },
-					{ name = 'burncream',     price = 50 },
-					{ name = 'suturekit',     price = 50 },
-					{ name = 'icepack',       price = 50 },
-				}
-			},
+                                        { name = 'medicalbag',    price = 50, amount = 50 },
+                                        { name = 'bandage',       price = 50, amount = 50 },
+                                        { name = 'defibrillator', price = 50, amount = 50 },
+                                        { name = 'tweezers',      price = 50, amount = 50 },
+                                        { name = 'burncream',     price = 50, amount = 50 },
+                                        { name = 'suturekit',     price = 50, amount = 50 },
+                                        { name = 'icepack',       price = 50, amount = 50 },
+                                }
+                        },
 			["ems_shop_2"] = {
 				job = false,
 				label = "Pharmacy",
@@ -140,11 +140,11 @@ Config.Hospitals = {
 					color = 2,
 					pos = vector3(-447.13, -1033.49, 23.8),
 				},
-				items = {
-					{ name = 'bandage', price = 50 },
-				}
-			},
-		},
+                                items = {
+                                        { name = 'bandage', price = 50, amount = 50 },
+                                }
+                        },
+                },
 		garage = {
 			['ems_garage_1'] = {
 				pedPos = vector4(-407.12, -939.91, 24.0, 269.11),
