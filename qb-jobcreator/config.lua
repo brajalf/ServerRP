@@ -22,7 +22,17 @@ Config.Integrations = Config.Integrations or {
   UseQbManagement = false,   -- fondos de sociedad; si no, fallback propio en DB
   UseQbInventory  = true,
   UseBossMenu     = true,
+  -- Eventos de hospital. Ajusta los nombres según el script que uses
+  -- qb-ambulancejob (por defecto):
+  --   Revivir -> 'hospital:client:Revive'
+  --   Curar   -> 'hospital:client:TreatWounds'
+  -- esx_ambulancejob:
+  --   Revivir -> 'esx_ambulancejob:revive'
+  --   Curar   -> 'esx_ambulancejob:treat'
   HospitalReviveEvent = 'hospital:client:Revive',
+  HospitalHealEvent   = 'hospital:client:TreatWounds',
+  -- Recursos a verificar antes de disparar los eventos
+  HospitalResources   = { 'qb-ambulancejob', 'hospital' },
 }
 
 -- ===== Multi‑trabajo =====
