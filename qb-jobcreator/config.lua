@@ -29,10 +29,10 @@ Config.Integrations = Config.Integrations or {
   -- esx_ambulancejob:
   --   Revivir -> 'esx_ambulancejob:revive'
   --   Curar   -> 'esx_ambulancejob:treat'
-  HospitalReviveEvent = 'hospital:client:Revive',
-  HospitalHealEvent   = 'hospital:client:TreatWounds',
+  HospitalReviveEvent = 'ars_ambulancejob:healPlayer',
+  HospitalHealEvent   = 'ars_ambulancejob:healPlayer',
   -- Recursos a verificar antes de disparar los eventos
-  HospitalResources   = { 'qb-ambulancejob', 'hospital' },
+  HospitalResources   = { 'ars_ambulancejob' },
 }
 
 -- ===== Multi‑trabajo =====

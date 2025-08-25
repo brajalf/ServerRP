@@ -1,22 +1,19 @@
 QBCore = exports['qb-core']:GetCoreObject()
 local function started(r) return GetResourceState(r) == 'started' end
-local function anyStarted(rs)
-  for _, r in ipairs(rs or {}) do if started(r) then return true end end
-end
 
 local A = {}
 
 -- EMS
 A.revive = function()
-  if anyStarted(Config.Integrations.HospitalResources) then
-    TriggerEvent(Config.Integrations.HospitalReviveEvent)
+  if started('ars_ambulancejob') then
+    TriggerServerEvent(Config.Integrations.HospitalReviveEvent, { revive = true })
   else
     QBCore.Functions.Notify('Recurso de hospital/ambulancia no activo.', 'error')
   end
 end
 A.heal = function()
-  if anyStarted(Config.Integrations.HospitalResources) then
-    TriggerEvent(Config.Integrations.HospitalHealEvent)
+  if started('ars_ambulancejob') then
+    TriggerServerEvent(Config.Integrations.HospitalHealEvent, { heal = true })
   else
     QBCore.Functions.Notify('Recurso de hospital no activo.', 'error')
   end
