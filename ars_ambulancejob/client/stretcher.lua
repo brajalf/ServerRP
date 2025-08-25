@@ -29,11 +29,11 @@ local usingStretcher = false
 local currentStretcher = nil
 local patientOnStretcher = nil
 
-local function isEmsVehicle(vehicle)
+local function isAmbulanceVehicle(vehicle)
     local vehicleModel = GetEntityModel(vehicle)
     local vehicleClass = GetVehicleClass(vehicle)
 
-    for index, model in pairs(Config.EmsVehicles) do
+    for index, model in pairs(Config.AmbulanceVehicles) do
         if joaat(model) == vehicleModel or GetVehicleClassFromName(model) == vehicleClass then return true end
     end
 
@@ -161,7 +161,7 @@ local function vehicleInteractions()
             label = locale('take_stretcher'),
             groups = Config.EmsJobs,
             cn = function(entity, distance, coords, name)
-                return isEmsVehicle(entity) and not usingStretcher
+                return isAmbulanceVehicle(entity) and not usingStretcher
             end,
             fn = function(data)
                 local vehicle = type(data) == "number" and data or data.entity
@@ -179,7 +179,7 @@ local function vehicleInteractions()
             label = locale('put_stretcher'),
             groups = Config.EmsJobs,
             cn = function(entity, distance, coords, name)
-                return isEmsVehicle(entity) and usingStretcher and not patientOnStretcher
+                return isAmbulanceVehicle(entity) and usingStretcher and not patientOnStretcher
             end,
             fn = function(data)
                 local vehicle = type(data) == "number" and data or data.entity
@@ -196,7 +196,7 @@ local function vehicleInteractions()
             label = locale('put_patient_in_vehicle'),
             groups = Config.EmsJobs,
             cn = function(entity, distance, coords, name)
-                return isEmsVehicle(entity) and usingStretcher and patientOnStretcher
+                return isAmbulanceVehicle(entity) and usingStretcher and patientOnStretcher
             end,
             fn = function(data)
                 local dataToSend = {}
@@ -214,7 +214,7 @@ local function vehicleInteractions()
             label = locale('take_patient_from_vehicle'),
             groups = Config.EmsJobs,
             cn = function(entity, distance, coords, name)
-                return isEmsVehicle(entity) and Entity(entity).state?.patient
+                return isAmbulanceVehicle(entity) and Entity(entity).state?.patient
             end,
             fn = function(data)
                 local dataToSend = {}

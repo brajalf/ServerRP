@@ -5,7 +5,7 @@ Config                         = {}
 Config.Debug                   = false
 
 Config.ClothingScript          = 'illenium-appearance' -- 'illenium-appearance', 'fivem-appearance' ,'core' or false -- to disable
-Config.EmsJobs                 = { "ambulance", "ems" }
+Config.EmsJobs                 = { "ambulance" }
 Config.RespawnTime             = 0                     -- in minutes
 Config.UseInterDistressSystem  = true
 Config.WaitTimeForNewCall      = 5                     -- minutes
@@ -39,7 +39,7 @@ Config.NpcReviveCommand        = "ambulance" -- this will work only when there a
 Config.UsePedToDepositVehicle  = false       -- if false the vehicle will instantly despawns
 Config.ExtraEffects            = true        -- false >> disables the screen shake and the black and white screen
 
-Config.EmsVehicles             = {           -- vehicles that have access to the props (cones and ecc..)
+Config.AmbulanceVehicles       = {           -- vehicles that have access to the props (cones and ecc..)
 	'ambulance',
 	'ambulance2',
 }
@@ -94,17 +94,17 @@ Config.Hospitals = {
 
 		},
 		stash = {
-			['ems_stash_1'] = {
+                    ['ambulance_stash_1'] = {
 				slots = 50,
 				weight = 100, -- kg
 				min_grade = 0,
-				label = 'Ems stash',
+                                label = 'Ambulance stash',
 				shared = true, -- false if you want to make everyone has a personal stash
 				pos = vector3(-459.97, -994.69, 23.74)
 			}
 		},
 		pharmacy = {
-			["ems_shop_1"] = {
+                    ["ambulance_shop_1"] = {
 				job = true,
 				label = "Pharmacy",
 				grade = 0, -- works only if job true
@@ -127,7 +127,7 @@ Config.Hospitals = {
                                         { name = 'icepack',       price = 50, amount = 50 },
                                 }
                         },
-			["ems_shop_2"] = {
+                    ["ambulance_shop_2"] = {
 				job = false,
 				label = "Pharmacy",
 				grade = 0, -- works only if job true
@@ -146,7 +146,7 @@ Config.Hospitals = {
                         },
                 },
 		garage = {
-			['ems_garage_1'] = {
+                    ['ambulance_garage_1'] = {
                                 pedPos = vector4(-407.12, -939.91, 23.0, 269.11),
 				model = 'mp_m_weapexp_01',
 				spawn = vector4(-401.78, -937.12, 23.84, 179.89),

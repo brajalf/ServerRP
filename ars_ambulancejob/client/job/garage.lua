@@ -79,10 +79,10 @@ local function depositVehicle(data)
                 lib.hideTextUI()
 
                 if Config.UsePedToDepositVehicle then
-                    local emsDriver = utils.createPed(data.model, data.driverSpawnCoords)
-                    FreezeEntityPosition(emsDriver, false)
+                    local ambulanceDriver = utils.createPed(data.model, data.driverSpawnCoords)
+                    FreezeEntityPosition(ambulanceDriver, false)
 
-                    TaskEnterVehicle(emsDriver, vehicleToDelete, -1, -1, 1.0, 1, 0)
+                    TaskEnterVehicle(ambulanceDriver, vehicleToDelete, -1, -1, 1.0, 1, 0)
 
                     Wait(1000)
 
@@ -90,17 +90,17 @@ local function depositVehicle(data)
                     while GetPedInVehicleSeat(vehicleToDelete, 1) ~= 0 do Wait(1) end
                     while GetPedInVehicleSeat(vehicleToDelete, 2) ~= 0 do Wait(1) end
 
-                    TaskVehicleDriveWander(emsDriver, vehicleToDelete, 60.0, 8)
+                    TaskVehicleDriveWander(ambulanceDriver, vehicleToDelete, 60.0, 8)
 
                     Wait(20 * 1000) -- 20 seconds
 
                     NetworkFadeOutEntity(vehicleToDelete, false, true)
-                    NetworkFadeOutEntity(emsDriver, false, true)
+                    NetworkFadeOutEntity(ambulanceDriver, false, true)
 
                     Wait(1 * 1000)
 
-                    DeletePed(emsDriver)
-                    emsDriver = nil
+                    DeletePed(ambulanceDriver)
+                    ambulanceDriver = nil
                 end
 
                 DeleteVehicle(vehicleToDelete)
