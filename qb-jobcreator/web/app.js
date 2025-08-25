@@ -8,6 +8,7 @@ const App = (() => {
     chart: null,
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
+    recipes: {},
   };
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -102,6 +103,8 @@ const App = (() => {
       applyBranding(pay.branding);
       applyScope();
 
+      postJ('getRecipes').then((r) => { state.recipes = r || {}; });
+
       // si viene como boss, entrar directo al panel del trabajo
       if (pay.scope && pay.scope.mode === 'boss' && pay.scope.job) {
         state.jd = { job: pay.scope.job, tab: 'employees' };
@@ -121,6 +124,7 @@ const App = (() => {
       if (payload.scope) state.scope = payload.scope;
       applyBranding(payload.branding);
       applyScope();
+      postJ('getRecipes').then((r) => { state.recipes = r || {}; });
       renderAll();
       return;
     }
@@ -586,7 +590,15 @@ const App = (() => {
         box.innerHTML = inp('zveh','Vehículos (rango=modelo, separados por coma)','0=police,2=police2,4=ambulance') +
                         row(inp('zvehdef','Modelo por defecto','police'));
       } else if (t === 'crafting') {
-        box.innerHTML = inp('zrecipe','Receta / clave','bandage');
+        const opts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
+        box.innerHTML = row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
+        document.getElementById('editRecipes').onclick = () => {
+          const cur = JSON.stringify(state.recipes || {}, null, 2);
+          modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {
+            try { state.recipes = JSON.parse(document.getElementById('recJSON').value) || {}; post('saveRecipes', { recipes: state.recipes }); renderExtra(); closeModal(); toast('Recetas guardadas', 'success'); }
+            catch { toast('JSON inválido', 'error'); }
+          });
+        };
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {

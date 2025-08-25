@@ -173,6 +173,35 @@ local function GetClosestPlayerToMe(radius)
   return nil
 end
 
+local function openCraftMenu(z)
+  local menu = {}
+  for name, recipe in pairs(Config.CraftingRecipes or {}) do
+    menu[#menu+1] = {
+      header = recipe.label or name,
+      params = { event = 'qb-jobcreator:client:craftSelect', args = { zone = z.id, recipe = name } }
+    }
+  end
+  if #menu == 0 then
+    QBCore.Functions.Notify('Sin recetas configuradas', 'error')
+    return
+  end
+  exports['qb-menu']:openMenu(menu)
+end
+
+RegisterNetEvent('qb-jobcreator:client:craftSelect', function(data)
+  if not data or not data.zone or not data.recipe then return end
+  TriggerServerEvent('qb-jobcreator:server:craft', data.zone, data.recipe)
+end)
+
+RegisterNetEvent('qb-jobcreator:client:craftProgress', function(time)
+  QBCore.Functions.Progressbar('jc_craft', 'Crafteando...', time or 3000, false, true, {
+    disableMovement = true,
+    disableCarMovement = true,
+    disableMouse = false,
+    disableCombat = true,
+  }, {}, {}, {}, function() end, function() end)
+end)
+
 -- =====================================
 -- Targets por zona
 -- =====================================
@@ -359,7 +388,7 @@ local function addTargetForZone(z)
     table.insert(opts, {
       label = 'Craftear', icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
-      action = function() QBCore.Functions.Notify('Abrir crafteo (placeholder). Integra tu UI preferida.', 'primary') end
+      action = function() openCraftMenu(z) end
     })
   end
 

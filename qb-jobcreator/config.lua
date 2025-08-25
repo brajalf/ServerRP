@@ -99,7 +99,11 @@ Config.ZoneTypes = Config.ZoneTypes or {
 }
 
 Config.CraftingRecipes = Config.CraftingRecipes or {
-  bandage = { needs = { {item='cloth', qty=2} }, time = 3000 },
+  bandage = {
+    inputs = { { item = 'cloth', amount = 2 } },
+    time   = 3000,
+    output = { item = 'bandage', amount = 1 }
+  },
 }
 
 -- Integración de garajes
