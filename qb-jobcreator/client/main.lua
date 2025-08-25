@@ -37,8 +37,27 @@ end)
 
 RegisterNetEvent('qb-jobcreator:client:openBossUI', function(job)
   if uiOpen then ForceClose() end
-  SetNuiFocus(true, true); SetNuiFocusKeepInput(false); uiOpen = true
-  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, branding = Config and Config.Branding or nil, scope = { mode = 'boss', job = job } } })
+  SetNuiFocus(true, true)
+  SetNuiFocusKeepInput(false)
+  uiOpen = true
+  SendNUIMessage({
+    action = 'open',
+    payload = {
+      ok = true,
+      jobs = Jobs or {},
+      zones = Zones or {},
+      totals = { jobs = 0, employees = 0, money = 0 },
+      popular = {},
+      branding = Config and Config.Branding or nil,
+      scope = { mode = 'boss', job = job }
+    }
+  })
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
+    if type(data) == 'table' and data.ok then
+      data.scope = { mode = 'boss', job = job }
+      SendNUIMessage({ action = 'update', payload = data })
+    end
+  end)
 end)
 
 RegisterNUICallback('close', function(_, cb) ForceClose(); cb(true) end)
@@ -113,26 +132,11 @@ RegisterNUICallback('updateZone', function(data, cb)
   cb({ ok = true })
 end)
 
--- Apertura directa del panel del BOSS (desde zona 'boss')
-RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
-  SetNuiFocus(true, true)
-  SetNuiFocusKeepInput(false)
-  uiOpen = true
-  SendNUIMessage({
-    action = 'open',
-    payload = {
-      ok = true,
-      jobs = Jobs or {},
-      zones = Zones or {},
-      totals = { jobs = 0, employees = 0, money = 0 },
-      popular = {},
-      branding = Config and Config.Branding or nil,
-      scope = { type = 'boss', job = jobName }
-    }
-  })
-  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
-    if type(data) == 'table' and data.ok then
-      SendNUIMessage({ action = 'update', payload = data })
-    end
-  end)
+-- ===== Recetas =====
+RegisterNUICallback('getRecipes', function(_, cb)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getRecipes', function(list) cb(list or {}) end)
+end)
+RegisterNUICallback('saveRecipes', function(data, cb)
+  TriggerServerEvent('qb-jobcreator:server:saveRecipes', data.recipes or {})
+  cb({ ok = true })
 end)
