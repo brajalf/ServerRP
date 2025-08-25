@@ -35,12 +35,6 @@ RegisterNetEvent('qb-jobcreator:client:openUI', function()
   end)
 end)
 
-RegisterNetEvent('qb-jobcreator:client:openBossUI', function(job)
-  if uiOpen then ForceClose() end
-  SetNuiFocus(true, true); SetNuiFocusKeepInput(false); uiOpen = true
-  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, branding = Config and Config.Branding or nil, scope = { mode = 'boss', job = job } } })
-end)
-
 RegisterNUICallback('close', function(_, cb) ForceClose(); cb(true) end)
 
 -- ===== CRUD Trabajos =====
@@ -81,8 +75,10 @@ end)
 RegisterNUICallback('recruit', function(data, cb)
   local jobName = data and data.job
   local grade = tonumber(data and data.grade) or 0
-  local targetId = tonumber(data and data.target) or -1
-  if jobName and targetId ~= -1 then TriggerServerEvent('qb-jobcreator:server:recruit', jobName, grade, targetId) end
+  local targetId = tonumber(data and (data.target or data.targetId or data.sid)) or -1
+  if jobName and targetId ~= -1 then
+    TriggerServerEvent('qb-jobcreator:server:recruit', jobName, grade, targetId)
+  end
   cb({ ok = true })
 end)
 
@@ -94,21 +90,26 @@ RegisterNUICallback('wash', function(data, cb) TriggerServerEvent('qb-jobcreator
 
 -- ===== Zonas =====
 RegisterNUICallback('getZones', function(data, cb) QBCore.Functions.TriggerCallback('qb-jobcreator:server:getZones', function(list) cb(list or {}) end, data.job) end)
-RegisterNUICallback('createZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:createZone', data); cb({ ok = true }) end)
+local busyCreate = false
+RegisterNUICallback('createZone', function(data, cb)
+  if busyCreate then cb({ ok = false, message = 'busy' }); return end
+  busyCreate = true
+  TriggerServerEvent('qb-jobcreator:server:createZone', data)
+  SetTimeout(800, function() busyCreate = false end)
+  cb({ ok = true })
+end)
 RegisterNUICallback('deleteZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:deleteZone', data.id); cb({ ok = true }) end)
-RegisterNUICallback('getCoords', function(_, cb) local p = GetEntityCoords(PlayerPedId()); cb({ x = p.x, y = p.y, z = p.z }) end)
+RegisterNUICallback('getCoords', function(_, cb)
+  local ped = PlayerPedId()
+  local p = GetEntityCoords(ped)
+  cb({ x = p.x, y = p.y, z = p.z, w = GetEntityHeading(ped) })
+end)
 
 -- Lista de cercanos (por si la UI lo usa)
 RegisterNUICallback('nearbyPlayers', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getNearbyPlayers', function(list)
     cb(list or {})
   end, data.job, data.radius or 3.5)
-end)
-
--- Reclutar a un ID concreto (por si la UI lo usa)
-RegisterNUICallback('recruit', function(data, cb)
-  TriggerServerEvent('qb-jobcreator:server:recruit', data.job, tonumber(data.grade) or 0, tonumber(data.targetId) or -1)
-  cb({ ok = true })
 end)
 
 -- Guardar data de una zona (para “vehículos por rango”)
@@ -119,6 +120,7 @@ end)
 
 -- Apertura directa del panel del BOSS (desde zona 'boss')
 RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
+  if uiOpen then ForceClose() end
   SetNuiFocus(true, true)
   SetNuiFocusKeepInput(false)
   uiOpen = true
@@ -131,11 +133,12 @@ RegisterNetEvent('qb-jobcreator:client:openBossUI', function(jobName)
       totals = { jobs = 0, employees = 0, money = 0 },
       popular = {},
       branding = Config and Config.Branding or nil,
-      scope = { type = 'boss', job = jobName }
+      scope = { mode = 'boss', job = jobName }
     }
   })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
     if type(data) == 'table' and data.ok then
+      data.scope = { mode = 'boss', job = jobName }
       SendNUIMessage({ action = 'update', payload = data })
     end
   end)
