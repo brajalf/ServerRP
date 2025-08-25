@@ -218,3 +218,23 @@ RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price
 
     TriggerClientEvent('QBCore:Notify', src, ('Compraste %s x%s'):format(itemName, count), 'success')
 end)
+-- Comando simple: /qbgiveitem [id] [item] [count]
+QBCore.Commands.Add('qbgiveitem', 'Dar ítem (wrapper ox)', {
+    {name='id', help='Player ID'},
+    {name='item', help='Item name'},
+    {name='count', help='Cantidad'}
+}, false, function(source, args)
+    local target = tonumber(args[1] or '')
+    local item   = args[2]
+    local count  = tonumber(args[3] or '1')
+    if not target or not item then
+        if source then
+            TriggerClientEvent('QBCore:Notify', source, 'Uso: /qbgiveitem [id] [item] [count]', 'error')
+        end
+        return
+    end
+    exports.ox_inventory:AddItem(target, string.lower(item), count or 1)
+    if source then
+        TriggerClientEvent('QBCore:Notify', source, ('Dado %s x%s a %s'):format(item, count or 1, target), 'success')
+    end
+end, 'admin')
