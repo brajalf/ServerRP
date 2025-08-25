@@ -113,7 +113,7 @@ RegisterNetEvent("ars_ambulancejob:useItem", function(data)
     local quality = item.info and item.info.quality or 100
     local newQuality = quality - data.value
 
-    exports['qb-inventory']:SetItemQuality(source, slot, newQuality)
+    exports.ox_inventory:SetDurability(source, slot, newQuality)
 end)
 
 RegisterNetEvent("ars_ambulancejob:removeInventory", function()
