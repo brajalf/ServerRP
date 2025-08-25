@@ -6,26 +6,38 @@ local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:
 local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
 
 local function registerPharmacies()
+    local useOx = GetResourceState('ox_inventory') == 'started'
+    local useQb = GetResourceState('qb-inventory') == 'started'
 
-
-    if GetResourceState('ox_inventory') ~= 'started' then return end
+    if not useOx and not useQb then return end
 
     for _, hospital in pairs(Config.Hospitals) do
         if hospital.pharmacy then
             for name, pharmacy in pairs(hospital.pharmacy) do
-                local groups
-                if pharmacy.job then
-                    groups = {}
-                    for _, job in pairs(Config.EmsJobs) do
-                        groups[job] = pharmacy.grade or 0
+                if useOx then
+                    local groups
+                    if pharmacy.job then
+                        groups = {}
+                        for _, job in pairs(Config.EmsJobs) do
+                            groups[job] = pharmacy.grade or 0
+                        end
                     end
+
+                    exports.ox_inventory:RegisterShop(name, {
+                        name = pharmacy.label,
+                        groups = groups,
+                        inventory = pharmacy.items,
+                    })
                 end
 
-                exports.ox_inventory:RegisterShop(name, {
-                    name = pharmacy.label,
-                    groups = groups,
-                    inventory = pharmacy.items,
-                })
+                if useQb then
+                    exports['qb-inventory']:CreateShop({
+                        name = name,
+                        label = pharmacy.label,
+                        coords = pharmacy.pos,
+                        items = pharmacy.items,
+                    })
+                end
             end
         end
     end
@@ -82,14 +94,13 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     end
 
     if GetResourceState('ox_inventory') == 'started' then
-        TriggerClientEvent('qb-inventory:client:OpenShop', src, name)
+        TriggerClientEvent('qb-inventory:client:OpenShop', src, name) -- puente de ox_inventory
     else
-        TriggerClientEvent('inventory:client:SetCurrentStash', src, name)
-        TriggerEvent('inventory:server:OpenInventory', 'shop', name, pharmacy.items)
+        exports['qb-inventory']:OpenShop(src, name)
     end
 end)
 
-if GetResourceState('ox_inventory') == 'started' then
+if GetResourceState('ox_inventory') == 'started' or GetResourceState('qb-inventory') == 'started' then
     registerPharmacies()
 end
 
@@ -99,7 +110,7 @@ end
 
 
 AddEventHandler('onResourceStart', function(resource)
-    if resource == 'ox_inventory' then
+    if resource == 'ox_inventory' or resource == 'qb-inventory' then
         registerPharmacies()
     end
 end)
