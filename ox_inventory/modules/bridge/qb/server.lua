@@ -336,8 +336,7 @@ export('qb-inventory.OpenInventoryById', function(playerId, targetId)
     server.forceOpenInventory(playerId, 'player', targetId)
 end)
 
-export('qb-inventory.CreateShop')
-export('qb-inventory.OpenShop')
+-- compatibility shop exports implemented below
 
 export('qb-inventory.AddItem', function(invId, itemName, amount, slot, metadata)
     return Inventory.AddItem(invId, itemName, amount, metadata, slot) and true
@@ -394,4 +393,193 @@ export('qb-inventory.ClearStash', function(identifier)
     inv.items = {}
     inv.weight = 0
     Inventory.Save(inv)
+end)
+
+-- qb-inventory additional compatibility for stashes, shops and metadata
+
+-- helper to open inventories for various types
+local function openInvServer(src, invType, identifier)
+    if invType == 'stash' then
+        return exports.ox_inventory:forceOpenInventory(src, 'stash', identifier)
+    elseif invType == 'trunk' then
+        return exports.ox_inventory:forceOpenInventory(src, 'trunk', identifier)
+    elseif invType == 'glovebox' then
+        return exports.ox_inventory:forceOpenInventory(src, 'glovebox', identifier)
+    elseif invType == 'shop' then
+        TriggerClientEvent('qb-inventory:client:OpenShop', src, identifier)
+        return true
+    else
+        print(('[qb-inv compat] invType no manejado: %s'):format(tostring(invType)))
+        return false
+    end
+end
+
+local RegisteredStashes = {}
+
+export('qb-inventory.CreateStash', function(id, label, slots, weight, owner, groups)
+    if not id then return false end
+    if RegisteredStashes[id] then return true end
+    RegisteredStashes[id] = true
+    return exports.ox_inventory:RegisterStash(id, label or id, slots or 50, weight or 400000, owner, groups)
+end)
+
+export('qb-inventory.OpenStash', function(source, id, slots, weight, owner, groups)
+    if not id then return false end
+    if not RegisteredStashes[id] then
+        slots = slots or 50
+        weight = weight or 400000
+        exports.ox_inventory:RegisterStash(id, id, slots, weight, owner or true, groups)
+        RegisteredStashes[id] = true
+    end
+    return openInvServer(source, 'stash', id)
+end)
+
+-- shops
+local Shops = {}
+
+local function qbProductsToOx(products)
+    local inv = {}
+    for _, p in pairs(products or {}) do
+        if p.name then
+            inv[#inv+1] = {
+                name     = string.lower(p.name),
+                price    = tonumber(p.price) or 0,
+                metadata = p.info,
+                count    = p.amount
+            }
+        end
+    end
+    return inv
+end
+
+export('qb-inventory.RegisterShop', function(id, label, account, products, locations, groups)
+    local inventory = qbProductsToOx(products)
+    Shops[id] = {
+        account   = account or 'cash',
+        inventory = inventory
+    }
+
+    exports.ox_inventory:RegisterShop(id, {
+        name      = label or id,
+        inventory = inventory,
+        locations = locations,
+        groups    = groups
+    })
+
+    return true
+end)
+
+export('qb-inventory.OpenShop', function(source, id)
+    if not Shops[id] then return false end
+    TriggerClientEvent('qb-inventory:client:OpenShop', source, id)
+    return true
+end)
+
+RegisterNetEvent('qb-inventory:server:OpenShop', function(id)
+    local src = source
+    if not Shops[id] then return end
+    TriggerClientEvent('qb-inventory:client:OpenShop', src, id)
+end)
+
+-- classic inventory open handler
+RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, identifier, extraData)
+    local src = source
+    if inventoryType == 'shop' then
+        local items = qbProductsToOx(extraData)
+        exports.ox_inventory:forceOpenInventory(src, 'shop', { id = identifier, items = items })
+    elseif inventoryType == 'stash' then
+        local stashId = identifier or ('stash_' .. src)
+        if not RegisteredStashes[stashId] then
+            exports.ox_inventory:RegisterStash(
+                stashId, stashId,
+                (extraData and extraData.slots) or 50,
+                (extraData and (extraData.weight or extraData.maxweight)) or 400000,
+                extraData and extraData.owner,
+                extraData and extraData.groups
+            )
+            RegisteredStashes[stashId] = true
+        end
+        openInvServer(src, 'stash', stashId)
+    elseif inventoryType == 'trunk' then
+        openInvServer(src, 'trunk', identifier)
+    elseif inventoryType == 'glovebox' then
+        openInvServer(src, 'glovebox', identifier)
+    else
+        print(('[qb-inv compat] OpenInventory tipo no manejado: %s'):format(tostring(inventoryType)))
+    end
+end)
+
+-- qb-inventory shop purchase handler
+RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price, count, metadata)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local shop = Shops[shopId]
+    if not Player or not shop then return end
+
+    itemName = string.lower(itemName)
+    price    = tonumber(price) or 0
+    count    = tonumber(count) or 1
+    if price <= 0 or count <= 0 then return end
+
+    local product
+    for _, it in pairs(shop.inventory or {}) do
+        if it.name == itemName then
+            product = it
+            break
+        end
+    end
+    if not product then
+        TriggerClientEvent('QBCore:Notify', src, 'Artículo no disponible', 'error')
+        return
+    end
+    if price ~= product.price then
+        TriggerClientEvent('QBCore:Notify', src, 'Precio inválido', 'error')
+        return
+    end
+    if product.count and product.count < count then
+        TriggerClientEvent('QBCore:Notify', src, 'No hay suficiente stock', 'error')
+        return
+    end
+
+    local acc = shop.account == 'bank' and 'bank' or 'cash'
+    local bal = Player.PlayerData.money[acc] or 0
+    local total = product.price * count
+    if bal < total then
+        TriggerClientEvent('QBCore:Notify', src, 'No tienes suficiente dinero', 'error')
+        return
+    end
+
+    Player.Functions.RemoveMoney(acc, total, ('Shop purchase %s x%s'):format(itemName, count))
+
+    local ok = exports.ox_inventory:AddItem(src, itemName, count, metadata or product.metadata)
+    if not ok then
+        Player.Functions.AddMoney(acc, total, ('Refund %s x%s'):format(itemName, count))
+        TriggerClientEvent('QBCore:Notify', src, 'No tienes espacio en el inventario', 'error')
+        return
+    end
+
+    if product.count then
+        product.count = product.count - count
+    end
+
+    TriggerClientEvent('QBCore:Notify', src, ('Compraste %s x%s'):format(itemName, count), 'success')
+end)
+
+-- update item metadata
+export('qb-inventory.SetMetadata', function(source, name, metadata, amount, slot)
+    if not name then return false end
+    name = string.lower(name)
+
+    if slot then
+        Inventory.SetMetadata(source, slot, metadata)
+        return true
+    end
+
+    local slots = Inventory.Search(source, 'slots', name, metadata)
+    if slots and slots[1] then
+        Inventory.SetMetadata(source, slots[1].slot, metadata)
+        return true
+    end
+
+    return false
 end)
