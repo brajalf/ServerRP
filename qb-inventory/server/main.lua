@@ -72,16 +72,31 @@ end
 local RegisteredStashes = {}
 
 exports('CreateStash', function(id, label, slots, weight, owner, groups)
+    if not id then
+        print('[qb-inventory compat] CreateStash sin id')
+        return false
+    end
     if RegisteredStashes[id] then return true end
     RegisteredStashes[id] = true
+    print(('[qb-inventory compat] RegisterStash %s label=%s slots=%s weight=%s owner=%s groups=%s')
+        :format(id, label or id, slots or 50, weight or 400000, tostring(owner), tostring(groups)))
     return exports.ox_inventory:RegisterStash(id, label or id, slots or 50, weight or 400000, owner, groups)
 end)
 
-exports('OpenStash', function(source, id)
+exports('OpenStash', function(source, id, slots, weight, owner, groups)
+    if not id then
+        print('[qb-inventory compat] OpenStash sin id')
+        return false
+    end
     if not RegisteredStashes[id] then
-        exports.ox_inventory:RegisterStash(id, id, 50, 400000, true)
+        slots = slots or 50
+        weight = weight or 400000
+        print(('[qb-inventory compat] RegisterStash %s slots=%s weight=%s owner=%s groups=%s')
+            :format(id, slots, weight, tostring(owner), tostring(groups)))
+        exports.ox_inventory:RegisterStash(id, id, slots, weight, owner or true, groups)
         RegisteredStashes[id] = true
     end
+    print(('[qb-inventory compat] OpenStash %s'):format(id))
     return openInvServer(source, 'stash', id)
 end)
 
