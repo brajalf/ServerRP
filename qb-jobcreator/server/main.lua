@@ -288,23 +288,38 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
   if not r then return end
-  Runtime.Zones[#Runtime.Zones+1] = {
+  local nz = {
     id = r.id, job = r.job, ztype = r.ztype, label = r.label,
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
+  Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
+  if nz.ztype == 'music' then
+    local name = (nz.data and (nz.data.name or nz.data.djName)) or ('jc_ms_'..nz.job..'_'..nz.id)
+    local range = tonumber(nz.data and (nz.data.range or nz.data.distance)) or 20.0
+    TriggerEvent('myDj:addZone', {
+      name = name,
+      pos = vector3(nz.coords.x or 0.0, nz.coords.y or 0.0, nz.coords.z or 0.0),
+      range = range,
+      requiredJob = nz.job
+    })
+  end
 end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
-  local src = source; local job
-  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
+  local src = source; local job; local dz
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job dz = z break end end
   if not allowAdminOrBoss(src, job or '') then return end
   DB.DeleteZone(id)
   for i = #Runtime.Zones, 1, -1 do
     if Runtime.Zones[i].id == id then table.remove(Runtime.Zones, i) break end
   end
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
+  if dz and dz.ztype == 'music' then
+    local name = (dz.data and (dz.data.name or dz.data.djName)) or ('jc_ms_'..dz.job..'_'..dz.id)
+    TriggerEvent('myDj:removeZone', name)
+  end
 end)
 
 -- ===== Empleados =====

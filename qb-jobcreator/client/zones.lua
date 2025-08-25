@@ -328,17 +328,15 @@ local function addTargetForZone(z)
   elseif z.ztype == 'music' then
     table.insert(opts, {
       label = 'Reproducir música', icon = 'fa-solid fa-music',
-      canInteract = function() return canUseZone(z, false) and GetResourceState('xsound')=='started' end,
+      canInteract = function() return canUseZone(z, false) and GetResourceState('myDj')=='started' end,
       action = function()
         local d = z.data or {}
-        local id  = ('jc_ms_%s_%s'):format(z.job, z.id)
         local url = d.url or ''
-        local vol = tonumber(d.volume) or 0.5
-        local dist= tonumber(d.distance) or 20.0
-        local pos = vector3(z.coords.x, z.coords.y, z.coords.z)
+        local name = d.name or ('jc_ms_%s_%s'):format(z.job, z.id)
+        local dist = tonumber(d.range or d.distance) or 20.0
+        local pos  = vector3(z.coords.x, z.coords.y, z.coords.z)
         if url == '' then QBCore.Functions.Notify('URL no configurada.', 'error'); return end
-        TriggerServerEvent('xsound:stateSound', id, 'position', { x = pos.x, y = pos.y, z = pos.z })
-        TriggerServerEvent('xsound:playx', id, url, vol, dist)
+        TriggerServerEvent('myDj:syncPlaySong', name, pos, dist, url)
       end
     })
 
