@@ -1,10 +1,10 @@
-codex/replace-openinventory-with-custom-event
+-- codex/replace-openinventory-with-custom-event
 local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:GetCoreObject() or nil
 local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
 
-if GetResourceState('ox_inventory') == 'started' then
+-- if GetResourceState('ox_inventory') == 'started' then
 local function registerPharmacies()
- main
+-- main
     for _, hospital in pairs(Config.Hospitals) do
         if hospital.pharmacy then
             for name, pharmacy in pairs(hospital.pharmacy) do
@@ -25,7 +25,7 @@ local function registerPharmacies()
         end
     end
 end
- codex/replace-openinventory-with-custom-event
+-- codex/replace-openinventory-with-custom-event
 RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     local src = source
     local pharmacy
@@ -39,7 +39,15 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     if not pharmacy then return end
 
     if pharmacy.job then
-        if not hasJob(src, Config.EmsJobs) then return end
+        if not hasJob(src, Config.EmsJobs) then
+            if QBCore then
+                TriggerClientEvent('QBCore:Notify', src, 'No tienes el trabajo requerido', 'error')
+            elseif ESX then
+                TriggerClientEvent('esx:showNotification', src, 'No tienes el trabajo requerido')
+            end
+            print(('[ars_ambulancejob] %s tried to open pharmacy "%s" without required job'):format(GetPlayerName(src) or src, name))
+            return
+        end
 
         local grade = 0
         if QBCore then
@@ -49,7 +57,17 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
             local xPlayer = ESX.GetPlayerFromId(src)
             grade = xPlayer and xPlayer.job.grade or 0
         end
-        if grade < (pharmacy.grade or 0) then return end
+
+        local minGrade = pharmacy.grade or 0
+        if grade < minGrade then
+            if QBCore then
+                TriggerClientEvent('QBCore:Notify', src, 'Tu grado es insuficiente', 'error')
+            elseif ESX then
+                TriggerClientEvent('esx:showNotification', src, 'Tu grado es insuficiente')
+            end
+            print(('[ars_ambulancejob] %s tried to open pharmacy "%s" with grade %s (required %s)'):format(GetPlayerName(src) or src, name, grade, minGrade))
+            return
+        end
     end
 
     if GetResourceState('ox_inventory') == 'started' then
@@ -68,5 +86,5 @@ else
         end
     end)
 end
- main
+-- main
 
