@@ -98,7 +98,7 @@ RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, ident
             exports.ox_inventory:RegisterStash(
                 stashId, stashId,
                 (extraData and extraData.slots) or 50,
-                (extraData and extraData.weight) or 400000,
+                (extraData and (extraData.weight or extraData.maxweight)) or 400000,
                 extraData and extraData.owner,
                 extraData and extraData.groups
             )
