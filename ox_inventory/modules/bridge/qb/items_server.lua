@@ -12,12 +12,16 @@ AddEventHandler('ox_inventory:itemList', function(ItemList)
                 label       = v.label or lower,
                 weight      = tonumber(v.weight) or 0,
                 stack       = (v.unique == nil) and true or (not v.unique),
-                close       = true,
+                close       = v.shouldClose ~= false,
                 description = v.description,
                 image       = v.image,
                 client      = v.client,
                 server      = v.server,
-                consume     = v.consume
+                consume     = v.consume,
+                unique      = v.unique,
+                useable     = v.useable,
+                combinable  = v.combinable,
+                type        = v.type
             }
         end
     end
