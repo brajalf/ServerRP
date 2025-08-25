@@ -6,6 +6,9 @@ local QBCore = exports['qb-core']:GetCoreObject()
 -- =============== Utils ===============
 local normalize = require 'qb-inventory.shared.normalize'
 
+-- Forward declarations
+local qbProductsToOx
+
 -- =============== Exports qb → ox ===============
 exports('AddItem', function(source, name, amount, metadata, slot)
     return exports.ox_inventory:AddItem(source, string.lower(name), amount or 1, metadata, slot)
@@ -86,7 +89,8 @@ end)
 RegisterNetEvent('inventory:server:OpenInventory', function(inventoryType, identifier, extraData)
     local src = source
     if inventoryType == 'shop' then
-        TriggerClientEvent('qb-inventory:client:OpenShop', src, identifier)
+        local items = qbProductsToOx(extraData)
+        exports.ox_inventory:forceOpenInventory(src, 'shop', { id = identifier, items = items })
         return
     elseif inventoryType == 'stash' then
         local stashId = identifier or ('stash_' .. src)
@@ -115,7 +119,7 @@ end)
 -- =========================
 local Shops = {}
 
-local function qbProductsToOx(products)
+qbProductsToOx = function(products)
     local inv = {}
     for _, p in pairs(products or {}) do
         if p.name then
