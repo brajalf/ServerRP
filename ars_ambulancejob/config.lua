@@ -117,14 +117,14 @@ Config.Hospitals = {
 					color = 2,
 					pos = vector3(-462.8, -1014.48, 23.72),
 				},
-				items = {
-                                        { name = 'medicalbag',    price = 50, amount = 50 },
-                                        { name = 'bandage',       price = 50, amount = 50 },
-                                        { name = 'defibrillator', price = 50, amount = 50 },
-                                        { name = 'tweezers',      price = 50, amount = 50 },
-                                        { name = 'burncream',     price = 50, amount = 50 },
-                                        { name = 'suturekit',     price = 50, amount = 50 },
-                                        { name = 'icepack',       price = 50, amount = 50 },
+                                items = {
+                                        { name = 'medicalbag',    price = 50, count = 50 },
+                                        { name = 'bandage',       price = 50, count = 50 },
+                                        { name = 'defibrillator', price = 50, count = 50 },
+                                        { name = 'tweezers',      price = 50, count = 50 },
+                                        { name = 'burncream',     price = 50, count = 50 },
+                                        { name = 'suturekit',     price = 50, count = 50 },
+                                        { name = 'icepack',       price = 50, count = 50 },
                                 }
                         },
 			["ems_shop_2"] = {
@@ -141,7 +141,7 @@ Config.Hospitals = {
 					pos = vector3(-447.13, -1033.49, 23.8),
 				},
                                 items = {
-                                        { name = 'bandage', price = 50, amount = 50 },
+                                        { name = 'bandage', price = 50, count = 50 },
                                 }
                         },
                 },

@@ -453,7 +453,7 @@ local function qbProductsToOx(products)
                 name     = string.lower(p.name),
                 price    = tonumber(p.price) or 0,
                 metadata = p.info,
-                count    = p.amount
+                count    = p.count or p.amount
             }
         end
     end
