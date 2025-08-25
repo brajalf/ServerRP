@@ -1,4 +1,5 @@
 local CreatePed = CreatePed
+local PlaceObjectOnGroundProperly = PlaceObjectOnGroundProperly
 local SetEntityInvincible = SetEntityInvincible
 local SetModelAsNoLongerNeeded = SetModelAsNoLongerNeeded
 local CreateVehicle = CreateVehicle
@@ -48,6 +49,7 @@ function utils.createPed(name, ...)
     if not model then return end
 
     local ped = CreatePed(0, model, ...)
+    PlaceObjectOnGroundProperly(ped)
 
     SetEntityInvincible(ped, true)
     SetModelAsNoLongerNeeded(model)

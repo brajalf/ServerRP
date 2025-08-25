@@ -64,7 +64,7 @@ Config.Hospitals = {
 	["phillbox"] = {
 		paramedic = {
 			model = "s_m_m_scientist_01",
-			pos = vector4(-468.89, -990.85, 23.69, 97.23),
+                        pos = vector4(-468.89, -990.85, 22.69, 97.23),
 		},
 		bossmenu = {
 			pos = vector3(-488.79, -980.41, 34.3),
@@ -147,7 +147,7 @@ Config.Hospitals = {
 		},
 		garage = {
 			['ems_garage_1'] = {
-				pedPos = vector4(-407.12, -939.91, 24.0, 269.11),
+                                pedPos = vector4(-407.12, -939.91, 23.0, 269.11),
 				model = 'mp_m_weapexp_01',
 				spawn = vector4(-401.78, -937.12, 23.84, 179.89),
 				deposit = vector3(-401.78, -937.12, 23.84),
@@ -165,7 +165,7 @@ Config.Hospitals = {
 		},
 		clothes = {
 			enable = true,
-			pos = vector4(-458.2, -1002.17, 23.75, 90.22),
+                        pos = vector4(-458.2, -1002.17, 22.75, 90.22),
 			model = 'a_f_m_bevhills_01',
 			male = {
 				[1] = {
