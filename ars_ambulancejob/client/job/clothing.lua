@@ -4,57 +4,19 @@ local FreezeEntityPosition            = FreezeEntityPosition
 local SetEntityInvincible             = SetEntityInvincible
 local SetBlockingOfNonTemporaryEvents = SetBlockingOfNonTemporaryEvents
 
-local function openClothingMenu(clothes)
+local function openClothingMenu()
     lib.registerContext({
         id = 'ambulance_clothing_menu',
-        title = 'Clothing Menu',
+        title = 'Clothing Store',
         options = {
             {
-                title = '🧥 Civil Clothes',
-                description = 'Example button description',
+                title = '🧥 Civil/Work Clothes',
+                description = 'Open the wardrobe to change your look',
                 onSelect = function()
-                    if lib.progressBar({
-                            duration = 3000,
-                            label = 'Putting on civil clothes',
-                            useWhileDead = false,
-                            allowCuffed = false,
-                            canCancel = false,
-                            disable = {
-                                car = true,
-                                move = true,
-                                combat = true,
-                            },
-                            anim = {
-                                dict = 'clothingshirt',
-                                clip = 'try_shirt_positive_d'
-                            },
-                        }) then
-                        toggleClothes(false, clothes)
-                    end
-                end,
-            },
-            {
-                title = '👮 Work Clothes',
-                description = 'Example button description',
-                onSelect = function()
-                    if lib.progressBar({
-                            duration = 3000,
-                            label = 'Putting on works clothes',
-                            useWhileDead = false,
-                            allowCuffed = false,
-                            canCancel = false,
-                            disable = {
-                                car = true,
-                                move = true,
-                                combat = true,
-                            },
-                            anim = {
-                                dict = 'clothingshirt',
-                                clip = 'try_shirt_positive_d'
-                            },
-                        }) then
-                        toggleClothes(true, clothes)
-                    end
+                    exports['illenium-appearance']:startPlayerCustomization(function(app)
+                        -- guardar/usar la apariencia si se desea
+                    end, { components = true, props = true, headBlend = false, faceFeatures = false,
+                           headOverlays = false, hair = false, tattoos = false })
                 end,
             },
         }
@@ -76,7 +38,7 @@ function initClothes(data, jobs)
             icon = 'fa-solid fa-road',
             groups = jobs,
             fn = function()
-                openClothingMenu(data)
+                openClothingMenu()
             end
         }
     })
