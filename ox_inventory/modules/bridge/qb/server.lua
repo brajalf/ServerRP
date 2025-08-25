@@ -26,7 +26,7 @@ AddEventHandler('QBCore:Server:OnGangUpdate', function(source, gang)
 end)
 
 AddEventHandler('onResourceStart', function(resource)
-    if resource ~= 'qb-weapons' or resource ~= 'qb-shops' then return end
+    if resource ~= 'qb-weapons' and resource ~= 'qb-shops' then return end
     StopResource(resource)
 end)
 
