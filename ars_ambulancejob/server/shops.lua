@@ -1,13 +1,6 @@
 
 
 -- codex/replace-openinventory-with-custom-event
-local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:GetCoreObject() or nil
-local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
-
--- if GetResourceState('ox_inventory') == 'started' then
-local function registerPharmacies()
--- main
-
 
 local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:GetCoreObject() or nil
 local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
