@@ -1,6 +1,8 @@
 player = {}
 distressCalls = {}
 
+local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
+
 RegisterNetEvent("ars_ambulancejob:updateDeathStatus", function(death)
     local data = {}
     data.target = source
@@ -82,6 +84,26 @@ RegisterNetEvent("ars_ambulancejob:removAddItem", function(data)
         exports.ox_inventory:RemoveItem(source, data.item, data.quantity)
     else
         exports.ox_inventory:AddItem(source, data.item, data.quantity)
+    end
+end)
+
+RegisterNetEvent('ars_ambulancejob:addRemoveMoney', function(add, amount)
+    if QBCore then
+        local Player = QBCore.Functions.GetPlayer(source)
+        if not Player then return end
+
+        if add then
+            Player.Functions.AddMoney('cash', amount)
+        else
+            Player.Functions.RemoveMoney('cash', amount)
+        end
+    elseif ESX then
+        local xPlayer = ESX.GetPlayerFromId(source)
+        if add then
+            xPlayer.addMoney(amount)
+        else
+            xPlayer.removeMoney(amount)
+        end
     end
 end)
 
