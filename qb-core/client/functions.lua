@@ -45,7 +45,21 @@ function QBCore.Functions.GetCoords(entity)
 end
 
 function QBCore.Functions.HasItem(items, amount)
-    return exports['qb-inventory']:HasItem(items, amount)
+    amount = amount or 1
+
+    if type(items) == 'table' then
+        for _, v in pairs(items) do
+            local name = v.name or v
+            local meta = v.metadata
+            if exports.ox_inventory:GetItemCount(name, meta) < amount then
+                return false
+            end
+        end
+
+        return true
+    else
+        return exports.ox_inventory:GetItemCount(items) >= amount
+    end
 end
 
 ---Returns the full character name

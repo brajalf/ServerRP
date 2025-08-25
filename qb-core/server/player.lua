@@ -146,8 +146,8 @@ function QBCore.Player.CheckPlayerData(source, PlayerData)
 
     applyDefaults(PlayerData, QBCore.Config.Player.PlayerDefaults)
 
-    if GetResourceState('qb-inventory') ~= 'missing' then
-        PlayerData.items = exports['qb-inventory']:LoadInventory(PlayerData.source, PlayerData.citizenid)
+    if GetResourceState('ox_inventory') ~= 'missing' then
+        PlayerData.items = exports.ox_inventory:GetInventoryItems(PlayerData.source)
     end
 
     return QBCore.Player.CreatePlayer(PlayerData, Offline)
@@ -499,7 +499,9 @@ function QBCore.Player.Save(source)
             position = json.encode(pcoords),
             metadata = json.encode(PlayerData.metadata)
         })
-        if GetResourceState('qb-inventory') ~= 'missing' then exports['qb-inventory']:SaveInventory(source) end
+        if GetResourceState('ox_inventory') ~= 'missing' and exports.ox_inventory and exports.ox_inventory.SaveInventory then
+            exports.ox_inventory:SaveInventory(source)
+        end
         QBCore.ShowSuccess(resourceName, PlayerData.name .. ' PLAYER SAVED!')
     else
         QBCore.ShowError(resourceName, 'ERROR QBCORE.PLAYER.SAVE - PLAYERDATA IS EMPTY!')
@@ -520,7 +522,9 @@ function QBCore.Player.SaveOffline(PlayerData)
             position = json.encode(PlayerData.position),
             metadata = json.encode(PlayerData.metadata)
         })
-        if GetResourceState('qb-inventory') ~= 'missing' then exports['qb-inventory']:SaveInventory(PlayerData, true) end
+        if GetResourceState('ox_inventory') ~= 'missing' and exports.ox_inventory and exports.ox_inventory.SaveInventory then
+            exports.ox_inventory:SaveInventory(PlayerData, true)
+        end
         QBCore.ShowSuccess(resourceName, PlayerData.name .. ' OFFLINE PLAYER SAVED!')
     else
         QBCore.ShowError(resourceName, 'ERROR QBCORE.PLAYER.SAVEOFFLINE - PLAYERDATA IS EMPTY!')
@@ -595,28 +599,38 @@ end
 -- Inventory Backwards Compatibility
 
 function QBCore.Player.SaveInventory(source)
-    if GetResourceState('qb-inventory') == 'missing' then return end
-    exports['qb-inventory']:SaveInventory(source, false)
+    if GetResourceState('ox_inventory') == 'missing' then return end
+    if exports.ox_inventory and exports.ox_inventory.SaveInventory then
+        exports.ox_inventory:SaveInventory(source, false)
+    end
 end
 
 function QBCore.Player.SaveOfflineInventory(PlayerData)
-    if GetResourceState('qb-inventory') == 'missing' then return end
-    exports['qb-inventory']:SaveInventory(PlayerData, true)
+    if GetResourceState('ox_inventory') == 'missing' then return end
+    if exports.ox_inventory and exports.ox_inventory.SaveInventory then
+        exports.ox_inventory:SaveInventory(PlayerData, true)
+    end
 end
 
-function QBCore.Player.GetTotalWeight(items)
-    if GetResourceState('qb-inventory') == 'missing' then return end
-    return exports['qb-inventory']:GetTotalWeight(items)
+function QBCore.Player.GetTotalWeight(playerId)
+    if GetResourceState('ox_inventory') == 'missing' then return end
+    local inv = exports.ox_inventory:GetInventory(playerId)
+    return inv and inv.weight or 0
 end
 
-function QBCore.Player.GetSlotsByItem(items, itemName)
-    if GetResourceState('qb-inventory') == 'missing' then return end
-    return exports['qb-inventory']:GetSlotsByItem(items, itemName)
+function QBCore.Player.GetSlotsByItem(playerId, itemName)
+    if GetResourceState('ox_inventory') == 'missing' then return end
+    return exports.ox_inventory:GetItemSlots(playerId, itemName)
 end
 
-function QBCore.Player.GetFirstSlotByItem(items, itemName)
-    if GetResourceState('qb-inventory') == 'missing' then return end
-    return exports['qb-inventory']:GetFirstSlotByItem(items, itemName)
+function QBCore.Player.GetFirstSlotByItem(playerId, itemName)
+    if GetResourceState('ox_inventory') == 'missing' then return end
+    local slots = exports.ox_inventory:GetItemSlots(playerId, itemName)
+    if slots then
+        for slot in pairs(slots) do
+            return slot
+        end
+    end
 end
 
 -- Util Functions
