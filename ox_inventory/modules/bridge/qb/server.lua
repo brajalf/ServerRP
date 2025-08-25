@@ -269,6 +269,14 @@ export('qb-inventory.SaveInventory', function(playerId)
     Inventory.Save(playerId)
 end)
 
+export('ox_inventory.SaveInventory', function(playerId)
+    if type(playerId) ~= 'number' then
+        TypeError('playerId', 'number', type(playerId))
+    end
+
+    Inventory.Save(playerId)
+end)
+
 export('qb-inventory.SetInventory')
 export('qb-inventory.SetItemData')
 export('qb-inventory.UseItem')
