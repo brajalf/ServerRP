@@ -32,6 +32,15 @@ RegisterNUICallback('getZones', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getZones', function(list) cb(list or {}) end, data.job)
 end)
 
+RegisterNUICallback('getRecipes', function(_, cb)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getRecipes', function(list) cb(list or {}) end)
+end)
+
+RegisterNUICallback('saveRecipes', function(data, cb)
+  TriggerServerEvent('qb-jobcreator:server:saveRecipes', data.recipes or {})
+  cb('ok')
+end)
+
 local busyCreate = false
 RegisterNUICallback('createZone', function(data, cb)
   if busyCreate then cb('busy'); return end
