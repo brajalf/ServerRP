@@ -64,7 +64,7 @@ Config.DefaultGrades = Config.DefaultGrades or {
 }
 
 -- Acciones habilitables
-Config.PlayerActions = Config.PlayerActions or {
+Config.PlayerActionsDefaults = Config.PlayerActionsDefaults or {
   search   = true,
   handcuff = true,
   drag     = true,
@@ -100,7 +100,7 @@ Config.Garages = {
   SpawnEvent    = nil,         -- si tu fork expone un evento de spawn (server)
 }
 
-Config.PlayerActions = Config.PlayerActions or {
+Config.PlayerActionsByJob = Config.PlayerActionsByJob or {
   police    = { 'cuff', 'escort', 'putinveh', 'takeout', 'bill' },
   ambulance = { 'revive', 'heal' },
   mechanic  = { 'repair', 'clean', 'impound' },
