@@ -104,6 +104,11 @@ function utils.getClosestHospital()
 end
 
 function utils.addRemoveItem(type, item, quantity)
+    if item == 'money' then
+        TriggerServerEvent('ars_ambulancejob:addRemoveMoney', type ~= 'remove', quantity)
+        return
+    end
+
     local data = {}
     data.toggle = type == "remove"
     data.item = item
