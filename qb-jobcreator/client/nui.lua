@@ -52,11 +52,6 @@ RegisterNUICallback('getCoords', function(_, cb)
   cb({ x = c.x + 0.0, y = c.y + 0.0, z = c.z + 0.0, w = GetEntityHeading(ped) + 0.0 })
 end)
 
-RegisterNUICallback('recruit', function(data, cb)
-  TriggerServerEvent('qb-jobcreator:server:recruit', data.job, data.grade, data.sid)
-  cb('ok')
-end)
-
 RegisterNUICallback('fire', function(data, cb)
   TriggerServerEvent('qb-jobcreator:server:fire', data.job, data.citizenid); cb('ok')
 end)
