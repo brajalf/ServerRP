@@ -208,13 +208,18 @@ end)
 -- ===== CRUD de trabajos =====
 RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
   local src = source; if not ensurePerm(src) then return end
+  local name = string.lower((data.name or ''):gsub('%s+',''))
   local job = {
-    name = string.lower((data.name or ''):gsub('%s+','')),
+    name = name,
     label = data.label or 'Trabajo',
     type = data.type or 'generic',
     whitelisted = data.whitelisted or false,
     grades = next(data.grades or {}) and data.grades or Config.DefaultGrades,
-    actions = { player = Config.PlayerActions, vehicle = Config.VehicleActions }
+    actions = {
+      defaults = Config.PlayerActionsDefaults,
+      player   = Config.PlayerActionsByJob[name] or {},
+      vehicle  = Config.VehicleActions
+    }
   }
   if job.name == '' then return end
   Runtime.Jobs[job.name] = job

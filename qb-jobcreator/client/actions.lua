@@ -32,8 +32,21 @@ A.clean     = function() TriggerEvent('qb-mechanicjob:client:CleanVehicle') end
 A.impound   = function() TriggerEvent('police:client:ImpoundVehicle') end
 
 RegisterNetEvent('qb-jobcreator:client:doAction', function(action)
-  local fn = A[action]
-  if fn then fn() else QBCore.Functions.Notify('Acción no disponible: '..tostring(action), 'error') end
+  local pd = QBCore.Functions.GetPlayerData() or {}
+  local jobName = (pd.job and pd.job.name) or ''
+  local byJob = (Config.PlayerActionsByJob or {})[jobName] or {}
+  local allowed = false
+  for _, v in ipairs(byJob) do if v == action then allowed = true break end end
+  if allowed and ((Config.PlayerActionsDefaults or {})[action] ~= false) then
+    local fn = A[action]
+    if fn then
+      fn()
+    else
+      QBCore.Functions.Notify('Acción no disponible: '..tostring(action), 'error')
+    end
+  else
+    QBCore.Functions.Notify('Acción no disponible: '..tostring(action), 'error')
+  end
 end)
 
 -- Helpers
