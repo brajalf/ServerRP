@@ -264,7 +264,7 @@ local function addTargetForZone(z)
           -- tienda de ropa / vestuario
           TriggerEvent('illenium-appearance:client:openClothingShop')
         elseif GetResourceState('qb-clothing')=='started' then
-          TriggerEvent('qb-clothing:client:openMenu')
+          TriggerEvent('qb-clothing:client:openMenu', true) -- true = shop mode
         else
           QBCore.Functions.Notify('No hay sistema de vestuario disponible.', 'error')
         end
