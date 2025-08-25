@@ -182,6 +182,14 @@ return {
     ['mg_ammo'] = { label = "MG ammo", weight = 1000, stack = true, close = true, description = "Ammo for Machine Guns", image = 'mg_ammo.png'},
     ['milkshake-chocolate'] = { label = "Chocolate Oreo Milkshake", weight = 1000, stack = true, close = true, description = "", image = 'komi_oreo.png'},
     ['milkshake-morango'] = { label = "Strawberry Milkshake", weight = 1000, stack = true, close = true, description = "", image = 'komi_fresacrema.png'},
+    ['money'] = {
+        label = 'Money',
+        weight = 0,
+        stack = true,
+        close = false,
+        description = 'Cash used as currency',
+        image = 'money.png'
+    },
     ['moneybag'] = { label = "Money Bag", weight = 0, stack = false, close = true, description = "A bag with cash", image = 'moneybag.png'},
     ['morphine15'] = { label = "Morphine 15MG", weight = 2, stack = true, close = true, description = "A controlled substance to control pain", image = 'morphine15.png'},
     ['morphine30'] = { label = "Morphine 30MG", weight = 2, stack = true, close = true, description = "A controlled substance to control pain", image = 'morphine30.png'},
