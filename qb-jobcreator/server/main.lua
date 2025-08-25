@@ -230,8 +230,16 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteJob', function(name)
   local src = source; if not ensurePerm(src) then return end
-  Runtime.Jobs[name] = nil; QBCore.Shared.Jobs[name] = nil; DB.DeleteJob(name)
-  LoadAll()
+  Runtime.Jobs[name] = nil
+  QBCore.Shared.Jobs[name] = nil
+  DB.DeleteJob(name)
+  local zones = {}
+  for _, z in ipairs(Runtime.Zones) do
+    if z.job ~= name then zones[#zones+1] = z end
+  end
+  Runtime.Zones = zones
+  TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:duplicateJob', function(name, newName)
@@ -274,16 +282,29 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     return
   end
   _lastCreate[src] = { sig = sig, t = now }
-
-  DB.SaveZone(zone)
-  LoadAll()
+  local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
+    { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
+  if not id then return end
+  local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
+  local r = row and row[1]
+  if not r then return end
+  Runtime.Zones[#Runtime.Zones+1] = {
+    id = r.id, job = r.job, ztype = r.ztype, label = r.label,
+    coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
+    data = json.decode(r.data or '{}') or {}
+  }
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
   local src = source; local job
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
   if not allowAdminOrBoss(src, job or '') then return end
-  DB.DeleteZone(id); LoadAll()
+  DB.DeleteZone(id)
+  for i = #Runtime.Zones, 1, -1 do
+    if Runtime.Zones[i].id == id then table.remove(Runtime.Zones, i) break end
+  end
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end)
 
 -- ===== Empleados =====
@@ -465,6 +486,20 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job break end end
   if not allowAdminOrBoss(src, job or '') then return end
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
-  LoadAll()
+  local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
+  local r = row and row[1]
+  if r then
+    for idx, z in ipairs(Runtime.Zones) do
+      if z.id == id then
+        Runtime.Zones[idx] = {
+          id = r.id, job = r.job, ztype = r.ztype, label = r.label,
+          coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
+          data = json.decode(r.data or '{}') or {}
+        }
+        break
+      end
+    end
+    TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
+  end
 end)
 
