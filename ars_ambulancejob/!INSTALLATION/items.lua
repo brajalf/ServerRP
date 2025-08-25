@@ -54,8 +54,8 @@
     description = "An ice pack used to reduce swelling and provide relief from pain and inflammation.",
 },
 
-['emstablet'] = {
-    label = 'Ems tablet',
+['ambulancetablet'] = {
+    label = 'Ambulance tablet',
     weight = 200,
     stack = true,
     client = {
