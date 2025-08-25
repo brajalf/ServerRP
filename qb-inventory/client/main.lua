@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
 -- qb-inventory (compat for ox) - CLIENT
 ----------------------------------------------------------------
-local normalize = require 'qb-inventory.shared.normalize'
+local normalize = require 'shared.normalize'
 
 local currentStash
 

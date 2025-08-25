@@ -4,7 +4,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 -- =============== Utils ===============
-local normalize = require 'qb-inventory.shared.normalize'
+local normalize = require 'shared.normalize'
 
 -- Forward declarations
 local qbProductsToOx

@@ -7,7 +7,8 @@ description 'Compatibility layer: exposes qb-inventory API using ox_inventory ba
 version '1.0.0'
 
 shared_scripts {
-    '@qb-core/shared.lua'
+    '@qb-core/shared.lua',
+    'shared/normalize.lua'
 }
 
 client_scripts {
