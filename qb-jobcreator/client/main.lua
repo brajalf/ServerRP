@@ -81,8 +81,10 @@ end)
 RegisterNUICallback('recruit', function(data, cb)
   local jobName = data and data.job
   local grade = tonumber(data and data.grade) or 0
-  local targetId = tonumber(data and data.target) or -1
-  if jobName and targetId ~= -1 then TriggerServerEvent('qb-jobcreator:server:recruit', jobName, grade, targetId) end
+  local targetId = tonumber(data and (data.target or data.sid or data.targetId)) or -1
+  if jobName and targetId ~= -1 then
+    TriggerServerEvent('qb-jobcreator:server:recruit', jobName, grade, targetId)
+  end
   cb({ ok = true })
 end)
 
@@ -103,12 +105,6 @@ RegisterNUICallback('nearbyPlayers', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getNearbyPlayers', function(list)
     cb(list or {})
   end, data.job, data.radius or 3.5)
-end)
-
--- Reclutar a un ID concreto (por si la UI lo usa)
-RegisterNUICallback('recruit', function(data, cb)
-  TriggerServerEvent('qb-jobcreator:server:recruit', data.job, tonumber(data.grade) or 0, tonumber(data.targetId) or -1)
-  cb({ ok = true })
 end)
 
 -- Guardar data de una zona (para “vehículos por rango”)
