@@ -577,8 +577,12 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
   local slots = tonumber(zone.data and zone.data.slots) or 50
   local weight = tonumber(zone.data and zone.data.weight) or 400000
-  TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
-  pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, weight, true) end)
+  if Config.Integrations.UseQbInventory then
+    TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
+    pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, weight, true) end)
+  else
+    pcall(function() exports.ox_inventory:openInventory('stash', { id = stashId, slots = slots, weight = weight }) end)
+  end
 end)
 
 RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
@@ -587,10 +591,21 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
   if not ok then return end
   local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
   local items = SanitizeShopItems(zone.data and zone.data.items or {})
-  for _, it in ipairs(items) do
-    it.metadata = it.info; it.info = nil
+  if Config.Integrations.UseQbInventory then
+    local shopItems = {}
+    for _, it in ipairs(items) do
+      shopItems[#shopItems+1] = { name = it.name, price = it.price, amount = it.count, info = it.info }
+    end
+    pcall(function()
+      exports['qb-inventory']:CreateShop({ name = sid, label = zone.label or 'Shop', items = shopItems })
+      exports['qb-inventory']:OpenShop(src, sid)
+    end)
+  else
+    for _, it in ipairs(items) do
+      it.metadata = it.info; it.info = nil
+    end
+    pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
   end
-  pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
