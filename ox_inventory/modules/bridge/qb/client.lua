@@ -4,6 +4,29 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local Inventory = require 'modules.inventory.client'
 local Weapon = require 'modules.weapon.client'
 
+local function normalize(items)
+    if not items then return {} end
+    local out = {}
+    if type(items) == 'string' then
+        out[#out+1] = { name = items, amount = 1 }
+        return out
+    end
+    if items.name then
+        out[#out+1] = { name = items.name, amount = items.amount or 1, metadata = items.info or items.metadata }
+        return out
+    end
+    for _, it in pairs(items) do
+        if type(it) == 'string' then
+            out[#out+1] = { name = it, amount = 1 }
+        elseif type(it) == 'table' then
+            out[#out+1] = { name = it.name or it[1], amount = it.amount or 1, metadata = it.info or it.metadata }
+        end
+    end
+    return out
+end
+
+local currentStash
+
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', client.onLogout)
 
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(data)
@@ -70,20 +93,41 @@ local function export(exportName, func)
     end)
 end
 
-export('qb-inventory.HasItem', function(items, amount)
-    amount = amount or 1
-
-    if type(items) == 'table' then
-        for _, v in pairs(items) do
-            local name = v.name or v
-            local meta = v.metadata
-            if Inventory.GetItemCount(name, meta) < amount then
-                return false
-            end
-        end
-
-        return true
-    else
-        return Inventory.GetItemCount(items) >= amount
+export('qb-inventory.HasItem', function(items, amount, metadata)
+    local list = normalize(items)
+    local needed = amount or 1
+    for _, it in ipairs(list) do
+        local cnt = exports.ox_inventory:Search('count', string.lower(it.name), metadata or it.metadata)
+        if cnt >= (it.amount or needed) then return true end
     end
+    return false
+end)
+
+local function ItemBox(items, type, amount)
+    for _, item in ipairs(normalize(items)) do
+        local info = exports.ox_inventory:Items(item.name)
+        TriggerEvent('ox_inventory:itemNotify', { info, type, amount or item.amount })
+    end
+end
+export('qb-inventory.ItemBox', ItemBox)
+
+export('qb-inventory.ShowHotbar', function()
+    SendNUIMessage({ action = 'toggleHotbar', state = true })
+end)
+
+export('qb-inventory.HideHotbar', function()
+    SendNUIMessage({ action = 'toggleHotbar', state = false })
+end)
+
+export('qb-inventory.CloseInventory', function()
+    TriggerEvent('ox_inventory:closeInventory')
+    currentStash = nil
+end)
+
+RegisterNetEvent('qb-inventory:client:OpenShop', function(id)
+    exports.ox_inventory:openInventory('shop', id)
+end)
+
+RegisterNetEvent('inventory:client:SetCurrentStash', function(name)
+    currentStash = name
 end)
