@@ -147,15 +147,18 @@ end
 
 -- Registra una tienda en OX pero guardamos el "account" para cobro
 exports('RegisterShop', function(id, label, account, products, locations, groups)
+    -- Convertimos los productos a formato de ox y los almacenamos para futuras validaciones
+    local inventory = qbProductsToOx(products)
     Shops[id] = {
-        account = account or 'cash' -- 'cash' o 'bank'
+        account   = account or 'cash', -- 'cash' o 'bank'
+        inventory = inventory
     }
 
     -- NOTA: ox_inventory usará su lógica, pero nos aseguramos de pasar inventario y props.
     -- El 'account' lo guardamos aparte y lo usamos al comprar (ver handler más abajo).
     exports.ox_inventory:RegisterShop(id, {
         name      = label or id,
-        inventory = qbProductsToOx(products),
+        inventory = inventory,
         locations = locations,
         groups    = groups
     })
@@ -195,10 +198,31 @@ RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price
     count    = tonumber(count) or 1
     if price <= 0 or count <= 0 then return end
 
+    -- Localizar producto dentro del shop y validar precio/stock
+    local product
+    for _, it in pairs(shop.inventory or {}) do
+        if it.name == itemName then
+            product = it
+            break
+        end
+    end
+    if not product then
+        TriggerClientEvent('QBCore:Notify', src, 'Artículo no disponible', 'error')
+        return
+    end
+    if price ~= product.price then
+        TriggerClientEvent('QBCore:Notify', src, 'Precio inválido', 'error')
+        return
+    end
+    if product.count and product.count < count then
+        TriggerClientEvent('QBCore:Notify', src, 'No hay suficiente stock', 'error')
+        return
+    end
+
     -- Verificar saldo
     local acc = shop.account == 'bank' and 'bank' or 'cash'
     local bal = Player.PlayerData.money[acc] or 0
-    local total = price * count
+    local total = product.price * count
     if bal < total then
         TriggerClientEvent('QBCore:Notify', src, 'No tienes suficiente dinero', 'error')
         return
@@ -208,12 +232,17 @@ RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price
     Player.Functions.RemoveMoney(acc, total, ('Shop purchase %s x%s'):format(itemName, count))
 
     -- Entregar
-    local ok = exports.ox_inventory:AddItem(src, itemName, count, metadata)
+    local ok = exports.ox_inventory:AddItem(src, itemName, count, metadata or product.metadata)
     if not ok then
         -- Reembolsar si no cabe
         Player.Functions.AddMoney(acc, total, ('Refund %s x%s'):format(itemName, count))
         TriggerClientEvent('QBCore:Notify', src, 'No tienes espacio en el inventario', 'error')
         return
+    end
+
+    -- Descontar stock si se está utilizando
+    if product.count then
+        product.count = product.count - count
     end
 
     TriggerClientEvent('QBCore:Notify', src, ('Compraste %s x%s'):format(itemName, count), 'success')
