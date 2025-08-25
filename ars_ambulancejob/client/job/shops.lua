@@ -34,7 +34,7 @@ local function createShops()
 
                         if self.currentDistance < 1 and IsControlJustReleased(0, 38) then
                             if GetResourceState('ox_inventory') == 'started' then
-                                exports.ox_inventory:openInventory('shop', { id = name, items = pharmacy.items })
+                                exports.ox_inventory:openInventory('shop', { type = name })
                             else
                                 TriggerServerEvent('inventory:server:OpenInventory', 'shop', name, pharmacy.items)
                                 TriggerEvent('inventory:client:SetCurrentStash', name)
