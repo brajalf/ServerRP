@@ -94,7 +94,7 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
     end
 
     if GetResourceState('ox_inventory') == 'started' then
-        TriggerClientEvent('qb-inventory:client:OpenShop', src, name) -- puente de ox_inventory
+        exports.ox_inventory:openInventory(src, 'shop', name)
     else
         exports['qb-inventory']:OpenShop(src, name)
     end
