@@ -20,7 +20,7 @@ Config.Integrations = Config.Integrations or {
   UseQbTarget     = true,
   UseOxTarget     = false,
   UseQbManagement = false,   -- fondos de sociedad; si no, fallback propio en DB
-  UseQbInventory  = true,
+  UseQbInventory  = false,
   UseBossMenu     = true,
   -- Eventos de hospital. Ajusta los nombres según el script que uses
   -- qb-ambulancejob (por defecto):
