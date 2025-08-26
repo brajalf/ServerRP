@@ -55,6 +55,8 @@ const App = (() => {
     ? GetParentResourceName()
     : (window.resourceName || 'qb-jobcreator');
 
+  window.resourceName = RESOURCE;
+
   function post(name, data = {}) {
     return fetch(`https://${RESOURCE}/${name}`, {
       method: 'POST',
