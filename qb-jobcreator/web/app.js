@@ -753,3 +753,59 @@ const App = (() => {
 
   return {};
 })();
+
+// ===== Panel de Crafteo =====
+const CraftUI = (() => {
+  let zoneId = null;
+  let visible = false;
+
+  function open(payload) {
+    zoneId = payload.zone;
+    const recipes = payload.recipes || {};
+    const wrap = document.getElementById('craft-list');
+    wrap.innerHTML = '';
+    Object.entries(recipes).forEach(([name, rec]) => {
+      const card = document.createElement('div');
+      card.className = 'craft-item';
+      const out = rec.output && rec.output.item || name;
+      const inputs = (rec.inputs || [])
+        .map(i => `<li>${i.amount || i.qty || 1}x ${i.item}</li>`)
+        .join('');
+      const imgSrc = `nui://qb-inventory/html/images/${out}.png`;
+      card.innerHTML = `
+        <img src="${imgSrc}" alt="${out}">
+        <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
+        <button class="btn craft-btn" data-recipe="${name}">Fabricar</button>`;
+      wrap.appendChild(card);
+    });
+    document.getElementById('craft').classList.remove('hidden');
+    visible = true;
+  }
+
+  function close() {
+    document.getElementById('craft').classList.add('hidden');
+    visible = false;
+  }
+
+  window.addEventListener('message', (e) => {
+    const data = e.data || {};
+    if (data.action === 'openCraft') open(data.payload || {});
+    if (data.action === 'hide') close();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('craft-btn')) {
+      const recipe = e.target.dataset.recipe;
+      post('craft', { zone: zoneId, recipe });
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && visible) {
+      post('close');
+      close();
+    }
+  });
+
+  return { open, close };
+})();

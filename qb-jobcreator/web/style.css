@@ -42,3 +42,13 @@ body{margin:0;background:transparent;color:var(--text);font:14px/1.4 Inter,syste
 .input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3146;background:#0f1422;color:#e5e7eb}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .actions-inline{display:flex;gap:6px}
+
+/* ===== Crafteo ===== */
+.craft.hidden{display:none!important}
+.craft{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
+.craft-panel{background:var(--card);padding:20px;border-radius:12px;max-height:80vh;overflow-y:auto;min-width:320px}
+.craft-item{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.craft-item img{width:64px;height:64px;object-fit:contain;border-radius:6px}
+.craft-item .materials{flex:1;font-size:14px}
+.craft-item .materials ul{margin:0;padding-left:16px}
+.craft-item button{padding:8px 12px}
