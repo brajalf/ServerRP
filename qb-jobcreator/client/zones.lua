@@ -173,24 +173,31 @@ local function GetClosestPlayerToMe(radius)
   return nil
 end
 
+local currentCraftZone
+
 local function openCraftMenu(z)
-  local menu = {}
-  for name, recipe in pairs(Config.CraftingRecipes or {}) do
-    menu[#menu+1] = {
-      header = recipe.label or name,
-      params = { event = 'qb-jobcreator:client:craftSelect', args = { zone = z.id, recipe = name } }
-    }
-  end
-  if #menu == 0 then
-    QBCore.Functions.Notify('Sin recetas configuradas', 'error')
-    return
-  end
-  exports['qb-menu']:openMenu(menu)
+  currentCraftZone = z.id
+  SetNuiFocus(true, true)
+  SendNUIMessage({
+    action = 'openCraft',
+    payload = { zone = z.id, recipes = Config.CraftingRecipes or {} }
+  })
 end
 
-RegisterNetEvent('qb-jobcreator:client:craftSelect', function(data)
-  if not data or not data.zone or not data.recipe then return end
-  TriggerServerEvent('qb-jobcreator:server:craft', data.zone, data.recipe)
+RegisterNUICallback('craftSelect', function(data, cb)
+  currentCraftZone = data and data.zone or currentCraftZone
+  cb({ ok = true })
+end)
+
+RegisterNUICallback('craft', function(data, cb)
+  local zone = data and data.zone or currentCraftZone
+  local recipe = data and data.recipe
+  SetNuiFocus(false, false)
+  SendNUIMessage({ action = 'hide' })
+  if zone and recipe then
+    TriggerServerEvent('qb-jobcreator:server:craft', zone, recipe)
+  end
+  cb({ ok = true })
 end)
 
 RegisterNetEvent('qb-jobcreator:client:craftProgress', function(time)
