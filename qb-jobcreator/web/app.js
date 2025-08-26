@@ -14,6 +14,7 @@ const App = (() => {
   const $$ = (sel) => document.querySelectorAll(sel);
 
   let collectShopItems = () => [];
+  let collectTeleports = () => [];
 
   function renderShopItemsSection(box, items = []) {
     box.innerHTML = `
@@ -45,6 +46,49 @@ const App = (() => {
         let info;
         if (infoTxt) { try { info = JSON.parse(infoTxt); } catch { info = infoTxt; } }
         list.push({ name, price, count, info });
+      });
+      return list;
+    };
+  }
+
+  function renderTeleportSection(box, items = []) {
+    box.innerHTML = `
+      <div id="tp-items"></div>
+      <div class="row"><button class="btn" id="addTP">+ Destino</button></div>`;
+    const wrap = box.querySelector('#tp-items');
+    function addRow(data = {}) {
+      const row = document.createElement('div');
+      row.className = 'row tp-item';
+      row.innerHTML = `
+        <div><input class="input tpx" placeholder="X" value="${data.x || ''}"/></div>
+        <div><input class="input tpy" placeholder="Y" value="${data.y || ''}"/></div>
+        <div><input class="input tpz" placeholder="Z" value="${data.z || ''}"/></div>
+        <div><input class="input tpw" placeholder="Heading" value="${data.w || ''}"/></div>
+        <div><button class="btn tpcoords">Usar mis coords</button></div>
+        <div><button class="btn danger del">X</button></div>`;
+      wrap.appendChild(row);
+      row.querySelector('.del').onclick = () => row.remove();
+      row.querySelector('.tpcoords').onclick = () => {
+        postJ('getCoords', {}).then((c) => {
+          if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
+          row.querySelector('.tpx').value = c.x || 0;
+          row.querySelector('.tpy').value = c.y || 0;
+          row.querySelector('.tpz').value = c.z || 0;
+          row.querySelector('.tpw').value = c.w || 0;
+        });
+      };
+    }
+    (items || []).forEach(addRow);
+    if (!items || items.length === 0) addRow();
+    box.querySelector('#addTP').onclick = () => addRow();
+    collectTeleports = () => {
+      const list = [];
+      wrap.querySelectorAll('.tp-item').forEach((r) => {
+        const x = Number(r.querySelector('.tpx').value) || 0;
+        const y = Number(r.querySelector('.tpy').value) || 0;
+        const z = Number(r.querySelector('.tpz').value) || 0;
+        const w = Number(r.querySelector('.tpw').value) || 0;
+        list.push({ x, y, z, w });
       });
       return list;
     };
@@ -614,7 +658,7 @@ const App = (() => {
                               data.anim = document.getElementById('zanm')?.value||'';
                               data.time = Number(document.getElementById('ztime')?.value||5000); }
           if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
-          if (t === 'teleport') { data.to = { x:Number(document.getElementById('tox')?.value||0), y:Number(document.getElementById('toy')?.value||0), z:Number(document.getElementById('toz')?.value||0), w:Number(document.getElementById('tow')?.value||0) }; }
+          if (t === 'teleport') { data.to = collectTeleports(); }
           const z = {
             job: state.jd.job,
             ztype: t,
@@ -638,6 +682,7 @@ const App = (() => {
       const ta  = (id, label, ph='') => `<div style="flex:1"><label>${label}</label><textarea id="${id}" class="input" style="height:120px" placeholder='${ph}'></textarea></div>`;
 
       collectShopItems = () => [];
+      collectTeleports = () => [];
       if (t === 'boss') {
         box.innerHTML = row(inp('zmin','Mín. rango','0'));
       } else if (t === 'stash') {
@@ -677,7 +722,7 @@ const App = (() => {
         box.innerHTML = row(inp('zname','Nombre DJ','') + inp('zrange','Radio','20')) +
                         row(inp('zurl','YouTube/URL','https://...') + inp('zvol','Volumen (0-1)','0.5'));
       } else if (t === 'teleport') {
-        box.innerHTML = row(inp('tox','To X','') + inp('toy','To Y','') + inp('toz','To Z','') + inp('tow','Heading',''));
+        renderTeleportSection(box, []);
       } else {
         box.innerHTML = '';
       }

@@ -687,6 +687,26 @@ RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
   end
 end)
 
+RegisterNetEvent('qb-jobcreator:server:teleport', function(zoneId, index)
+  local src = source
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'teleport')
+  if not ok then return end
+  local d = zone.data or {}
+  local to = d.to
+  local dest
+  if type(to) == 'table' then
+    if to[1] then
+      dest = to[tonumber(index) or 1]
+    elseif to.x then
+      dest = to
+    end
+  end
+  if not (dest and dest.x and dest.y and dest.z) then return end
+  local ped = GetPlayerPed(src)
+  SetEntityCoords(ped, dest.x+0.0, dest.y+0.0, dest.z+0.0, false, false, false, true)
+  if dest.w then SetEntityHeading(ped, dest.w+0.0) end
+end)
+
 RegisterNetEvent('qb-jobcreator:server:charge', function(zoneId, targetId)
   local src = source
   local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'register')
