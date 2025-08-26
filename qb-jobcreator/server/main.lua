@@ -3,6 +3,7 @@ QBCore = exports['qb-core']:GetCoreObject()
 
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
+local CreatedShops = {}
 
 local function SanitizeShopItems(items)
   local list = {}
@@ -597,7 +598,10 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
       shopItems[#shopItems+1] = { name = it.name, price = it.price, amount = it.count, info = it.info }
     end
     pcall(function()
-      exports['qb-inventory']:CreateShop({ name = sid, label = zone.label or 'Shop', items = shopItems })
+      if not CreatedShops[sid] then
+        exports['qb-inventory']:CreateShop({ name = sid, label = zone.label or 'Shop', items = shopItems })
+        CreatedShops[sid] = true
+      end
       exports['qb-inventory']:OpenShop(src, sid)
     end)
   else
