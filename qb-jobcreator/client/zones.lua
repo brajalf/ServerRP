@@ -262,7 +262,7 @@ local function addTargetForZone(z)
       action = function()
         if GetResourceState('illenium-appearance')=='started' then
           -- tienda de ropa / vestuario
-          TriggerEvent('illenium-appearance:client:openClothingShop')
+          TriggerEvent('illenium-appearance:client:openWardrobe', {customization = {components = true, props = true}})
         elseif GetResourceState('qb-clothing')=='started' then
           TriggerEvent('qb-clothing:client:openMenu', true) -- true = shop mode
         else
