@@ -380,11 +380,33 @@ local function addTargetForZone(z)
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local d = z.data or {}
-        if d.to and d.to.x then
-          SetEntityCoords(PlayerPedId(), d.to.x+0.0, d.to.y+0.0, d.to.z+0.0, false, false, false, true)
-          if d.to.w then SetEntityHeading(PlayerPedId(), d.to.w+0.0) end
-        else
+        local to = d.to
+        if type(to) ~= 'table' then
           QBCore.Functions.Notify('Destino no configurado.', 'error')
+          return
+        end
+
+        if to.x then
+          TriggerServerEvent('qb-jobcreator:server:teleport', z.id, 1)
+          return
+        end
+
+        if not to[1] then
+          QBCore.Functions.Notify('Destino no configurado.', 'error')
+          return
+        end
+
+        if GetResourceState('qb-menu') == 'started' then
+          local menu = { { header = 'Selecciona destino', isMenuHeader = true } }
+          for i, dest in ipairs(to) do
+            menu[#menu+1] = {
+              header = dest.label or ('Destino '..i),
+              params = { event = 'qb-jobcreator:client:teleportSelect', args = { zone = z.id, index = i } }
+            }
+          end
+          exports['qb-menu']:openMenu(menu)
+        else
+          TriggerServerEvent('qb-jobcreator:server:teleport', z.id, 1)
         end
       end
     })
@@ -404,7 +426,10 @@ local function addTargetForZone(z)
   z._zoneName = name
 end
 
-
+RegisterNetEvent('qb-jobcreator:client:teleportSelect', function(data)
+  if not data or not data.zone or not data.index then return end
+  TriggerServerEvent('qb-jobcreator:server:teleport', data.zone, data.index)
+end)
 
 RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
   removeAll()
