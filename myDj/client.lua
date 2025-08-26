@@ -151,6 +151,21 @@ AddEventHandler('myDj:open', function()
     end)
 end)
 
+RegisterNetEvent('myDj:client:openMenu', function(djName, djPos, djRange)
+    currentDJ = {
+        name = djName or ('dj_'..math.random(1000,9999)),
+        pos = djPos or GetEntityCoords(PlayerPedId()),
+        range = djRange or 20.0,
+        volume = 1.0
+    }
+    SetNuiFocus(true, true)
+    isDjOpen = true
+    SendNUIMessage({type = 'open'})
+    QBCore.Functions.TriggerCallback('myDJ:requestPlaylistsAndSongs', function(playlists, songs)
+        SendNUIMessage({type = 'getPlaylists', playlists = playlists, songs = songs})
+    end)
+end)
+
 -- sync timestamps
 Citizen.CreateThread(function()
     while true do

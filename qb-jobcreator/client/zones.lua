@@ -360,12 +360,10 @@ local function addTargetForZone(z)
       canInteract = function() return canUseZone(z, false) and GetResourceState('myDj')=='started' end,
       action = function()
         local d = z.data or {}
-        local url = d.url or ''
         local name = d.name or ('jc_ms_%s_%s'):format(z.job, z.id)
         local dist = tonumber(d.range or d.distance) or 20.0
         local pos  = vector3(z.coords.x, z.coords.y, z.coords.z)
-        if url == '' then QBCore.Functions.Notify('URL no configurada.', 'error'); return end
-        TriggerServerEvent('myDj:syncPlaySong', name, pos, dist, url)
+        TriggerEvent('myDj:client:openMenu', name, pos, dist)
       end
     })
 
