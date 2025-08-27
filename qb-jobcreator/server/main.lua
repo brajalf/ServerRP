@@ -22,7 +22,14 @@ end
 
 -- ===== Helpers =====
 local function InjectJobToCore(job)
-  QBCore.Shared.Jobs[job.name] = { label = job.label, grades = job.grades }
+  QBCore.Shared.Jobs[job.name] = {
+    label = job.label,
+    type = job.type or 'generic',
+    defaultDuty = job.defaultDuty ~= false,
+    offDutyPay = job.offDutyPay == true,
+    whitelisted = job.whitelisted or false,
+    grades = job.grades or {}
+  }
 end
 
 local function MultiAvailable()
@@ -231,6 +238,8 @@ RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
     name = name,
     label = data.label or 'Trabajo',
     type = data.type or 'generic',
+    defaultDuty = data.defaultDuty ~= false,
+    offDutyPay = data.offDutyPay == true,
     whitelisted = data.whitelisted or false,
     grades = next(data.grades or {}) and data.grades or Config.DefaultGrades,
     actions = {
