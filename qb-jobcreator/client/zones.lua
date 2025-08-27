@@ -267,7 +267,13 @@ local function addTargetForZone(z)
       label = 'Vestuario', icon = 'fa-solid fa-shirt',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        if GetResourceState('illenium-appearance')=='started' then
+        local data = z.data or {}
+        local mode = data.mode
+        if mode == 'illenium' then
+          TriggerEvent('illenium-appearance:client:openWardrobe', {customization = {components = true, props = true}})
+        elseif mode == 'qb-clothing' then
+          TriggerEvent('qb-clothing:client:openMenu', true) -- true = shop mode
+        elseif GetResourceState('illenium-appearance')=='started' then
           -- tienda de ropa / vestuario
           TriggerEvent('illenium-appearance:client:openWardrobe', {customization = {components = true, props = true}})
         elseif GetResourceState('qb-clothing')=='started' then
