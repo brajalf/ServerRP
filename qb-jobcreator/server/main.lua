@@ -637,7 +637,8 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
   local slots = tonumber(zone.data and zone.data.slots) or 50
   local maxWeight = tonumber(zone.data and zone.data.weight) or 400000
-  if Config.Integrations.UseQbInventory then
+  local useQb = GetResourceState('qb-inventory') == 'started'
+  if useQb then
     TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
     pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, maxWeight, true) end)
   else
@@ -652,7 +653,8 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
   if not ok then return end
   local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
   local items = SanitizeShopItems(zone.data and zone.data.items or {})
-  if Config.Integrations.UseQbInventory then
+  local useQb = GetResourceState('qb-inventory') == 'started'
+  if useQb then
     local shopItems = {}
     for _, it in ipairs(items) do
       shopItems[#shopItems+1] = { name = it.name, price = it.price, amount = it.count, info = it.info }
