@@ -425,11 +425,15 @@ local function addTargetForZone(z)
     })
   end
 
-  exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
-    name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
-  }, { options = opts, distance = radius + 0.5 })
+  if #opts > 0 then
+    exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
+      name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
+    }, { options = opts, distance = radius + 0.5 })
 
-  z._zoneName = name
+    z._zoneName = name
+  else
+    print(string.format('[qb-jobcreator] Zona %s sin interacciones, se omite qb-target', name))
+  end
 end
 
 RegisterNetEvent('qb-jobcreator:client:teleportSelect', function(data)
