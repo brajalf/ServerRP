@@ -642,53 +642,59 @@ const App = (() => {
     function editZone(id) {
       const zone = zonesCache.find((z) => z.id === id);
       if (!zone) return;
+      let coords = zone.coords;
       const base = `
         <div class="row">
           <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
           <div><label>Radio</label><input id="zrad" class="input" value="${zone.radius || 2.0}"/></div>
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="${(zone.data && zone.data.clearRadius) || 0}"/></div>
-          <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
+          <div><button id="zcoords" class="btn">Usar mis coords</button></div>
         </div>
         <div id="zextra"></div>`;
       modal('Editar ' + zone.ztype, base, () => {
+        const t = zone.ztype;
+        const data = {};
+        if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
+        if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
+                            data.weight = Number(document.getElementById('zweight')?.value || 400000); }
+        if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
+                            data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
+        if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
+        if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
+        if (t === 'shop')  { data.items = collectShopItems(); }
+        if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
+                              data.amount = Number(document.getElementById('zamt')?.value||1);
+                              data.time = Number(document.getElementById('ztime')?.value||3000);
+                              data.dict = document.getElementById('zdict')?.value||'';
+                              data.anim = document.getElementById('zanm')?.value||''; }
+        if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
+        if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
+                            data.price = Number(document.getElementById('zsprice')?.value||10);
+                            data.max = Number(document.getElementById('zsmax')?.value||10);
+                            data.toSociety = (document.getElementById('zssoc')?.value||'true') !== 'false'; }
+        if (t === 'register') { data.amount = Number(document.getElementById('zramt')?.value||100);
+                                data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
+                                data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
+        if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
+        if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
+                            data.dict = document.getElementById('zdict')?.value||'';
+                            data.anim = document.getElementById('zanm')?.value||'';
+                            data.time = Number(document.getElementById('ztime')?.value||5000); }
+        if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
+        if (t === 'teleport') { data.to = collectTeleports(); }
+        const cr = Number(document.getElementById('zclearrad')?.value || 0);
+        data.clearArea = cr > 0;
+        data.clearRadius = cr;
+        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords }).then(() => { closeModal(); load(); });
+      });
+
+      document.getElementById('zcoords').onclick = () => {
         postJ('getCoords', {}).then((c) => {
           if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
-          const t = zone.ztype;
-          const data = {};
-          if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
-          if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
-                              data.weight = Number(document.getElementById('zweight')?.value || 400000); }
-          if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
-                              data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
-          if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
-          if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
-          if (t === 'shop')  { data.items = collectShopItems(); }
-          if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
-                                data.amount = Number(document.getElementById('zamt')?.value||1);
-                                data.time = Number(document.getElementById('ztime')?.value||3000);
-                                data.dict = document.getElementById('zdict')?.value||'';
-                                data.anim = document.getElementById('zanm')?.value||''; }
-          if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
-          if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
-                              data.price = Number(document.getElementById('zsprice')?.value||10);
-                              data.max = Number(document.getElementById('zsmax')?.value||10);
-                              data.toSociety = (document.getElementById('zssoc')?.value||'true') !== 'false'; }
-          if (t === 'register') { data.amount = Number(document.getElementById('zramt')?.value||100);
-                                  data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
-                                  data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
-          if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
-          if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
-                              data.dict = document.getElementById('zdict')?.value||'';
-                              data.anim = document.getElementById('zanm')?.value||'';
-                              data.time = Number(document.getElementById('ztime')?.value||5000); }
-          if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
-          if (t === 'teleport') { data.to = collectTeleports(); }
-          const cr = Number(document.getElementById('zclearrad')?.value || 0);
-          data.clearArea = cr > 0;
-          data.clearRadius = cr;
-          post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords: c }).then(() => { closeModal(); load(); });
+          coords = c;
+          toast('Coordenadas actualizadas', 'success');
         });
-      });
+      };
 
       const box = document.getElementById('zextra');
       function renderEditExtra() {
