@@ -445,12 +445,14 @@ RegisterNetEvent('qb-jobcreator:server:fire', function(jobName, citizenid)
     if Player.PlayerData.citizenid == citizenid then
       if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
         Player.Functions.SetJob('unemployed', 0)
+      elseif Config.MultiJob and Config.MultiJob.Enabled then
+        -- despedir un trabajo secundario no debe afectar al principal
       end
       Multi_Remove(citizenid, jobName)
       return
     end
   end
-  DB.UpdateOfflineJob(citizenid, 'unemployed', 0)
+  DB.UpdateOfflineJob(citizenid, 'unemployed', 0, jobName)
   Multi_Remove(citizenid, jobName)
 end)
 
