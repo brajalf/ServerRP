@@ -277,13 +277,41 @@ RegisterNetEvent('qb-jobcreator:server:duplicateJob', function(name, newName)
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
-RegisterNetEvent('qb-jobcreator:server:updateGradeSalary', function(jobName, gradeKey, salary)
+RegisterNetEvent('qb-jobcreator:server:addGrade', function(jobName, gradeKey, data)
   local src = source; if not ensurePerm(src) then return end
   local j = Runtime.Jobs[jobName]; if not j then return end
-  if j.grades[tostring(gradeKey)] then
-    j.grades[tostring(gradeKey)].payment = tonumber(salary) or 0
-    DB.SaveJob(j); InjectJobToCore(j)
+  j.grades = j.grades or {}
+  local k = tostring(gradeKey)
+  j.grades[k] = {
+    name = data and data.name or k,
+    label = data and data.label or (data and data.name) or k,
+    payment = tonumber(data and data.payment) or 0,
+    isboss = data and (data.isboss == true) or false
+  }
+  DB.SaveJob(j); InjectJobToCore(j)
+  TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:updateGrade', function(jobName, gradeKey, data)
+  local src = source; if not ensurePerm(src) then return end
+  local j = Runtime.Jobs[jobName]; if not j then return end
+  local g = j.grades and j.grades[tostring(gradeKey)]; if not g then return end
+  if data then
+    if data.label ~= nil then g.label = data.label end
+    if data.name  ~= nil then g.name  = data.name end
+    if data.payment ~= nil then g.payment = tonumber(data.payment) or 0 end
+    if data.isboss ~= nil then g.isboss = data.isboss == true end
   end
+  DB.SaveJob(j); InjectJobToCore(j)
+  TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:deleteGrade', function(jobName, gradeKey)
+  local src = source; if not ensurePerm(src) then return end
+  local j = Runtime.Jobs[jobName]; if not j then return end
+  if j.grades then j.grades[tostring(gradeKey)] = nil end
+  DB.SaveJob(j); InjectJobToCore(j)
+  TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
 -- ===== Zonas =====

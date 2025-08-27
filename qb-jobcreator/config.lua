@@ -65,13 +65,12 @@ Config.Zone = Config.Zone or {
   TextUIKey  = '[E]',
 }
 
--- Plantilla de rangos
-Config.DefaultGrades = Config.DefaultGrades or {
-  ['0'] = { name = 'recluta',  label = 'Recluta',  payment = 0 },
-  ['1'] = { name = 'oficial',  label = 'Oficial',  payment = 0 },
-  ['2'] = { name = 'sargento', label = 'Sargento', payment = 0 },
-  ['3'] = { name = 'boss',     label = 'Jefe',     isboss = true, payment = 0 },
-}
+-- Plantilla de rangos (puedes añadir más entradas si lo necesitas)
+Config.DefaultGrades = Config.DefaultGrades or {}
+Config.DefaultGrades['0'] = Config.DefaultGrades['0'] or { name = 'recluta',  label = 'Recluta',  payment = 0 }
+Config.DefaultGrades['1'] = Config.DefaultGrades['1'] or { name = 'oficial',  label = 'Oficial',  payment = 0 }
+Config.DefaultGrades['2'] = Config.DefaultGrades['2'] or { name = 'sargento', label = 'Sargento', payment = 0 }
+Config.DefaultGrades['3'] = Config.DefaultGrades['3'] or { name = 'boss',     label = 'Jefe',     isboss = true, payment = 0 }
 
 -- Acciones habilitables
 Config.PlayerActionsDefaults = Config.PlayerActionsDefaults or {
