@@ -277,17 +277,66 @@ export('ox_inventory.SaveInventory', function(playerId)
     Inventory.Save(playerId)
 end)
 
-export('qb-inventory.SetInventory')
-export('qb-inventory.SetItemData')
-export('qb-inventory.UseItem')
-export('qb-inventory.GetSlotsByItem')
-export('qb-inventory.GetFirstSlotByItem')
+export('qb-inventory.SetInventory', function(invId, items)
+    if type(invId) ~= 'number' or type(items) ~= 'table' then
+        error("qb-inventory.SetInventory requiere un id de inventario y una tabla de items")
+    end
+
+    Inventory.Clear(invId)
+
+    for _, v in pairs(items) do
+        if v and v.name then
+            Inventory.AddItem(invId, v.name, v.amount or v.count or 1, v.info or v.metadata, v.slot)
+        end
+    end
+
+    return true
+end)
+
+export('qb-inventory.SetItemData', function(invId, itemName, key, value, slot)
+    if not itemName or not key then return false end
+
+    local slotId = slot or Inventory.GetSlotIdWithItem(invId, itemName)
+    if not slotId then return false end
+
+    if key == 'info' or key == 'metadata' then
+        Inventory.SetMetadata(invId, slotId, value)
+        return true
+    elseif key == 'durability' then
+        Inventory.SetDurability(invId, slotId, value)
+        return true
+    end
+
+    error(("qb-inventory.SetItemData no es compatible con la clave '%s'"):format(key))
+end)
+
+export('qb-inventory.UseItem', function(itemName, ...)
+    local itemData = QBCore.Functions.CanUseItem(itemName)
+    if type(itemData) == 'table' and itemData.func then
+        return itemData.func(...)
+    end
+end)
+
+export('qb-inventory.GetSlotsByItem', function(invId, itemName, metadata)
+    return Inventory.GetSlotIdsWithItem(invId, itemName, metadata)
+end)
+
+export('qb-inventory.GetFirstSlotByItem', function(invId, itemName, metadata)
+    return Inventory.GetSlotIdWithItem(invId, itemName, metadata)
+end)
 
 export('qb-inventory.GetItemBySlot', function(playerId, slotId)
     return Inventory.GetSlot(playerId, slotId)
 end)
 
-export('qb-inventory.GetTotalWeight')
+export('qb-inventory.GetTotalWeight', function(inv)
+    if type(inv) == 'table' then
+        return Inventory.CalculateWeight(inv)
+    end
+
+    local inventory = Inventory(inv)
+    return inventory and inventory.weight or 0
+end)
 
 export('qb-inventory.GetItemByName', function(playerId, itemName)
     return Inventory.GetSlotWithItem(playerId, itemName)
@@ -297,8 +346,29 @@ export('qb-inventory.GetItemsByName', function(playerId, itemName)
     return Inventory.GetSlotsWithItem(playerId, itemName)
 end)
 
-export('qb-inventory.GetSlots')
-export('qb-inventory.GetItemCount')
+export('qb-inventory.GetSlots', function(invId)
+    local inv = Inventory(invId)
+    if not inv then return 0, 0 end
+
+    local used = 0
+    for _, v in pairs(inv.items) do
+        if v then used += 1 end
+    end
+
+    return used, inv.slots - used
+end)
+
+export('qb-inventory.GetItemCount', function(invId, items)
+    if type(items) == 'table' then
+        local count = 0
+        for _, item in pairs(items) do
+            count += Inventory.GetItemCount(invId, item)
+        end
+        return count
+    end
+
+    return Inventory.GetItemCount(invId, items)
+end)
 
 export('qb-inventory.CanAddItem', function(playerId, itemName, amount)
     return (Inventory.CanCarryAmount(playerId, itemName) or 0) >= amount
