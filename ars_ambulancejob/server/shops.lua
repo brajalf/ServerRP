@@ -47,6 +47,14 @@ end
 
 -- codex/replace-openinventory-with-custom-event
 
+local function OpenShop(src, shopId, items)
+    if GetResourceState('ox_inventory') == 'started' then
+        exports.ox_inventory:forceOpenInventory(src, 'shop', { id = shopId, items = items })
+    else
+        exports['qb-inventory']:OpenShop(src, shopId)
+    end
+end
+
 
 
 RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
@@ -93,15 +101,7 @@ RegisterNetEvent('ars_ambulancejob:openPharmacy', function(name)
         end
     end
 
-    if GetResourceState('ox_inventory') == 'started' then
-        if exports.ox_inventory.forceOpenInventory then
-            exports.ox_inventory:forceOpenInventory(src, 'shop', { id = name })
-        else
-            TriggerClientEvent('ox_inventory:openInventory', src, 'shop', { id = name })
-        end
-    else
-        exports['qb-inventory']:OpenShop(src, name)
-    end
+    OpenShop(src, name, pharmacy.items)
 end)
 
 AddEventHandler('onResourceStart', function(resource)
