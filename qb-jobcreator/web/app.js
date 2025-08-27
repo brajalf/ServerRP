@@ -623,7 +623,7 @@ const App = (() => {
           <td>${z.id}</td><td>${z.ztype}</td><td>${z.label||''}</td>
           <td>${z.radius}</td>
           <td>${(z.data && (z.data.vehicles || z.data.vehicle || '')) || ''}</td>
-          <td>${z.ztype === 'shop' ? `<button class="btn" data-edit="${z.id}">Editar</button>` : ''}<button class="btn danger" data-id="${z.id}">Borrar</button></td>
+          <td><button class="btn" data-edit="${z.id}">Editar</button><button class="btn danger" data-id="${z.id}">Borrar</button></td>
         </tr>`;
       });
       html += '</tbody></table>';
@@ -633,21 +633,115 @@ const App = (() => {
         b.onclick = () => post('deleteZone', { id: Number(b.dataset.id) }).then(() => load());
       });
       list.querySelectorAll('button[data-edit]').forEach((b) => {
-        b.onclick = () => editShop(Number(b.dataset.edit));
+        b.onclick = () => editZone(Number(b.dataset.edit));
       });
     });
     }
     load();
 
-    function editShop(id) {
+    function editZone(id) {
       const zone = zonesCache.find((z) => z.id === id);
       if (!zone) return;
-      const base = `<div id="zextra"></div>`;
-      modal('Editar Tienda', base, () => {
-        const data = { items: collectShopItems() };
-        post('updateZone', { id, data }).then(() => { closeModal(); load(); });
+      const base = `
+        <div class="row">
+          <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
+          <div><label>Radio</label><input id="zrad" class="input" value="${zone.radius || 2.0}"/></div>
+          <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
+        </div>
+        <div id="zextra"></div>`;
+      modal('Editar ' + zone.ztype, base, () => {
+        postJ('getCoords', {}).then((c) => {
+          if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
+          const t = zone.ztype;
+          const data = {};
+          if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
+          if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
+                              data.weight = Number(document.getElementById('zweight')?.value || 400000); }
+          if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
+                              data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
+          if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
+          if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
+          if (t === 'shop')  { data.items = collectShopItems(); }
+          if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
+                                data.amount = Number(document.getElementById('zamt')?.value||1);
+                                data.time = Number(document.getElementById('ztime')?.value||3000);
+                                data.dict = document.getElementById('zdict')?.value||'';
+                                data.anim = document.getElementById('zanm')?.value||''; }
+          if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
+          if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
+                              data.price = Number(document.getElementById('zsprice')?.value||10);
+                              data.max = Number(document.getElementById('zsmax')?.value||10);
+                              data.toSociety = (document.getElementById('zssoc')?.value||'true') !== 'false'; }
+          if (t === 'register') { data.amount = Number(document.getElementById('zramt')?.value||100);
+                                  data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
+                                  data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
+          if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
+          if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
+                              data.dict = document.getElementById('zdict')?.value||'';
+                              data.anim = document.getElementById('zanm')?.value||'';
+                              data.time = Number(document.getElementById('ztime')?.value||5000); }
+          if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
+          if (t === 'teleport') { data.to = collectTeleports(); }
+          post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords: c }).then(() => { closeModal(); load(); });
+        });
       });
-      renderShopItemsSection(document.getElementById('zextra'), (zone.data && zone.data.items) || []);
+
+      const box = document.getElementById('zextra');
+      function renderEditExtra() {
+        const t = zone.ztype;
+        const d = zone.data || {};
+
+        const row = (inner) => `<div class="row">${inner}</div>`;
+        const inp = (id, label, ph='', val='') => `<div><label>${label}</label><input id="${id}" class="input" placeholder="${ph}" value="${val}"/></div>`;
+        const ta  = (id, label, ph='', val='') => `<div style="flex:1"><label>${label}</label><textarea id="${id}" class="input" style="height:120px" placeholder='${ph}'>${val}</textarea></div>`;
+
+        collectShopItems = () => [];
+        collectTeleports = () => [];
+        if (t === 'boss') {
+          box.innerHTML = row(inp('zmin','Mín. rango','0', d.minGrade || 0));
+        } else if (t === 'stash') {
+          box.innerHTML = row(inp('zslots','Slots','50', d.slots || '') + inp('zweight','Peso máximo','400000', d.weight || ''));
+        } else if (t === 'garage') {
+          box.innerHTML = inp('zveh','Vehículos (rango=modelo, separados por coma)','0=police,2=police2,4=ambulance', d.vehicles || '') +
+                          row(inp('zvehdef','Modelo por defecto','police', d.vehicle || ''));
+        } else if (t === 'crafting') {
+          const opts = Object.keys(state.recipes || {}).map((r) => `<option ${d.recipe===r?'selected':''}>${r}</option>`).join('');
+          box.innerHTML = row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
+          document.getElementById('editRecipes').onclick = () => {
+            const cur = JSON.stringify(state.recipes || {}, null, 2);
+            modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {
+              try { state.recipes = JSON.parse(document.getElementById('recJSON').value) || {}; post('saveRecipes', { recipes: state.recipes }); renderEditExtra(); closeModal(); toast('Recetas guardadas', 'success'); }
+              catch { toast('JSON inválido', 'error'); }
+            });
+          };
+        } else if (t === 'cloakroom') {
+          box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
+        } else if (t === 'shop') {
+          renderShopItemsSection(box, d.items || []);
+        } else if (t === 'collect') {
+          box.innerHTML = row(inp('zitem','Ítem','material', d.item || '') + inp('zamt','Cantidad','1', d.amount || '')) +
+                          row(inp('ztime','Tiempo (ms)','3000', d.time || '') + inp('zdict','Anim dict','', d.dict || '') + inp('zanm','Anim nombre','', d.anim || ''));
+        } else if (t === 'spawner') {
+          box.innerHTML = row(inp('zprop','Modelo prop','prop_toolchest_05', d.prop || ''));
+        } else if (t === 'sell') {
+          box.innerHTML = row(inp('zsitem','Ítem','material', d.item || '') + inp('zsprice','Precio unidad','10', d.price || '') + inp('zsmax','Máx por venta','10', d.max || '')) +
+                          row(inp('zssoc','A sociedad? (true/false)','true', String(d.toSociety ?? true)));
+        } else if (t === 'register') {
+          box.innerHTML = row(inp('zramt','Monto por defecto','100', d.amount || '') + inp('zrmethod','Método (cash/bank)','bank', d.method || '') + inp('zrsoc','A sociedad? (true/false)','true', String(d.toSociety ?? true)));
+        } else if (t === 'alarm') {
+          box.innerHTML = row(inp('zalcode','Código/Tipo','panic', d.code || ''));
+        } else if (t === 'anim') {
+          box.innerHTML = row(inp('zsc','Scenario','PROP_HUMAN_SEAT_CHAIR', d.scenario || '')) + row(inp('zdict','Anim dict','', d.dict || '') + inp('zanm','Anim nombre','', d.anim || '') + inp('ztime','Duración (ms)','5000', d.time || ''));
+        } else if (t === 'music') {
+          box.innerHTML = row(inp('zname','Nombre DJ','', d.name || '') + inp('zrange','Radio','20', d.range || d.distance || '')) +
+                          row(inp('zurl','YouTube/URL','https://...', d.url || '') + inp('zvol','Volumen (0-1)','0.5', d.volume || ''));
+        } else if (t === 'teleport') {
+          renderTeleportSection(box, d.to || []);
+        } else {
+          box.innerHTML = '';
+        }
+      }
+      renderEditExtra();
     }
 
     document.getElementById('addz').onclick = () => {
