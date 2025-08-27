@@ -15,7 +15,7 @@ local function openMedicalBag()
 
     lib.callback('ars_ambulancejob:openMedicalBag', false, function(stash)
         TriggerServerEvent('inventory:server:OpenInventory', 'stash', stash, {maxweight = 50 * 1000, slots = 10})
-        TriggerEvent('inventory:client:SetCurrentStash', stash)
+        SetCurrentStash(stash)
     end)
 end
 
