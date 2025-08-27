@@ -226,12 +226,12 @@ local function addTargetForZone(z)
       action = function() TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job) end
     })
 
-  elseif z.ztype == 'stash' and Config.Integrations.UseQbInventory then
+  elseif z.ztype == 'stash' then
     table.insert(opts, {
       label = 'Abrir Almacén', icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        TriggerServerEvent('qb-jobcreator:server:openStash', z.id)
+        TriggerServerEvent('qb-jobcreator:server:openStash', z.id, Config.Integrations.UseQbInventory and 'qb' or 'ox')
       end
     })
 
@@ -284,12 +284,12 @@ local function addTargetForZone(z)
       end
     })
 
-  elseif z.ztype == 'shop' and Config.Integrations.UseQbInventory then
+  elseif z.ztype == 'shop' then
     table.insert(opts, {
       label = 'Abrir tienda', icon = 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        TriggerServerEvent('qb-jobcreator:server:openShop', z.id)
+        TriggerServerEvent('qb-jobcreator:server:openShop', z.id, Config.Integrations.UseQbInventory and 'qb' or 'ox')
       end
     })
 
