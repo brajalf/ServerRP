@@ -636,12 +636,13 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   if not ok then return end
   local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
   local slots = tonumber(zone.data and zone.data.slots) or 50
-  local weight = tonumber(zone.data and zone.data.weight) or 400000
+  local maxWeight = tonumber(zone.data and zone.data.weight) or 400000
   if Config.Integrations.UseQbInventory then
     TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
-    pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, weight, true) end)
+    pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, maxWeight, true) end)
   else
-    pcall(function() exports.ox_inventory:openInventory('stash', { id = stashId, slots = slots, weight = weight }) end)
+    exports.ox_inventory:RegisterStash(stashId, zone.label or stashId, slots, maxWeight, true)
+    exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
   end
 end)
 
