@@ -664,7 +664,10 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
         exports['qb-inventory']:CreateShop({ name = sid, label = zone.label or 'Shop', items = shopItems })
         CreatedShops[sid] = true
       end
-      exports['qb-inventory']:OpenShop(src, sid)
+      local ver = GetResourceMetadata('qb-inventory', 'version', 0) or '0'
+      local major = tonumber(ver:match('^(%d+)')) or 0
+      local useServerEvent = major >= 2
+      TriggerClientEvent('qb-jobcreator:client:openInvShop', src, sid, useServerEvent)
     end)
   else
     for _, it in ipairs(items) do

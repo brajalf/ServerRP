@@ -60,6 +60,15 @@ RegisterNetEvent('qb-jobcreator:client:openBossUI', function(job)
   end)
 end)
 
+-- Abre una tienda registrada en qb-inventory u ox_inventory
+RegisterNetEvent('qb-jobcreator:client:openInvShop', function(id, useServerEvent)
+  if useServerEvent then
+    TriggerServerEvent('qb-inventory:server:OpenShop', id)
+  else
+    TriggerEvent('qb-inventory:client:OpenShop', id)
+  end
+end)
+
 RegisterNUICallback('close', function(_, cb) ForceClose(); cb(true) end)
 
 -- ===== CRUD Trabajos =====
