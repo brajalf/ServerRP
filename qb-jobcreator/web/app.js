@@ -350,18 +350,59 @@ const App = (() => {
 
   function openGradesModal(job) {
     const grades = job.grades || {};
-    let body = '';
-    Object.keys(grades).forEach((k) => {
-      const g = grades[k];
-      body += `<div class="row"><div><label>${g.label || g.name || k}</label></div><div><label>Salario</label><input data-k="${k}" class="input" value="${g.payment || 0}"/></div></div>`;
-    });
+    const body = `
+      <div id="grades-wrap"></div>
+      <div class="row"><button class="btn" id="addGrade">+ Añadir rango</button></div>`;
+
     modal(`Rangos · ${job.label}`, body, () => {
-      $$('#modal-content input[data-k]').forEach((inp) => {
-        post('updateGradeSalary', { job: job.name, grade: inp.dataset.k, salary: Number(inp.value) || 0 });
+      const wrap = $('#grades-wrap');
+      const rows = wrap.querySelectorAll('.grade-row');
+      const existing = { ...grades };
+      const seen = {};
+      const newGrades = {};
+      rows.forEach((row) => {
+        const k = row.dataset.k;
+        const g = {
+          label: row.querySelector('.g-label').value,
+          name: row.querySelector('.g-name').value,
+          payment: Number(row.querySelector('.g-pay').value) || 0,
+          isboss: row.querySelector('.g-boss').checked,
+        };
+        newGrades[k] = g;
+        if (existing[k]) {
+          post('updateGrade', { job: job.name, grade: k, data: g });
+        } else {
+          post('addGrade', { job: job.name, grade: k, data: g });
+        }
+        seen[k] = true;
       });
+      Object.keys(existing).forEach((k) => { if (!seen[k]) post('deleteGrade', { job: job.name, grade: k }); });
+      job.grades = newGrades;
       closeModal();
+      renderAll();
       toast('Rangos actualizados', 'success');
     });
+
+    const wrap = $('#modal-content #grades-wrap');
+    function addRow(k, g = {}) {
+      const row = document.createElement('div');
+      row.className = 'row grade-row';
+      row.dataset.k = k;
+      row.innerHTML = `
+        <div><input class="input g-label" placeholder="Etiqueta" value="${g.label || ''}"/></div>
+        <div><input class="input g-name" placeholder="Nombre" value="${g.name || ''}"/></div>
+        <div><input class="input g-pay" type="number" placeholder="Salario" value="${g.payment || 0}"/></div>
+        <div><label><input type="checkbox" class="g-boss" ${g.isboss ? 'checked' : ''}/> Jefe</label></div>
+        <div><button class="btn danger g-del">X</button></div>`;
+      row.querySelector('.g-del').onclick = () => row.remove();
+      wrap.appendChild(row);
+    }
+    Object.keys(grades).forEach((k) => addRow(k, grades[k]));
+    $('#modal-content #addGrade').onclick = () => {
+      let nk = 0;
+      while (wrap.querySelector(`[data-k="${nk}"]`)) nk++;
+      addRow(String(nk));
+    };
   }
 
   function openImportModal() {
