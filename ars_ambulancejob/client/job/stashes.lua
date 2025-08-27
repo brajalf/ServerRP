@@ -3,6 +3,17 @@ local IsControlJustReleased = IsControlJustReleased
 local CreateThread          = CreateThread
 
 
+function SetCurrentStash(id)
+    if GetResourceState('ox_inventory') == 'started' then
+        TriggerEvent('inventory:client:SetCurrentStash', id)
+    elseif GetResourceState('qb-inventory') == 'started' then
+        TriggerEvent('qb-inventory:client:SetCurrentStash', id)
+    else
+        TriggerEvent('inventory:client:SetCurrentStash', id)
+    end
+end
+
+
 local function OpenStash(id, data)
     if GetResourceState('ox_inventory') == 'started' then
         TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, data)
@@ -15,8 +26,9 @@ local function OpenStash(id, data)
                 inv:OpenStash(id, data.slots, data.weight)
             end
         end
-        TriggerEvent('inventory:client:SetCurrentStash', id)
     end
+
+    SetCurrentStash(id)
 end
 
 
