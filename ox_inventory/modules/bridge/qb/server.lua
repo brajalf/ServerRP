@@ -47,7 +47,13 @@ local function setupPlayer(Player)
     Player.PlayerData.name = ('%s %s'):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)
     server.setPlayerInventory(Player.PlayerData)
 
-    Inventory.SetItem(Player.PlayerData.source, 'money', Player.PlayerData.money.cash)
+    for account in pairs(server.accounts) do
+        local key = account == 'money' and 'cash' or account
+        local amount = Player.PlayerData.money[key] or 0
+
+        Player.PlayerData.money[key] = amount
+        Inventory.SetItem(Player.PlayerData.source, account, amount)
+    end
 
     QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, "AddItem", function(item, amount, slot, info)
         return Inventory.AddItem(Player.PlayerData.source, item, amount, info, slot)
