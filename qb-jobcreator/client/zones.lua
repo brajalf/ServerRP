@@ -3,10 +3,11 @@ QBCore = exports['qb-core']:GetCoreObject()
 local Active = {}
 
 local function removeAll()
-  if Config.Integrations.UseQbTarget and next(Active) then
+  if next(Active) then
     for _, z in pairs(Active) do
-      if z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+      if Config.Integrations.UseQbTarget and z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
       if z._popArea then RemovePopMultiplierArea(z._popArea) end
+      if z._stop ~= nil then z._stop = true end
     end
   end
   Active = {}
@@ -219,6 +220,10 @@ local function addTargetForZone(z)
   local radius = tonumber(z.radius) or Config.Zone.DefaultRadius or 2.0
   local size = radius * 2.0
   local opts = {}
+  local usingTarget = GetResourceState('qb-target') == 'started'
+  if not usingTarget then
+    print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
+  end
 
   if z.ztype == 'boss' then
     table.insert(opts, {
@@ -424,6 +429,39 @@ local function addTargetForZone(z)
       canInteract = function() return canUseZone(z, false) end,
       action = function() openCraftMenu(z) end
     })
+  end
+
+  if not usingTarget then
+    if #opts > 0 then
+      local zoneVec = vector3(z.coords.x, z.coords.y, z.coords.z)
+      z._stop = false
+      CreateThread(function()
+        while not z._stop do
+          local ped = PlayerPedId()
+          local pos = GetEntityCoords(ped)
+          local dist = #(pos - zoneVec)
+          if dist <= radius then
+            local opt = opts[1]
+            if opt then
+              local label = opt.label or (z.label or 'Interactuar')
+              if not opt.canInteract or opt.canInteract() then
+                QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, '[E] '..label)
+                if IsControlJustReleased(0, 38) then
+                  opt.action()
+                  Wait(1000)
+                end
+              else
+                QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, label)
+              end
+            end
+            Wait(0)
+          else
+            Wait(500)
+          end
+        end
+      end)
+    end
+    return
   end
 
   if #opts > 0 then
