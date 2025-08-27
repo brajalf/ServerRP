@@ -65,6 +65,20 @@ We do not guarantee compatibility or support for third-party resources.
 - [ox_core](https://github.com/communityox/ox_core)
 - [nd_core](https://github.com/ND-Framework/ND_Core)
 
+## Wrapper exports
+
+To simplify cross-resource integrations, `ox_inventory` provides generic server exports
+that automatically call the appropriate inventory system based on `shared.framework`.
+Scripts should prefer these helpers over directly invoking a specific inventory API.
+
+```lua
+-- open a stash for a player
+exports.ox_inventory:OpenStash(source, 'mystash')
+
+-- open a registered shop
+exports.ox_inventory:OpenShop(source, 'twentyfourseven')
+```
+
 ## ✨ Features
 
 - Server-side security ensures interactions with items, shops, and stashes are all validated.
