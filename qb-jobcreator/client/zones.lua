@@ -6,6 +6,7 @@ local function removeAll()
   if Config.Integrations.UseQbTarget and next(Active) then
     for _, z in pairs(Active) do
       if z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+      if z._popArea then RemovePopMultiplierArea(z._popArea) end
     end
   end
   Active = {}
@@ -426,11 +427,28 @@ local function addTargetForZone(z)
   end
 
   if #opts > 0 then
-    exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
+    local box = exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
       name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
     }, { options = opts, distance = radius + 0.5 })
 
     z._zoneName = name
+
+    if box and ((z.data and z.data.clearArea) or Config.Zone.ClearArea) then
+      local r = tonumber((z.data and z.data.clearRadius) or Config.Zone.ClearRadius) or radius
+      box:onPlayerInOut(function(inside)
+        if inside then
+          ClearAreaOfEverything(z.coords.x, z.coords.y, z.coords.z, r, false, false, false, false)
+          z._popArea = AddPopMultiplierArea(
+            z.coords.x - r, z.coords.y - r, z.coords.z - r,
+            z.coords.x + r, z.coords.y + r, z.coords.z + r,
+            0.0, 0.0, false
+          )
+        elseif z._popArea then
+          RemovePopMultiplierArea(z._popArea)
+          z._popArea = nil
+        end
+      end)
+    end
   else
     print(string.format('[qb-jobcreator] Zona %s sin interacciones, se omite qb-target', name))
   end

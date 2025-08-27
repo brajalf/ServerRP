@@ -63,6 +63,8 @@ Config.Zone = Config.Zone or {
   BlipSprite = 280,
   BlipColor  = 26,
   TextUIKey  = '[E]',
+  ClearArea  = false,
+  ClearRadius = 30.0,
 }
 
 -- Plantilla de rangos (puedes añadir más entradas si lo necesitas)

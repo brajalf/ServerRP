@@ -646,6 +646,7 @@ const App = (() => {
         <div class="row">
           <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
           <div><label>Radio</label><input id="zrad" class="input" value="${zone.radius || 2.0}"/></div>
+          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="${(zone.data && zone.data.clearRadius) || 0}"/></div>
           <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
         </div>
         <div id="zextra"></div>`;
@@ -682,6 +683,9 @@ const App = (() => {
                               data.time = Number(document.getElementById('ztime')?.value||5000); }
           if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
           if (t === 'teleport') { data.to = collectTeleports(); }
+          const cr = Number(document.getElementById('zclearrad')?.value || 0);
+          data.clearArea = cr > 0;
+          data.clearRadius = cr;
           post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords: c }).then(() => { closeModal(); load(); });
         });
       });
@@ -758,6 +762,7 @@ const App = (() => {
         </div>
         <div class="row">
           <div><label>Radio</label><input id="zrad" class="input" value="2.0"/></div>
+          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="0"/></div>
           <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
         </div>
         <div id="zextra"></div>`;
@@ -794,6 +799,9 @@ const App = (() => {
                               data.time = Number(document.getElementById('ztime')?.value||5000); }
           if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
           if (t === 'teleport') { data.to = collectTeleports(); }
+          const cr = Number(document.getElementById('zclearrad')?.value || 0);
+          data.clearArea = cr > 0;
+          data.clearRadius = cr;
           const z = {
             job: state.jd.job,
             ztype: t,
