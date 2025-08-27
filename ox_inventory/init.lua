@@ -12,9 +12,23 @@ end
 -- You want to change resource settings? Use convars (and by that we mean a entirely seperate cfg file included that you execute in the server cfg).
 -- https://coxdocs.dev/ox_inventory#config
 
+local framework = GetConvar('inventory:framework', '')
+
+if framework == '' then
+    if GetResourceState('qbx_core'):find('start') then
+        framework = 'qbx'
+    elseif GetResourceState('ox_core'):find('start') then
+        framework = 'ox'
+    elseif GetResourceState('qb-core'):find('start') then
+        framework = 'qb'
+    else
+        framework = 'qb'
+    end
+end
+
 shared = {
     resource = GetCurrentResourceName(),
-    framework = GetConvar('inventory:framework', 'qb'),
+    framework = framework,
     playerslots = GetConvarInt('inventory:slots', 50),
     playerweight = GetConvarInt('inventory:weight', 30000),
     target = GetConvarInt('inventory:target', 0) == 1,
