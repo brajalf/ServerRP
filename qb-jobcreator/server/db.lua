@@ -71,7 +71,17 @@ function DB.RemoveAccount(job, amount) exec('UPDATE jobcreator_accounts SET bala
 function DB.GetOfflineEmployees(job)
   return exec('SELECT citizenid,charinfo,job FROM players WHERE JSON_EXTRACT(job, "$..name") = ?', { job }) or {}
 end
-function DB.UpdateOfflineJob(citizenid, jobName, grade)
+function DB.UpdateOfflineJob(citizenid, jobName, grade, firedJob)
+  if Config.MultiJob and Config.MultiJob.Enabled and Config.MultiJob.OfflineTable then
+    local t = Config.MultiJob.OfflineTable
+    local q = ([[SELECT %s FROM %s WHERE %s=? AND %s<>?]]):format(t.columns.job, t.name, t.columns.citizen, t.columns.job)
+    local others = exec(q, { citizenid, firedJob }) or {}
+    if #others == 0 then
+      local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(grade), level = tonumber(grade) } })
+      exec('UPDATE players SET job=? WHERE citizenid=?', { jobJson, citizenid })
+    end
+    return
+  end
   local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(grade), level = tonumber(grade) } })
   exec('UPDATE players SET job=? WHERE citizenid=?', { jobJson, citizenid })
 end
