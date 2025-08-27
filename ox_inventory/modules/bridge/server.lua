@@ -59,8 +59,13 @@ if server.convertInventory then exports('ConvertItems', server.convertInventory)
 
 exports('OpenStash', function(src, id, opts)
     if shared.framework == 'qb' then
-        local o = opts or {}
-        return exports['qb-inventory']:OpenStash(src, id, o.slots, o.weight, o.owner, o.groups)
+        local state = GetResourceState('qb-inventory')
+        if state == 'started' or state == 'starting' then
+            local o = opts or {}
+            return exports['qb-inventory']:OpenStash(src, id, o.slots, o.weight, o.owner, o.groups)
+        else
+            warn("qb-inventory is not available, falling back to ox_inventory")
+        end
     end
 
     return exports.ox_inventory:forceOpenInventory(src, 'stash', id)
@@ -68,7 +73,12 @@ end)
 
 exports('OpenShop', function(src, id)
     if shared.framework == 'qb' then
-        return exports['qb-inventory']:OpenShop(src, id)
+        local state = GetResourceState('qb-inventory')
+        if state == 'started' or state == 'starting' then
+            return exports['qb-inventory']:OpenShop(src, id)
+        else
+            warn("qb-inventory is not available, falling back to ox_inventory")
+        end
     end
 
     return exports.ox_inventory:forceOpenInventory(src, 'shop', id)
