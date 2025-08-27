@@ -128,6 +128,13 @@ AddEventHandler('onResourceStart', function(res)
   DB.EnsureSchema(); LoadAll()
 end)
 
+AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
+  local src = Player and Player.PlayerData and Player.PlayerData.source
+  if not src then return end
+  TriggerClientEvent('qb-jobcreator:client:syncAll', src, Runtime.Jobs, Runtime.Zones)
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', src, Runtime.Zones)
+end)
+
 -- Verifica permisos de administrador o jefe del trabajo especificado
 local function ensurePerm(src, job)
   -- primero, permisos globales
