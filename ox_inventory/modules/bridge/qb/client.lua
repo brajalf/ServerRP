@@ -131,3 +131,27 @@ end)
 RegisterNetEvent('inventory:client:SetCurrentStash', function(name)
     currentStash = name
 end)
+
+RegisterNetEvent('qb-inventory:client:openInventory', function(items, other)
+    local invType = 'player'
+    local invId
+
+    if type(other) == 'table' then
+        invType = other.type or invType
+        invId = other.name or other.id
+
+        if invId and not other.type then
+            if invId:find('stash%-') then
+                invType = 'stash'
+            elseif invId:find('shop%-') then
+                invType = 'shop'
+            elseif invId:find('trunk%-') then
+                invType = 'trunk'
+            elseif invId:find('glovebox%-') then
+                invType = 'glovebox'
+            end
+        end
+    end
+
+    exports.ox_inventory:openInventory(invType, invId)
+end)
