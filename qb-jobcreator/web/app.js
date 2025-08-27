@@ -844,9 +844,11 @@ const App = (() => {
 const CraftUI = (() => {
   let zoneId = null;
   let visible = false;
+  let inventory = 'qb-inventory';
 
   function open(payload) {
     zoneId = payload.zone;
+    inventory = payload.inventory || 'qb-inventory';
     const recipes = payload.recipes || {};
     const wrap = document.getElementById('craft-list');
     wrap.innerHTML = '';
@@ -857,9 +859,12 @@ const CraftUI = (() => {
       const inputs = (rec.inputs || [])
         .map(i => `<li>${i.amount || i.qty || 1}x ${i.item}</li>`)
         .join('');
-      const imgSrc = `nui://qb-inventory/html/images/${out}.png`;
+      const base = inventory === 'ox_inventory'
+        ? 'nui://ox_inventory/web/images/'
+        : 'nui://qb-inventory/html/images/';
+      const imgSrc = `${base}${out}.png`;
       card.innerHTML = `
-        <img src="${imgSrc}" alt="${out}">
+        <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
         <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
         <button class="btn craft-btn" data-recipe="${name}">Fabricar</button>`;
       wrap.appendChild(card);
