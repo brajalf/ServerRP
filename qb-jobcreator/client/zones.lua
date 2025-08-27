@@ -237,7 +237,7 @@ local function addTargetForZone(z)
       label = 'Abrir Almacén', icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        TriggerServerEvent('qb-jobcreator:server:openStash', z.id, Config.Integrations.UseQbInventory and 'qb' or 'ox')
+        TriggerServerEvent('qb-jobcreator:server:openStash', z.id)
       end
     })
 
@@ -295,7 +295,7 @@ local function addTargetForZone(z)
       label = 'Abrir tienda', icon = 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        TriggerServerEvent('qb-jobcreator:server:openShop', z.id, Config.Integrations.UseQbInventory and 'qb' or 'ox')
+        TriggerServerEvent('qb-jobcreator:server:openShop', z.id)
       end
     })
 
