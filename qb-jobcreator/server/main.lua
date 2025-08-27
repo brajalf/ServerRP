@@ -1,5 +1,6 @@
 local DB = _G.DB
 QBCore = exports['qb-core']:GetCoreObject()
+local JobsFile = _G.JobsFile
 
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
@@ -252,6 +253,7 @@ RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
   Runtime.Jobs[job.name] = job
   DB.SaveJob(job)
   InjectJobToCore(job)
+  JobsFile.Save()
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
@@ -260,6 +262,7 @@ RegisterNetEvent('qb-jobcreator:server:deleteJob', function(name)
   Runtime.Jobs[name] = nil
   QBCore.Shared.Jobs[name] = nil
   DB.DeleteJob(name)
+  JobsFile.Save()
   local zones = {}
   for _, z in ipairs(Runtime.Zones) do
     if z.job ~= name then zones[#zones+1] = z end
@@ -273,7 +276,7 @@ RegisterNetEvent('qb-jobcreator:server:duplicateJob', function(name, newName)
   local src = source; if not ensurePerm(src) then return end
   local j = Runtime.Jobs[name]; if not j then return end
   local copy = json.decode(json.encode(j)); copy.name = newName; copy.label = copy.label .. ' (Copia)'
-  Runtime.Jobs[newName] = copy; DB.SaveJob(copy); InjectJobToCore(copy)
+  Runtime.Jobs[newName] = copy; DB.SaveJob(copy); InjectJobToCore(copy); JobsFile.Save()
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
@@ -288,7 +291,7 @@ RegisterNetEvent('qb-jobcreator:server:addGrade', function(jobName, gradeKey, da
     payment = tonumber(data and data.payment) or 0,
     isboss = data and (data.isboss == true) or false
   }
-  DB.SaveJob(j); InjectJobToCore(j)
+  DB.SaveJob(j); InjectJobToCore(j); JobsFile.Save()
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
@@ -302,7 +305,7 @@ RegisterNetEvent('qb-jobcreator:server:updateGrade', function(jobName, gradeKey,
     if data.payment ~= nil then g.payment = tonumber(data.payment) or 0 end
     if data.isboss ~= nil then g.isboss = data.isboss == true end
   end
-  DB.SaveJob(j); InjectJobToCore(j)
+  DB.SaveJob(j); InjectJobToCore(j); JobsFile.Save()
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
@@ -310,7 +313,7 @@ RegisterNetEvent('qb-jobcreator:server:deleteGrade', function(jobName, gradeKey)
   local src = source; if not ensurePerm(src) then return end
   local j = Runtime.Jobs[jobName]; if not j then return end
   if j.grades then j.grades[tostring(gradeKey)] = nil end
-  DB.SaveJob(j); InjectJobToCore(j)
+  DB.SaveJob(j); InjectJobToCore(j); JobsFile.Save()
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
 end)
 
