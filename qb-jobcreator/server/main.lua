@@ -350,6 +350,12 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   end
   _lastCreate[src] = { sig = sig, t = now }
   zone.data = zone.data or {}
+  if zone.data then
+    zone.data.clearArea = zone.data.clearArea and true or false
+    if zone.data.clearRadius ~= nil then
+      zone.data.clearRadius = tonumber(zone.data.clearRadius) or Config.Zone.ClearRadius
+    end
+  end
   if zone.ztype == 'shop' then zone.data.items = SanitizeShopItems(zone.data.items) end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
@@ -572,7 +578,11 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   local src = source; local job; local ztype
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype break end end
   if not allowAdminOrBoss(src, job or '') then return end
-  if type(data) == 'table' and ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
+  if type(data) == 'table' then
+    if ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
+    data.clearArea = data.clearArea and true or false
+    if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
+  end
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
