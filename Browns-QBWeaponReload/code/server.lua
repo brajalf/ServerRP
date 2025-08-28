@@ -1,26 +1,28 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local Inventory = require 'code.inventory_bridge'
 
+-- Ammo type to item mapping
+local AmmoTypes = {
+    AMMO_PISTOL = 'pistol_ammo',
+    AMMO_SMG = 'smg_ammo',
+    AMMO_SHOTGUN = 'shotgun_ammo',
+    AMMO_RIFLE = 'rifle_ammo',
+    AMMO_MG = 'mg_ammo',
+    AMMO_SNIPER = 'snp_ammo',
+    AMMO_EMPLAUNCHER = 'emp_ammo'
+}
+
+-- Register ammo items as usable and trigger client reload
+for _, ammoItem in pairs(AmmoTypes) do
+    QBCore.Functions.CreateUseableItem(ammoItem, function(source, item)
+        TriggerClientEvent('inventory:client:UseAmmo', source)
+    end)
+end
+
 QBCore.Functions.CreateCallback('browns_reload:GetAmount', function(source, cb, types) -- Passing the amount of ammo the player has to the client
     local src = source
-    local ammo_type
+    local ammo_type = AmmoTypes[types]
     local ammo_amounts
-    if types == 'AMMO_PISTOL' then 
-        ammo_type = 'pistol_ammo'
-    elseif types == 'AMMO_SMG' then 
-        ammo_type = 'smg_ammo'
-    elseif types == 'AMMO_SHOTGUN' then 
-        ammo_type = 'shotgun_ammo'
-    elseif types == 'AMMO_RIFLE' then 
-        ammo_type = 'rifle_ammo'
-    elseif types == 'AMMO_MG' then 
-        ammo_type = 'mg_ammo'
-    elseif types == 'AMMO_SNIPER' then 
-        ammo_type = 'snp_ammo'
-    elseif types == 'AMMO_EMPLAUNCHER' then 
-        ammo_type = 'emp_ammo'
-    end
-
     if ammo_type then
         ammo_amounts = Inventory.GetItemAmount(src, ammo_type)
     end
