@@ -1,8 +1,8 @@
 config = {}
 
 -- accepted inventories: --
--- 'qb-inventory' --
--- 'lj-inventory' -- 
--- 'ps-inventory' --
+-- 'qb-inventory'
+-- 'ps-inventory'
+-- 'ox_inventory'
 
 config.inventory = 'qb-inventory' 
