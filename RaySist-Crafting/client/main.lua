@@ -2,6 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local PlayerData = {}
 local craftingOpen = false
 local currentCraftingTable = nil
+local activeTables = {}
 
 -- Initialize
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
@@ -16,42 +17,64 @@ RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
     PlayerData.job = JobInfo
 end)
 
--- Create crafting tables
-CreateThread(function()
-    for tableName, table in pairs(Config.CraftingTables) do
-        -- Create target for crafting tables
-        exports['qb-target']:AddTargetModel(table.model, {
+local function BuildCraftingTables(zones)
+    for _, data in pairs(activeTables) do
+        exports['qb-target']:RemoveTargetModel(data.model)
+        if data.object and DoesEntityExist(data.object) then
+            DeleteObject(data.object)
+        end
+    end
+    activeTables = {}
+
+    Config.CraftingTables = zones or {}
+
+    for _, zone in pairs(Config.CraftingTables) do
+        local model = zone.model
+        if type(model) == 'string' then model = GetHashKey(model) end
+
+        exports['qb-target']:AddTargetModel(model, {
             options = {
                 {
                     type = "client",
                     event = "RaySist-Crafting:client:OpenCrafting",
                     icon = "fas fa-hammer",
-                    label = "Use " .. (table.tableLabel or "Crafting Table"),
-                    tableName = table.name, -- Pass the table name to identify which table was used
+                    label = "Use " .. (zone.tableLabel or "Crafting Table"),
+                    tableName = zone.name,
                 },
             },
-            distance = table.distance or 2.5
+            distance = zone.distance or 2.5
         })
 
-        -- Create crafting table props if coords are provided
-        if table.coords then
-            local model = table.model
+        local obj = nil
+        if zone.coords then
             RequestModel(model)
             while not HasModelLoaded(model) do
                 Wait(0)
             end
 
-            local craftingTable = CreateObject(model, table.coords.x, table.coords.y, table.coords.z - 1.0, false, false, false)
-            SetEntityHeading(craftingTable, table.coords.w)
-            FreezeEntityPosition(craftingTable, true)
-            SetEntityAsMissionEntity(craftingTable, true, true)
+            obj = CreateObject(model, zone.coords.x, zone.coords.y, zone.coords.z - 1.0, false, false, false)
+            SetEntityHeading(obj, zone.coords.w)
+            FreezeEntityPosition(obj, true)
+            SetEntityAsMissionEntity(obj, true, true)
             SetModelAsNoLongerNeeded(model)
 
             if Config.Debug then
-                print("Created crafting table at: " .. table.coords.x .. ", " .. table.coords.y .. ", " .. table.coords.z)
+                print("Created crafting table at: " .. zone.coords.x .. ", " .. zone.coords.y .. ", " .. zone.coords.z)
             end
         end
+
+        table.insert(activeTables, { model = model, object = obj })
     end
+end
+
+RegisterNetEvent('RaySist-Crafting:client:SyncData', function(data)
+    Config.Categories = data.categories or {}
+    Config.Recipes = data.recipes or {}
+    BuildCraftingTables(data.zones or {})
+end)
+
+RegisterNetEvent('RaySist-Crafting:client:SyncZones', function(zones)
+    BuildCraftingTables(zones or {})
 end)
 
 -- Open crafting menu
