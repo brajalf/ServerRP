@@ -4,8 +4,6 @@
 
 
 ![craft](https://i.ibb.co/KzXCBqfV/Craft-removebg.png)
-
->>>>>>> c6eee8b2f542c02f20c45a6ee5388a85ef07b4fc
 A modern crafting system for FiveM QBCore framework.
 
 ## Features
@@ -52,6 +50,20 @@ Players can interact with crafting tables using qb-target. The crafting menu all
 2. View required materials and crafting time
 3. Craft items if they have the required materials
 4. Track their crafting skill progress
+
+## Exports
+
+The resource exposes several server-side exports:
+
+- `GetCraftingData(jobName)` → table with `zones`, `categories` and `recipes` filtered for the job.
+- `CreateCategory(source, category)` → `id`
+- `RenameCategory(source, data)` → `bool`
+- `SaveRecipe(source, recipe)` → `bool`
+- `DeleteRecipe(source, name)` → `bool`
+- `AddZone(source, zone)` → `id`
+- `DeleteZone(source, id)` → `bool`
+
+Each function requires admin permissions on `source` when modifying data.
 
 ## Credits
 
