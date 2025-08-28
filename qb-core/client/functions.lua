@@ -47,19 +47,36 @@ end
 function QBCore.Functions.HasItem(items, amount)
     amount = amount or 1
 
-    if type(items) == 'table' then
-        for _, v in pairs(items) do
-            local name = v.name or v
-            local meta = v.metadata
-            if exports.ox_inventory:GetItemCount(name, meta) < amount then
-                return false
-            end
-        end
+    local oxInv = GetResourceState('ox_inventory') == 'started'
+    local qbInv = GetResourceState('qb-inventory') == 'started'
 
-        return true
-    else
-        return exports.ox_inventory:GetItemCount(items) >= amount
+    if oxInv then
+        if type(items) == 'table' then
+            for _, v in pairs(items) do
+                local name = v.name or v
+                local meta = v.metadata
+                if exports.ox_inventory:GetItemCount(name, meta) < amount then
+                    return false
+                end
+            end
+
+            return true
+        else
+            return exports.ox_inventory:GetItemCount(items) >= amount
+        end
+    elseif qbInv then
+        if type(items) == 'table' then
+            local itemTable = {}
+            for _, v in pairs(items) do
+                itemTable[#itemTable + 1] = v.name or v
+            end
+            return exports['qb-inventory']:HasItem(itemTable, amount)
+        else
+            return exports['qb-inventory']:HasItem(items, amount)
+        end
     end
+
+    return false
 end
 
 ---Returns the full character name
