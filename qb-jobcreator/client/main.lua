@@ -62,10 +62,15 @@ end)
 
 -- Abre una tienda registrada en qb-inventory u ox_inventory
 RegisterNetEvent('qb-jobcreator:client:openInvShop', function(id, useServerEvent)
-  if useServerEvent then
-    TriggerServerEvent('qb-inventory:server:OpenShop', id)
+  local oxStarted = GetResourceState('ox_inventory') == 'started'
+  if oxStarted then
+    exports.ox_inventory:openInventory('shop', id)
   else
-    TriggerEvent('qb-inventory:client:OpenShop', id)
+    if useServerEvent then
+      TriggerServerEvent('qb-inventory:server:OpenShop', id)
+    else
+      TriggerEvent('qb-inventory:client:OpenShop', id)
+    end
   end
 end)
 
