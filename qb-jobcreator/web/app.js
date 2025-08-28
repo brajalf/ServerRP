@@ -60,6 +60,7 @@ const App = (() => {
       const row = document.createElement('div');
       row.className = 'row tp-item';
       row.innerHTML = `
+        <div><input class="input tplabel" placeholder="Nombre" value="${data.label || ''}"/></div>
         <div><input class="input tpx" placeholder="X" value="${data.x || ''}"/></div>
         <div><input class="input tpy" placeholder="Y" value="${data.y || ''}"/></div>
         <div><input class="input tpz" placeholder="Z" value="${data.z || ''}"/></div>
@@ -68,15 +69,19 @@ const App = (() => {
         <div><button class="btn danger del">X</button></div>`;
       wrap.appendChild(row);
       row.querySelector('.del').onclick = () => row.remove();
-      row.querySelector('.tpcoords').onclick = () => {
-        postJ('getCoords', {}).then((c) => {
-          if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
-          row.querySelector('.tpx').value = c.x || 0;
-          row.querySelector('.tpy').value = c.y || 0;
-          row.querySelector('.tpz').value = c.z || 0;
-          row.querySelector('.tpw').value = c.w || 0;
-        });
+      const setCoords = (c) => {
+        if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
+        row.querySelector('.tpx').value = c.x || 0;
+        row.querySelector('.tpy').value = c.y || 0;
+        row.querySelector('.tpz').value = c.z || 0;
+        row.querySelector('.tpw').value = c.w || 0;
       };
+      row.querySelector('.tpcoords').onclick = () => {
+        postJ('getCoords', {}).then(setCoords);
+      };
+      if (!('x' in data) && !('y' in data) && !('z' in data) && !('w' in data)) {
+        postJ('getCoords', {}).then(setCoords);
+      }
     }
     (items || []).forEach(addRow);
     if (!items || items.length === 0) addRow();
@@ -84,11 +89,12 @@ const App = (() => {
     collectTeleports = () => {
       const list = [];
       wrap.querySelectorAll('.tp-item').forEach((r) => {
+        const label = r.querySelector('.tplabel').value.trim();
         const x = Number(r.querySelector('.tpx').value) || 0;
         const y = Number(r.querySelector('.tpy').value) || 0;
         const z = Number(r.querySelector('.tpz').value) || 0;
         const w = Number(r.querySelector('.tpw').value) || 0;
-        list.push({ x, y, z, w });
+        list.push({ label, x, y, z, w });
       });
       return list;
     };
