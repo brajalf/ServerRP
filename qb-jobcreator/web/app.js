@@ -574,6 +574,7 @@ const App = (() => {
       tr.innerHTML = `
         <td>${c.name}</td>
         <td>${c.label || ''}</td>
+        <td>${c.job || ''}</td>
         <td class="actions-inline"><button class="btn" data-act="ren">Renombrar</button></td>`;
       tr.querySelector('[data-act="ren"]').onclick = () => {
         const html = `
@@ -590,13 +591,15 @@ const App = (() => {
       catBody.appendChild(tr);
     });
     $('#btn-addcat').onclick = () => {
+      const jobOpts = Object.values(state.jobs || {}).map((j) => `<option value="${j.name}">${j.label || j.name}</option>`).join('');
       const html = `
         <div class="row">
           <div><label>Nombre</label><input id="catname" class="input"/></div>
           <div><label>Etiqueta</label><input id="catlabel" class="input"/></div>
+          <div><label>Trabajo</label><select id="catjob" class="input"><option value=""></option>${jobOpts}</select></div>
         </div>`;
       modal('Nueva Categoría', html, () => {
-        post('createCategory', { name: $('#catname').value, label: $('#catlabel').value });
+        post('createCategory', { name: $('#catname').value, label: $('#catlabel').value, job: $('#catjob').value });
         closeModal();
         setTimeout(refreshCrafting, 300);
       });
@@ -610,6 +613,7 @@ const App = (() => {
         <td>${r.name}</td>
         <td>${r.label || ''}</td>
         <td>${r.category || ''}</td>
+        <td>${r.job || ''}</td>
         <td>${r.time || 0}</td>
         <td>${r.requireBlueprint ? 'Sí' : 'No'}</td>
         <td class="actions-inline"><button class="btn" data-act="edit">Editar</button><button class="btn danger" data-act="del">X</button></td>`;
@@ -625,6 +629,7 @@ const App = (() => {
   function openRecipeModal(rec) {
     let collectIngredients = () => [];
     const catOpts = (state.categories || []).map((c) => `<option value="${c.name}" ${rec && rec.category===c.name?'selected':''}>${c.label || c.name}</option>`).join('');
+    const jobOpts = Object.values(state.jobs || {}).map((j) => `<option value="${j.name}" ${rec && rec.job===j.name?'selected':''}>${j.label || j.name}</option>`).join('');
     const html = `
       <div class="row">
         <div><label>Nombre</label><input id="rname" class="input" value="${rec.name || ''}"/></div>
@@ -632,6 +637,7 @@ const App = (() => {
       </div>
       <div class="row">
         <div><label>Categoría</label><select id="rcategory" class="input">${catOpts}</select></div>
+        <div><label>Trabajo</label><select id="rjob" class="input"><option value=""></option>${jobOpts}</select></div>
         <div><label>Tiempo (s)</label><input id="rtime" class="input" type="number" value="${rec.time || 0}"/></div>
       </div>
       <div class="row">
@@ -644,6 +650,7 @@ const App = (() => {
         name: $('#rname').value,
         label: $('#rlabel').value,
         category: $('#rcategory').value,
+        job: $('#rjob').value,
         time: Number($('#rtime').value) || 0,
         requireBlueprint: $('#rblue').checked,
         blueprintItem: $('#rblueitem').value,
