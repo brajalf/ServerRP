@@ -508,10 +508,15 @@ end
 ---@param source any
 ---@param item string
 function QBCore.Functions.UseItem(source, item)
-    if GetResourceState('ox_inventory') == 'missing' then return end
-    if exports.ox_inventory and exports.ox_inventory.UseItem then
+    if GetResourceState('ox_inventory') == 'started' and exports.ox_inventory and exports.ox_inventory.UseItem then
         exports.ox_inventory:UseItem(source, item)
+        return true
+    elseif GetResourceState('qb-inventory') == 'started' and exports['qb-inventory'] and exports['qb-inventory'].UseItem then
+        exports['qb-inventory']:UseItem(source, item)
+        return true
     end
+
+    return false
 end
 
 ---Kick Player
@@ -707,21 +712,26 @@ end
 ---@param amount number
 ---@return boolean
 function QBCore.Functions.HasItem(source, items, amount)
-    if GetResourceState('ox_inventory') == 'missing' then return end
     amount = amount or 1
-    local count = exports.ox_inventory:Search(source, 'count', items)
+    if GetResourceState('ox_inventory') == 'started' and exports.ox_inventory and exports.ox_inventory.Search then
+        local count = exports.ox_inventory:Search(source, 'count', items)
 
-    if type(items) == 'table' and type(count) == 'table' then
-        for _, v in pairs(count) do
-            if v < amount then
-                return false
+        if type(items) == 'table' and type(count) == 'table' then
+            for _, v in pairs(count) do
+                if v < amount then
+                    return false
+                end
             end
+
+            return true
         end
 
-        return true
+        return count >= amount
+    elseif GetResourceState('qb-inventory') == 'started' and exports['qb-inventory'] and exports['qb-inventory'].HasItem then
+        return exports['qb-inventory']:HasItem(source, items, amount)
     end
 
-    return count >= amount
+    return false
 end
 
 ---Notify
