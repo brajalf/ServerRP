@@ -113,11 +113,22 @@ local function LoadAll()
   for _, z in ipairs(DB.GetZones()) do
     local data = json.decode(z.data or '{}') or {}
     if z.ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
+    local coords = json.decode(z.coords or '{}') or {}
     Runtime.Zones[#Runtime.Zones+1] = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
-      coords = json.decode(z.coords or '{}') or {}, radius = z.radius or 2.0,
+      coords = coords, radius = z.radius or 2.0,
       data = data
     }
+    if z.ztype == 'music' then
+      local name = (data and (data.name or data.djName)) or ('jc_ms_'..z.job..'_'..z.id)
+      local range = tonumber(data and (data.range or data.distance)) or 20.0
+      TriggerEvent('myDj:addZone', {
+        name = name,
+        pos = vector3(coords.x or 0.0, coords.y or 0.0, coords.z or 0.0),
+        range = range,
+        requiredJob = z.job
+      })
+    end
   end
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
