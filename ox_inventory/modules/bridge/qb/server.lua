@@ -33,6 +33,10 @@ local function setItemCompatibilityProps(item)
     item.info = item.metadata
     item.amount = item.count
 
+    if item.info and item.info.durability ~= nil then
+        item.info.quality = item.info.durability
+    end
+
     return item
 end
 
@@ -199,7 +203,7 @@ function server.convertInventory(playerId, items)
         for _, data in pairs(items) do
             local item = Items(data.name)
 
-            if item?.name then
+            if item and item.name then
                 local metadata, count = Items.Metadata(playerId, item, data.info, data.amount or data.count or 1)
                 local weight = Inventory.SlotWeight(item, { count = count, metadata = metadata })
                 totalWeight += weight
@@ -290,9 +294,13 @@ export('qb-inventory.SetItemData', function(invId, itemName, key, value, slot)
     if not slotId then return false end
 
     if key == 'info' or key == 'metadata' then
+        if type(value) == 'table' and value.quality and not value.durability then
+            value.durability = value.quality
+            value.quality = nil
+        end
         Inventory.SetMetadata(invId, slotId, value)
         return true
-    elseif key == 'durability' then
+    elseif key == 'durability' or key == 'quality' then
         Inventory.SetDurability(invId, slotId, value)
         return true
     end
@@ -637,6 +645,11 @@ end)
 export('qb-inventory.SetMetadata', function(source, name, metadata, amount, slot)
     if not name then return false end
     name = string.lower(name)
+
+    if type(metadata) == 'table' and metadata.quality and not metadata.durability then
+        metadata.durability = metadata.quality
+        metadata.quality = nil
+    end
 
     if slot then
         Inventory.SetMetadata(source, slot, metadata)
