@@ -33,3 +33,27 @@ RegisterNetEvent('browns_reload:RemoveAmmoItem', function(ammo, counts) -- Remov
     counts = tonumber(counts)
     Inventory.RemoveItem(src, ammo, counts)
 end)
+
+-- Update weapon ammo using weapon hash sent from client
+RegisterNetEvent('qb-weapons:server:UpdateWeaponAmmo', function(weaponHash, ammo)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+
+    local weaponInfo = QBCore.Shared.Weapons[weaponHash]
+    if not weaponInfo then return end
+
+    local weaponName = weaponInfo.name
+    local weaponItem = Player.Functions.GetItemByName(weaponName)
+    if not weaponItem then return end
+
+    weaponItem.info = weaponItem.info or {}
+    weaponItem.info.ammo = ammo
+
+    if config.inventory == 'ox_inventory' then
+        exports.ox_inventory:SetMetadata(src, weaponItem.slot, weaponItem.info)
+    else
+        Player.Functions.RemoveItem(weaponName, 1, weaponItem.slot)
+        Player.Functions.AddItem(weaponName, 1, weaponItem.slot, weaponItem.info)
+    end
+end)
