@@ -1,5 +1,78 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local craftingPlayers = {}
+local CraftingData = {
+    zones = {},
+    categories = {},
+    recipes = {}
+}
+
+local function LoadCraftingData()
+    local categories = MySQL.query.await('SELECT * FROM crafting_categories') or {}
+    local recipes = MySQL.query.await('SELECT * FROM crafting_recipes') or {}
+    local zones = MySQL.query.await('SELECT * FROM crafting_zones') or {}
+
+    for _, z in pairs(zones) do
+        z.coords = json.decode(z.coords or '{}')
+        z.allowedCategories = json.decode(z.allowed_categories or '[]')
+        z.requiredItems = json.decode(z.required_items or '[]')
+    end
+
+    for _, r in pairs(recipes) do
+        r.ingredients = json.decode(r.ingredients or '[]')
+        r.requireBlueprint = r.require_blueprint == 1
+    end
+
+    CraftingData.zones = zones
+    CraftingData.categories = categories
+    CraftingData.recipes = recipes
+
+    Config.CraftingTables = CraftingData.zones
+    Config.Categories = CraftingData.categories
+    Config.Recipes = CraftingData.recipes
+end
+
+CreateThread(function()
+    LoadCraftingData()
+    Wait(100)
+    TriggerClientEvent('RaySist-Crafting:client:SyncData', -1, CraftingData)
+end)
+
+AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
+    TriggerClientEvent('RaySist-Crafting:client:SyncData', Player.PlayerData.source, CraftingData)
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:GetCraftingData', function(source, cb)
+    cb(CraftingData)
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:AddZone', function(source, cb, zone)
+    if not QBCore.Functions.HasPermission(source, 'admin') then return cb(false) end
+    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, model, coords, distance, allowed_categories, required_job, required_items) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        zone.name,
+        zone.model,
+        json.encode(zone.coords),
+        zone.distance or 2.5,
+        json.encode(zone.allowedCategories or {}),
+        zone.requiredJob,
+        json.encode(zone.requiredItems or {})
+    })
+    zone.id = id
+    table.insert(CraftingData.zones, zone)
+    Config.CraftingTables = CraftingData.zones
+    TriggerClientEvent('RaySist-Crafting:client:SyncZones', -1, CraftingData.zones)
+    cb(true, id)
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:DeleteZone', function(source, cb, id)
+    if not QBCore.Functions.HasPermission(source, 'admin') then return cb(false) end
+    MySQL.query.await('DELETE FROM crafting_zones WHERE id = ?', { id })
+    for i, z in ipairs(CraftingData.zones) do
+        if z.id == id then table.remove(CraftingData.zones, i) break end
+    end
+    Config.CraftingTables = CraftingData.zones
+    TriggerClientEvent('RaySist-Crafting:client:SyncZones', -1, CraftingData.zones)
+    cb(true)
+end)
 
 -- Get player inventory
 QBCore.Functions.CreateCallback('RaySist-Crafting:server:GetPlayerInventory', function(source, cb)
