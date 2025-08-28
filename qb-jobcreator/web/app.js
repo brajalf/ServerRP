@@ -76,12 +76,10 @@ const App = (() => {
         row.querySelector('.tpz').value = c.z || 0;
         row.querySelector('.tpw').value = c.w || 0;
       };
+      postJ('getCoords', {}).then(setCoords);
       row.querySelector('.tpcoords').onclick = () => {
         postJ('getCoords', {}).then(setCoords);
       };
-      if (!('x' in data) && !('y' in data) && !('z' in data) && !('w' in data)) {
-        postJ('getCoords', {}).then(setCoords);
-      }
     }
     (items || []).forEach(addRow);
     if (!items || items.length === 0) addRow();
