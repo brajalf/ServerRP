@@ -372,47 +372,73 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
 end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getRecipes', function(src, cb)
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(data)
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:GetCraftingData']
+  if not craftCb then return cb({}) end
+  craftCb(src, function(data)
     cb((data and data.recipes) or {})
   end)
 end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getCategories', function(src, cb)
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(data)
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:GetCraftingData']
+  if not craftCb then return cb({}) end
+  craftCb(src, function(data)
     cb((data and data.categories) or {})
   end)
 end)
 
 local function SyncRay()
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(dat)
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:GetCraftingData']
+  if not craftCb then return end
+  craftCb(0, function(dat)
     if dat then TriggerClientEvent('RaySist-Crafting:client:SyncData', -1, dat) end
   end)
 end
 
 RegisterNetEvent('qb-jobcreator:server:createCategory', function(cat)
   local src = source; if not ensurePerm(src) then return end
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:CreateCategory', function()
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:CreateCategory']
+  if not craftCb then
+    TriggerClientEvent('QBCore:Notify', src, 'Crafting callback not found', 'error')
+    return
+  end
+  craftCb(src, function()
     SyncRay()
   end, cat)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:renameCategory', function(data)
   local src = source; if not ensurePerm(src) then return end
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:RenameCategory', function()
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:RenameCategory']
+  if not craftCb then
+    TriggerClientEvent('QBCore:Notify', src, 'Crafting callback not found', 'error')
+    return
+  end
+  craftCb(src, function()
     SyncRay()
   end, data)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:saveRecipe', function(recipe)
   local src = source; if not ensurePerm(src) then return end
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:SaveRecipe', function()
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:SaveRecipe']
+  if not craftCb then
+    TriggerClientEvent('QBCore:Notify', src, 'Crafting callback not found', 'error')
+    return
+  end
+  craftCb(src, function()
     SyncRay()
   end, recipe)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:deleteRecipe', function(name)
   local src = source; if not ensurePerm(src) then return end
-  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:DeleteRecipe', function()
+  local craftCb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:DeleteRecipe']
+  if not craftCb then
+    TriggerClientEvent('QBCore:Notify', src, 'Crafting callback not found', 'error')
+    return
+  end
+  craftCb(src, function()
     SyncRay()
   end, name)
 end)
