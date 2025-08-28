@@ -24,6 +24,131 @@ local function GetCraftingDataForJob(job)
     }
 end
 
+local function AddZoneFn(src, zone)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return nil end
+    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, model, coords, distance, allowed_categories, required_job, required_items) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        zone.name,
+        zone.model,
+        json.encode(zone.coords),
+        zone.distance or 2.5,
+        json.encode(zone.allowedCategories or {}),
+        zone.requiredJob,
+        json.encode(zone.requiredItems or {})
+    })
+    if not id then return nil end
+    zone.id = id
+    table.insert(CraftingData.zones, zone)
+    Config.CraftingTables = CraftingData.zones
+    TriggerClientEvent('RaySist-Crafting:client:SyncZones', -1, CraftingData.zones)
+    return id
+end
+
+local function DeleteZoneFn(src, id)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return false end
+    MySQL.query.await('DELETE FROM crafting_zones WHERE id = ?', { id })
+    for i, z in ipairs(CraftingData.zones) do
+        if z.id == id then
+            table.remove(CraftingData.zones, i)
+            break
+        end
+    end
+    Config.CraftingTables = CraftingData.zones
+    TriggerClientEvent('RaySist-Crafting:client:RemoveTable', -1, id)
+    return true
+end
+
+local function CreateCategoryFn(src, cat)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return nil end
+    local id = MySQL.insert.await('INSERT INTO crafting_categories (name, label, icon) VALUES (?, ?, ?)', {
+        cat.name,
+        cat.label,
+        cat.icon
+    })
+    if not id then return nil end
+    cat.id = id
+    table.insert(CraftingData.categories, cat)
+    Config.Categories = CraftingData.categories
+    return id
+end
+
+local function RenameCategoryFn(src, data)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return false end
+    MySQL.update.await('UPDATE crafting_categories SET name = ?, label = ? WHERE name = ?', {
+        data.new,
+        data.label,
+        data.old
+    })
+    for _, c in pairs(CraftingData.categories) do
+        if c.name == data.old then
+            c.name = data.new
+            c.label = data.label
+            break
+        end
+    end
+    for _, r in pairs(CraftingData.recipes) do
+        if r.category == data.old then r.category = data.new end
+    end
+    Config.Categories = CraftingData.categories
+    Config.Recipes = CraftingData.recipes
+    return true
+end
+
+local function SaveRecipeFn(src, recipe)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return false end
+    local ingredients = json.encode(recipe.ingredients or {})
+    local requireBlueprint = recipe.requireBlueprint and 1 or 0
+    local exists = MySQL.scalar.await('SELECT id FROM crafting_recipes WHERE name = ?', { recipe.name })
+    if exists then
+        MySQL.update.await('UPDATE crafting_recipes SET label = ?, category = ?, time = ?, ingredients = ?, require_blueprint = ?, blueprint_item = ?, job = ? WHERE name = ?', {
+            recipe.label,
+            recipe.category,
+            recipe.time or 0,
+            ingredients,
+            requireBlueprint,
+            recipe.blueprintItem,
+            recipe.job,
+            recipe.name
+        })
+    else
+        MySQL.insert.await('INSERT INTO crafting_recipes (name, label, category, time, ingredients, require_blueprint, blueprint_item, job) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', {
+            recipe.name,
+            recipe.label,
+            recipe.category,
+            recipe.time or 0,
+            ingredients,
+            requireBlueprint,
+            recipe.blueprintItem,
+            recipe.job
+        })
+    end
+    local found = false
+    for i, r in ipairs(CraftingData.recipes) do
+        if r.name == recipe.name then
+            CraftingData.recipes[i] = recipe
+            found = true
+            break
+        end
+    end
+    if not found then
+        CraftingData.recipes[#CraftingData.recipes+1] = recipe
+    end
+    Config.Recipes = CraftingData.recipes
+    return true
+end
+
+local function DeleteRecipeFn(src, name)
+    if not QBCore.Functions.HasPermission(src, 'admin') then return false end
+    MySQL.query.await('DELETE FROM crafting_recipes WHERE name = ?', { name })
+    for i, r in ipairs(CraftingData.recipes) do
+        if r.name == name then
+            table.remove(CraftingData.recipes, i)
+            break
+        end
+    end
+    Config.Recipes = CraftingData.recipes
+    return true
+end
+
 local function LoadCraftingData()
     local categories = MySQL.query.await('SELECT * FROM crafting_categories') or {}
     local recipes = MySQL.query.await('SELECT * FROM crafting_recipes') or {}
@@ -71,35 +196,28 @@ QBCore.Functions.CreateCallback('RaySist-Crafting:server:GetCraftingData', funct
 end)
 
 QBCore.Functions.CreateCallback('RaySist-Crafting:server:AddZone', function(source, cb, zone)
-    if not QBCore.Functions.HasPermission(source, 'admin') then return cb(false) end
-    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, model, coords, distance, allowed_categories, required_job, required_items) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-        zone.name,
-        zone.model,
-        json.encode(zone.coords),
-        zone.distance or 2.5,
-        json.encode(zone.allowedCategories or {}),
-        zone.requiredJob,
-        json.encode(zone.requiredItems or {})
-    })
-    zone.id = id
-    table.insert(CraftingData.zones, zone)
-    Config.CraftingTables = CraftingData.zones
-    TriggerClientEvent('RaySist-Crafting:client:SyncZones', -1, CraftingData.zones)
-    cb(true, id)
+    local id = AddZoneFn(source, zone)
+    cb(id ~= nil, id)
 end)
 
 QBCore.Functions.CreateCallback('RaySist-Crafting:server:DeleteZone', function(source, cb, id)
-    if not QBCore.Functions.HasPermission(source, 'admin') then return cb(false) end
-    MySQL.query.await('DELETE FROM crafting_zones WHERE id = ?', { id })
-    for i, z in ipairs(CraftingData.zones) do
-        if z.id == id then
-            table.remove(CraftingData.zones, i)
-            break
-        end
-    end
-    Config.CraftingTables = CraftingData.zones
-    TriggerClientEvent('RaySist-Crafting:client:RemoveTable', -1, id)
-    cb(true)
+    cb(DeleteZoneFn(source, id))
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:CreateCategory', function(source, cb, cat)
+    cb(CreateCategoryFn(source, cat) ~= nil)
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:RenameCategory', function(source, cb, data)
+    cb(RenameCategoryFn(source, data))
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:SaveRecipe', function(source, cb, recipe)
+    cb(SaveRecipeFn(source, recipe))
+end)
+
+QBCore.Functions.CreateCallback('RaySist-Crafting:server:DeleteRecipe', function(source, cb, name)
+    cb(DeleteRecipeFn(source, name))
 end)
 
 -- Get player inventory
@@ -291,3 +409,11 @@ AddEventHandler('playerDropped', function()
         craftingPlayers[src] = nil
     end
 end)
+
+exports('GetCraftingData', GetCraftingDataForJob)
+exports('AddZone', AddZoneFn)
+exports('DeleteZone', DeleteZoneFn)
+exports('CreateCategory', CreateCategoryFn)
+exports('RenameCategory', RenameCategoryFn)
+exports('SaveRecipe', SaveRecipeFn)
+exports('DeleteRecipe', DeleteRecipeFn)
