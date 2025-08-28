@@ -3,29 +3,27 @@ local IsControlJustReleased = IsControlJustReleased
 local CreateThread          = CreateThread
 
 
+local inventoryType = GetResourceState('ox_inventory') == 'started' and 'ox' or (GetResourceState('qb-inventory') == 'started' and 'qb' or nil)
+
+
 function SetCurrentStash(id)
-    if GetResourceState('ox_inventory') == 'started' then
-        TriggerEvent('inventory:client:SetCurrentStash', id)
-    elseif GetResourceState('qb-inventory') == 'started' then
+    if inventoryType == 'ox' then
+        TriggerEvent('ox_inventory:client:SetCurrentStash', id)
+    elseif inventoryType == 'qb' then
         TriggerEvent('qb-inventory:client:SetCurrentStash', id)
     else
-        TriggerEvent('inventory:client:SetCurrentStash', id)
+        lib.notify({ type = 'error', description = 'No inventory resource started' })
     end
 end
 
-
 local function OpenStash(id, data)
-    if GetResourceState('ox_inventory') == 'started' then
-        TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, data)
+    if inventoryType == 'ox' then
+        TriggerServerEvent('ox_inventory:server:OpenInventory', 'stash', id, data)
+    elseif inventoryType == 'qb' then
+        TriggerServerEvent('qb-inventory:server:OpenInventory', 'stash', id, {maxweight = data.weight, slots = data.slots})
     else
-        if GetResourceState('qb-inventory') == 'started' then
-            TriggerServerEvent('qb-inventory:server:OpenInventory', 'stash', id, {maxweight = data.weight, slots = data.slots})
-        else
-            local inv = exports['qb-inventory']
-            if inv and inv.OpenStash then
-                inv:OpenStash(id, data.slots, data.weight)
-            end
-        end
+        lib.notify({ type = 'error', description = 'No inventory resource started' })
+        return
     end
 
     SetCurrentStash(id)
