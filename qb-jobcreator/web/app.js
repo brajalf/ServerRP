@@ -9,7 +9,7 @@ const App = (() => {
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
     recipes: {},
-    craftCategories: [],
+    categories: [],
   };
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -93,6 +93,34 @@ const App = (() => {
         const z = Number(r.querySelector('.tpz').value) || 0;
         const w = Number(r.querySelector('.tpw').value) || 0;
         list.push({ label, x, y, z, w });
+      });
+      return list;
+    };
+  }
+
+  function renderIngredientSection(box, items = []) {
+    box.innerHTML = `
+      <div id="ing-items"></div>
+      <div class="row"><button class="btn" id="addIng">+ Ingrediente</button></div>`;
+    const wrap = box.querySelector('#ing-items');
+    function addRow(data = {}) {
+      const row = document.createElement('div');
+      row.className = 'row ing-item';
+      row.innerHTML = `
+        <div><input class="input iname" placeholder="Ítem" value="${data.item || ''}"/></div>
+        <div><input class="input iamnt" type="number" placeholder="Cantidad" value="${data.amount || 1}"/></div>
+        <div><button class="btn danger del">X</button></div>`;
+      wrap.appendChild(row);
+      row.querySelector('.del').onclick = () => row.remove();
+    }
+    (items || []).forEach(addRow);
+    box.querySelector('#addIng').onclick = () => addRow();
+    return () => {
+      const list = [];
+      wrap.querySelectorAll('.ing-item').forEach((r) => {
+        const item = r.querySelector('.iname').value.trim();
+        const amount = Number(r.querySelector('.iamnt').value) || 0;
+        if (item && amount > 0) list.push({ item, amount, label: item });
       });
       return list;
     };
@@ -190,8 +218,11 @@ const App = (() => {
       applyBranding(pay.branding);
       applyScope();
 
-      postJ('getRecipes').then((r) => { state.recipes = r || {}; });
-      postJ('getCraftCategories').then((c) => { state.craftCategories = c || []; });
+      postJ('getRecipes').then((r) => {
+        if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
+        else { state.recipes = r || {}; }
+      });
+      postJ('getCategories').then((c) => { state.categories = c || []; });
 
       // si viene como boss, entrar directo al panel del trabajo
       if (pay.scope && pay.scope.mode === 'boss' && pay.scope.job) {
@@ -212,9 +243,19 @@ const App = (() => {
       if (payload.scope) state.scope = payload.scope;
       applyBranding(payload.branding);
       applyScope();
-      postJ('getRecipes').then((r) => { state.recipes = r || {}; });
-      postJ('getCraftCategories').then((c) => { state.craftCategories = c || []; });
+      postJ('getRecipes').then((r) => {
+        if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
+        else { state.recipes = r || {}; }
+      });
+      postJ('getCategories').then((c) => { state.categories = c || []; });
       renderAll();
+      return;
+    }
+    if (action === 'craftingData') {
+      const r = payload && payload.recipes;
+      if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
+      else { state.recipes = r || {}; }
+      state.categories = (payload && payload.categories) || [];
       return;
     }
     if (action === 'hide' || action === 'force-close') { hide(); return; }
@@ -252,6 +293,7 @@ const App = (() => {
     if (v === 'jobs')      renderJobs();
     if (v === 'employees') renderEmployees();
     if (v === 'stats')     renderStats();
+    if (v === 'crafting')  renderCrafting();
     if (v === 'jobdetail') renderJD();
   }
 
@@ -524,6 +566,105 @@ const App = (() => {
     });
   }
 
+  function renderCrafting() {
+    const catBody = $('#catTable tbody');
+    catBody.innerHTML = '';
+    (state.categories || []).forEach((c) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.name}</td>
+        <td>${c.label || ''}</td>
+        <td class="actions-inline"><button class="btn" data-act="ren">Renombrar</button></td>`;
+      tr.querySelector('[data-act="ren"]').onclick = () => {
+        const html = `
+          <div class="row">
+            <div><label>Nombre</label><input id="catname" class="input" value="${c.name}"/></div>
+            <div><label>Etiqueta</label><input id="catlabel" class="input" value="${c.label || ''}"/></div>
+          </div>`;
+        modal('Renombrar Categoría', html, () => {
+          post('renameCategory', { old: c.name, new: $('#catname').value, label: $('#catlabel').value });
+          closeModal();
+          setTimeout(refreshCrafting, 300);
+        });
+      };
+      catBody.appendChild(tr);
+    });
+    $('#btn-addcat').onclick = () => {
+      const html = `
+        <div class="row">
+          <div><label>Nombre</label><input id="catname" class="input"/></div>
+          <div><label>Etiqueta</label><input id="catlabel" class="input"/></div>
+        </div>`;
+      modal('Nueva Categoría', html, () => {
+        post('createCategory', { name: $('#catname').value, label: $('#catlabel').value });
+        closeModal();
+        setTimeout(refreshCrafting, 300);
+      });
+    };
+
+    const recBody = $('#recTable tbody');
+    recBody.innerHTML = '';
+    Object.values(state.recipes || {}).forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.name}</td>
+        <td>${r.label || ''}</td>
+        <td>${r.category || ''}</td>
+        <td>${r.time || 0}</td>
+        <td>${r.requireBlueprint ? 'Sí' : 'No'}</td>
+        <td class="actions-inline"><button class="btn" data-act="edit">Editar</button><button class="btn danger" data-act="del">X</button></td>`;
+      tr.querySelector('[data-act="edit"]').onclick = () => openRecipeModal(r);
+      tr.querySelector('[data-act="del"]').onclick = () => {
+        confirm('¿Borrar receta?', () => { post('deleteRecipe', { name: r.name }); setTimeout(refreshCrafting, 300); });
+      };
+      recBody.appendChild(tr);
+    });
+    $('#btn-addrec').onclick = () => openRecipeModal({});
+  }
+
+  function openRecipeModal(rec) {
+    let collectIngredients = () => [];
+    const catOpts = (state.categories || []).map((c) => `<option value="${c.name}" ${rec && rec.category===c.name?'selected':''}>${c.label || c.name}</option>`).join('');
+    const html = `
+      <div class="row">
+        <div><label>Nombre</label><input id="rname" class="input" value="${rec.name || ''}"/></div>
+        <div><label>Etiqueta</label><input id="rlabel" class="input" value="${rec.label || ''}"/></div>
+      </div>
+      <div class="row">
+        <div><label>Categoría</label><select id="rcategory" class="input">${catOpts}</select></div>
+        <div><label>Tiempo (s)</label><input id="rtime" class="input" type="number" value="${rec.time || 0}"/></div>
+      </div>
+      <div class="row">
+        <div><label><input type="checkbox" id="rblue" ${rec.requireBlueprint?'checked':''}/> Requiere blueprint</label></div>
+        <div><label>Item blueprint</label><input id="rblueitem" class="input" value="${rec.blueprintItem || ''}"/></div>
+      </div>
+      <div id="ingBox"></div>`;
+    modal(rec && rec.name ? 'Editar Receta' : 'Nueva Receta', html, () => {
+      const data = {
+        name: $('#rname').value,
+        label: $('#rlabel').value,
+        category: $('#rcategory').value,
+        time: Number($('#rtime').value) || 0,
+        requireBlueprint: $('#rblue').checked,
+        blueprintItem: $('#rblueitem').value,
+        ingredients: collectIngredients(),
+      };
+      post('saveRecipe', { recipe: data });
+      closeModal();
+      setTimeout(refreshCrafting, 300);
+    });
+    collectIngredients = renderIngredientSection(document.getElementById('ingBox'), rec.ingredients || []);
+  }
+
+  function refreshCrafting() {
+    postJ('getCategories').then((c) => { state.categories = c || []; renderCrafting(); });
+    postJ('getRecipes').then((r) => {
+      if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
+      else { state.recipes = r || {}; }
+      renderCrafting();
+    });
+  }
+
   // ====== DETALLE DE TRABAJO ======
   function openJobDetail(job) {
     state.jd.job = job.name;
@@ -726,18 +867,11 @@ const App = (() => {
                           row(inp('zvehdef','Modelo por defecto','police', d.vehicle || ''));
         } else if (t === 'crafting') {
           const opts = Object.keys(state.recipes || {}).map((r) => `<option ${d.recipe===r?'selected':''}>${r}</option>`).join('');
-          const cats = (state.craftCategories || []).map((c) => `<option value="${c.name}" ${ (d.allowedCategories||[]).includes(c.name)?'selected':'' }>${c.label || c.name}</option>`).join('');
+          const cats = (state.categories || []).map((c) => `<option value="${c.name}" ${ (d.allowedCategories||[]).includes(c.name)?'selected':'' }>${c.label || c.name}</option>`).join('');
           box.innerHTML =
             row(inp('zname','Nombre','Mesa', d.name || '')) +
             row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
-            row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
-          document.getElementById('editRecipes').onclick = () => {
-            const cur = JSON.stringify(state.recipes || {}, null, 2);
-            modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {
-              try { state.recipes = JSON.parse(document.getElementById('recJSON').value) || {}; post('saveRecipes', { recipes: state.recipes }); renderEditExtra(); closeModal(); toast('Recetas guardadas', 'success'); }
-              catch { toast('JSON inválido', 'error'); }
-            });
-          };
+            row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select></div>`);
         } else if (t === 'cloakroom') {
           box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
         } else if (t === 'shop') {
@@ -859,18 +993,11 @@ const App = (() => {
                         row(inp('zvehdef','Modelo por defecto','police'));
       } else if (t === 'crafting') {
         const opts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
-        const cats = (state.craftCategories || []).map((c) => `<option value="${c.name}">${c.label || c.name}</option>`).join('');
+        const cats = (state.categories || []).map((c) => `<option value="${c.name}">${c.label || c.name}</option>`).join('');
         box.innerHTML =
           row(inp('zname','Nombre','Mesa')) +
           row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
-          row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
-        document.getElementById('editRecipes').onclick = () => {
-          const cur = JSON.stringify(state.recipes || {}, null, 2);
-          modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {
-            try { state.recipes = JSON.parse(document.getElementById('recJSON').value) || {}; post('saveRecipes', { recipes: state.recipes }); renderExtra(); closeModal(); toast('Recetas guardadas', 'success'); }
-            catch { toast('JSON inválido', 'error'); }
-          });
-        };
+          row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select></div>`);
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {
