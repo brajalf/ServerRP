@@ -144,9 +144,10 @@ end
 
 function healStatus()
     local playerData = QBCore.Functions.GetPlayerData()
+    local safeValue = 100
 
-    TriggerServerEvent('consumables:server:addHunger', playerData.metadata.hunger + 100000)
-    TriggerServerEvent('consumables:server:addThirst', playerData.metadata.hunger + 100000)
+    TriggerServerEvent('consumables:server:addHunger', safeValue - playerData.metadata.hunger)
+    TriggerServerEvent('consumables:server:addThirst', safeValue - playerData.metadata.thirst)
 end
 
 function playerSpawned()
