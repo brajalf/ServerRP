@@ -410,12 +410,35 @@ RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
   for i = #Runtime.Zones, 1, -1 do
     if Runtime.Zones[i].id == id then table.remove(Runtime.Zones, i) break end
   end
-  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
-  if dz and dz.ztype == 'music' then
-    local name = (dz.data and (dz.data.name or dz.data.djName)) or ('jc_ms_'..dz.job..'_'..dz.id)
-    TriggerEvent('myDj:removeZone', name)
+  if dz then
+    if dz.ztype == 'music' then
+      local name = (dz.data and (dz.data.name or dz.data.djName)) or ('jc_ms_'..dz.job..'_'..dz.id)
+      TriggerEvent('myDj:removeZone', name)
+    elseif dz.ztype == 'stash' then
+      local stashId = ('jc_%s_%s'):format(dz.job, dz.id)
+      CreatedStashes[stashId] = nil
+      pcall(function()
+        local ox = exports.ox_inventory
+        if ox and ox.RemoveStash then ox:RemoveStash(stashId) end
+      end)
+    elseif dz.ztype == 'shop' then
+      local sid = ('jc_shop_%s_%s'):format(dz.job, dz.id)
+      CreatedShops[sid] = nil
+      if GetResourceState('qb-inventory') == 'started' then
+        pcall(function()
+          local inv = exports['qb-inventory']
+          if inv and inv.RemoveShop then inv:RemoveShop(sid) end
+        end)
+      else
+        pcall(function()
+          local ox = exports.ox_inventory
+          if ox and ox.RemoveShop then ox:RemoveShop(sid) end
+        end)
+      end
+    end
   end
-end)
+  TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
+  end)
 
 -- ===== Empleados =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getEmployees', function(src, cb, jobName)
