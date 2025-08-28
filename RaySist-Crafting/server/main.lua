@@ -67,10 +67,13 @@ QBCore.Functions.CreateCallback('RaySist-Crafting:server:DeleteZone', function(s
     if not QBCore.Functions.HasPermission(source, 'admin') then return cb(false) end
     MySQL.query.await('DELETE FROM crafting_zones WHERE id = ?', { id })
     for i, z in ipairs(CraftingData.zones) do
-        if z.id == id then table.remove(CraftingData.zones, i) break end
+        if z.id == id then
+            table.remove(CraftingData.zones, i)
+            break
+        end
     end
     Config.CraftingTables = CraftingData.zones
-    TriggerClientEvent('RaySist-Crafting:client:SyncZones', -1, CraftingData.zones)
+    TriggerClientEvent('RaySist-Crafting:client:RemoveTable', -1, id)
     cb(true)
 end)
 

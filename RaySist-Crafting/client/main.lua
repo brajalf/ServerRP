@@ -63,7 +63,7 @@ local function BuildCraftingTables(zones)
             end
         end
 
-        table.insert(activeTables, { model = model, object = obj })
+        table.insert(activeTables, { id = zone.id or zone.name, model = model, object = obj })
     end
 end
 
@@ -75,6 +75,26 @@ end)
 
 RegisterNetEvent('RaySist-Crafting:client:SyncZones', function(zones)
     BuildCraftingTables(zones or {})
+end)
+
+RegisterNetEvent('RaySist-Crafting:client:RemoveTable', function(tableId)
+    for i, tbl in ipairs(activeTables) do
+        if tbl.id == tableId then
+            exports['qb-target']:RemoveTargetModel(tbl.model)
+            if tbl.object and DoesEntityExist(tbl.object) then
+                DeleteObject(tbl.object)
+            end
+            table.remove(activeTables, i)
+            break
+        end
+    end
+
+    for i, tbl in ipairs(Config.CraftingTables) do
+        if tbl.id == tableId then
+            table.remove(Config.CraftingTables, i)
+            break
+        end
+    end
 end)
 
 -- Open crafting menu
