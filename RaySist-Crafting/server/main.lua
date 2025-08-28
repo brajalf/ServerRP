@@ -149,6 +149,20 @@ local function DeleteRecipeFn(src, name)
     return true
 end
 
+local function EnsureCraftingTables()
+    local sql = LoadResourceFile(GetCurrentResourceName(), 'sql/crafting.sql')
+    if not sql then
+        print('^1[RaySist-Crafting]^0 Unable to load crafting.sql')
+        return
+    end
+
+    for query in sql:gmatch('CREATE TABLE IF NOT EXISTS[^;]+;') do
+        MySQL.query.await(query)
+        local tableName = query:match('CREATE TABLE IF NOT EXISTS%s+`?(%w+)`?')
+        print(('[RaySist-Crafting] Ensured table %s'):format(tableName or 'unknown'))
+    end
+end
+
 local function LoadCraftingData()
     local categories = MySQL.query.await('SELECT * FROM crafting_categories') or {}
     local recipes = MySQL.query.await('SELECT * FROM crafting_recipes') or {}
@@ -175,6 +189,7 @@ local function LoadCraftingData()
 end
 
 CreateThread(function()
+    EnsureCraftingTables()
     LoadCraftingData()
     Wait(100)
     local players = QBCore.Functions.GetQBPlayers()
