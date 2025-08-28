@@ -137,7 +137,17 @@ end
 
 AddEventHandler('onResourceStart', function(res)
   if res ~= GetCurrentResourceName() then return end
-  DB.EnsureSchema(); LoadAll()
+  DB.EnsureSchema()
+  local existing = DB.GetJobs()
+  if not existing or #existing == 0 then
+    local jobs = JobsFile.Load()
+    for name, job in pairs(jobs) do
+      job.name = name
+      DB.SaveJob(job)
+      InjectJobToCore(job)
+    end
+  end
+  LoadAll()
 end)
 
 AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
