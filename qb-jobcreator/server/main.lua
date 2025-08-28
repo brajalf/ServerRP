@@ -80,15 +80,7 @@ local function Multi_Has(citizenid, job)
 end
 
 -- ===== Permisos genéricos (admin/ACE) =====
-local function HasOpenPermission(src)
-  -- ACE (recomendado)
-  if IsPlayerAceAllowed(src, 'qb-jobcreator.open') then return true end
-  -- Grupo/perm de QBCore
-  local P = QBCore.Functions.GetPlayer(src)
-  if not P or not P.PlayerData then return false end
-  local grp = P.PlayerData.group or P.PlayerData.permission
-  return grp == 'admin' or grp == 'god'
-end
+-- Usa la función HasOpenPermission global de shared/sh_utils.lua
 
 -- ===== Permiso admin O boss del job =====
 local function allowAdminOrBoss(src, job)
