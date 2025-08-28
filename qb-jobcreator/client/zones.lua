@@ -180,41 +180,10 @@ local function GetClosestPlayerToMe(radius)
   return nil
 end
 
-local currentCraftZone
-
 local function openCraftMenu(z)
-  currentCraftZone = z.id
-  SetNuiFocus(true, true)
-  SendNUIMessage({
-    action = 'openCraft',
-    payload = { zone = z.id, recipes = Config.CraftingRecipes or {} }
-  })
+  if not z or not z.data or not z.data.name then return end
+  TriggerEvent('RaySist-Crafting:client:OpenCrafting', { tableName = z.data.name })
 end
-
-RegisterNUICallback('craftSelect', function(data, cb)
-  currentCraftZone = data and data.zone or currentCraftZone
-  cb({ ok = true })
-end)
-
-RegisterNUICallback('craft', function(data, cb)
-  local zone = data and data.zone or currentCraftZone
-  local recipe = data and data.recipe
-  SetNuiFocus(false, false)
-  SendNUIMessage({ action = 'hide' })
-  if zone and recipe then
-    TriggerServerEvent('qb-jobcreator:server:craft', zone, recipe)
-  end
-  cb({ ok = true })
-end)
-
-RegisterNetEvent('qb-jobcreator:client:craftProgress', function(time)
-  QBCore.Functions.Progressbar('jc_craft', 'Crafteando...', time or 3000, false, true, {
-    disableMovement = true,
-    disableCarMovement = true,
-    disableMouse = false,
-    disableCombat = true,
-  }, {}, {}, {}, function() end, function() end)
-end)
 
 -- =====================================
 -- Targets por zona
@@ -544,6 +513,7 @@ end)
 
 RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
   removeAll()
+  local craft = {}
   for _, z in ipairs(zones or {}) do
     Active[#Active+1] = z
     if z.ztype == 'blip' then
@@ -554,7 +524,20 @@ RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
     else
       addTargetForZone(z)
     end
+    if z.ztype == 'crafting' and canUseZone(z, false) then
+      craft[#craft+1] = {
+        id = (z.data and z.data.rayId) or z.id,
+        name = (z.data and z.data.name) or ('jc_'..z.job..'_'..z.id),
+        model = (z.data and z.data.model) or 'gr_prop_gr_bench_04b',
+        coords = { x = z.coords.x, y = z.coords.y, z = z.coords.z, w = z.coords.w or 0.0 },
+        distance = z.radius or 2.5,
+        allowedCategories = (z.data and z.data.allowedCategories) or {},
+        requiredJob = z.job,
+        requiredItems = (z.data and z.data.requiredItems) or {}
+      }
+    end
   end
+  TriggerEvent('RaySist-Crafting:client:SyncZones', craft)
 end)
 
 -- =============================

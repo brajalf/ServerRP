@@ -9,6 +9,7 @@ const App = (() => {
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
     recipes: {},
+    craftCategories: [],
   };
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -190,6 +191,7 @@ const App = (() => {
       applyScope();
 
       postJ('getRecipes').then((r) => { state.recipes = r || {}; });
+      postJ('getCraftCategories').then((c) => { state.craftCategories = c || []; });
 
       // si viene como boss, entrar directo al panel del trabajo
       if (pay.scope && pay.scope.mode === 'boss' && pay.scope.job) {
@@ -211,6 +213,7 @@ const App = (() => {
       applyBranding(payload.branding);
       applyScope();
       postJ('getRecipes').then((r) => { state.recipes = r || {}; });
+      postJ('getCraftCategories').then((c) => { state.craftCategories = c || []; });
       renderAll();
       return;
     }
@@ -662,7 +665,11 @@ const App = (() => {
                             data.weight = Number(document.getElementById('zweight')?.value || 400000); }
         if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                             data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
-        if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
+        if (t === 'crafting') {
+                            data.recipe = document.getElementById('zrecipe')?.value || '';
+                            data.name = document.getElementById('zname')?.value || '';
+                            data.allowedCategories = Array.from(document.getElementById('zcategories')?.selectedOptions || []).map((o) => o.value);
+                           }
         if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
         if (t === 'shop')  { data.items = collectShopItems(); }
         if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
@@ -719,7 +726,11 @@ const App = (() => {
                           row(inp('zvehdef','Modelo por defecto','police', d.vehicle || ''));
         } else if (t === 'crafting') {
           const opts = Object.keys(state.recipes || {}).map((r) => `<option ${d.recipe===r?'selected':''}>${r}</option>`).join('');
-          box.innerHTML = row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
+          const cats = (state.craftCategories || []).map((c) => `<option value="${c.name}" ${ (d.allowedCategories||[]).includes(c.name)?'selected':'' }>${c.label || c.name}</option>`).join('');
+          box.innerHTML =
+            row(inp('zname','Nombre','Mesa', d.name || '')) +
+            row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
+            row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
           document.getElementById('editRecipes').onclick = () => {
             const cur = JSON.stringify(state.recipes || {}, null, 2);
             modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {
@@ -785,7 +796,11 @@ const App = (() => {
                               data.weight = Number(document.getElementById('zweight')?.value || 400000); }
           if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                               data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
-          if (t === 'crafting') data.recipe = document.getElementById('zrecipe')?.value || '';
+          if (t === 'crafting') {
+            data.recipe = document.getElementById('zrecipe')?.value || '';
+            data.name = document.getElementById('zname')?.value || '';
+            data.allowedCategories = Array.from(document.getElementById('zcategories')?.selectedOptions || []).map((o) => o.value);
+          }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
           if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
@@ -844,7 +859,11 @@ const App = (() => {
                         row(inp('zvehdef','Modelo por defecto','police'));
       } else if (t === 'crafting') {
         const opts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
-        box.innerHTML = row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
+        const cats = (state.craftCategories || []).map((c) => `<option value="${c.name}">${c.label || c.name}</option>`).join('');
+        box.innerHTML =
+          row(inp('zname','Nombre','Mesa')) +
+          row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
+          row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select><button id="editRecipes" style="margin-left:8px">Editar</button></div>`);
         document.getElementById('editRecipes').onclick = () => {
           const cur = JSON.stringify(state.recipes || {}, null, 2);
           modal('Recetas', `<textarea id="recJSON" class="input" style="height:200px">${cur}</textarea>`, () => {

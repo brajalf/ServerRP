@@ -26,6 +26,27 @@ local function SanitizeShopItems(items)
   return list
 end
 
+local function RayCraft_Add(src, zone)
+  local cb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:AddZone']
+  if not cb then return nil end
+  local rid
+  cb(src, function(_, id) rid = id end, {
+    name = (zone.data and zone.data.name) or ('jc_'..zone.job..'_'..zone.id),
+    model = (zone.data and zone.data.model) or 'gr_prop_gr_bench_04b',
+    coords = { x = zone.coords.x, y = zone.coords.y, z = zone.coords.z, w = zone.coords.w or 0.0 },
+    distance = zone.radius or 2.5,
+    allowedCategories = (zone.data and zone.data.allowedCategories) or {},
+    requiredJob = zone.job,
+    requiredItems = (zone.data and zone.data.requiredItems) or {}
+  })
+  return rid
+end
+
+local function RayCraft_Delete(src, rid)
+  local cb = QBCore.ServerCallbacks and QBCore.ServerCallbacks['RaySist-Crafting:server:DeleteZone']
+  if cb and rid then cb(src, function() end, rid) end
+end
+
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = {
@@ -394,6 +415,13 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     data = json.decode(r.data or '{}') or {}
   }
   if nz.ztype == 'shop' then nz.data.items = SanitizeShopItems(nz.data.items) end
+  if nz.ztype == 'crafting' then
+    local rid = RayCraft_Add(src, nz)
+    if rid then
+      nz.data.rayId = rid
+      DB.UpdateZone(nz.id, { data = nz.data })
+    end
+  end
   Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
   if nz.ztype == 'music' then
@@ -441,10 +469,12 @@ RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
           if ox and ox.RemoveShop then ox:RemoveShop(sid) end
         end)
       end
+    elseif dz.ztype == 'crafting' then
+      RayCraft_Delete(src, dz.data and dz.data.rayId)
     end
   end
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
-  end)
+end)
 
 -- ===== Empleados =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getEmployees', function(src, cb, jobName)
@@ -623,8 +653,8 @@ end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
 RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
-  local src = source; local job; local ztype
-  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype break end end
+  local src = source; local job; local ztype; local old
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype old = z break end end
   if not allowAdminOrBoss(src, job or '') then return end
   if type(data) == 'table' then
     if ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
@@ -644,6 +674,14 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
           coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
           data = nd
         }
+        if ztype == 'crafting' then
+          RayCraft_Delete(src, old and old.data and old.data.rayId)
+          local rid = RayCraft_Add(src, Runtime.Zones[idx])
+          if rid then
+            Runtime.Zones[idx].data.rayId = rid
+            DB.UpdateZone(id, { data = Runtime.Zones[idx].data })
+          end
+        end
         break
       end
     end
