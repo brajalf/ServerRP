@@ -185,6 +185,24 @@ local function openCraftMenu(z)
   TriggerEvent('RaySist-Crafting:client:OpenCrafting', { tableName = z.data.name })
 end
 
+-- Puente para delegar el crafteo en RaySist-Crafting
+RegisterNetEvent('RaySist-Crafting:client:CraftItem', function(recipe)
+  TriggerServerEvent('RaySist-Crafting:server:CraftItem', recipe)
+end)
+
+-- Eventos de progreso y resultado proporcionados por RaySist-Crafting
+RegisterNetEvent('RaySist-Crafting:client:CraftingProgress', function(_, time)
+  Progress('Crafteando...', (time or 0) * 1000)
+end)
+
+RegisterNetEvent('RaySist-Crafting:client:CraftingResult', function(success)
+  if success then
+    QBCore.Functions.Notify('Crafteo completado.', 'success')
+  else
+    QBCore.Functions.Notify('Crafteo fallido.', 'error')
+  end
+end)
+
 -- =====================================
 -- Targets por zona
 -- =====================================

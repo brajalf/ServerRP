@@ -33,3 +33,13 @@ Config.CraftingRecipes = {
 ```
 
 En la tienda del herrero añade `metal_ore` con el precio y stock deseado.  Los trabajadores comprarán el mineral, lo refinarán mediante la receta anterior y luego podrán vender las `metal_bar` o utilizarlas en otras recetas.
+
+## Integración con RaySist-Crafting
+
+Este recurso delega el sistema de crafteo en **RaySist-Crafting**, por lo que dicho recurso debe estar instalado y en ejecución.
+
+- Las recetas y categorías de crafteo se almacenan en la base de datos del recurso externo.
+- Configura las recetas y categorías necesarias antes de utilizar las mesas de crafteo creadas con `qb-jobcreator`.
+- RaySist-Crafting gestiona el inventario, las habilidades y los planos requeridos para cada receta.
+
+Sin esta dependencia las zonas de tipo `crafting` no funcionarán correctamente.
