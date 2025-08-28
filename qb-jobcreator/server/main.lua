@@ -751,16 +751,19 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   local stashId = ('jc_%s_%s'):format(zone.job, zone.id)
   local slots = tonumber(zone.data and zone.data.slots) or 50
   local maxWeight = tonumber(zone.data and zone.data.weight) or 400000
-  local useQb = GetResourceState('qb-inventory') == 'started'
-  if useQb then
+  local qbStarted = GetResourceState('qb-inventory') == 'started'
+  local oxStarted = GetResourceState('ox_inventory') == 'started'
+  if qbStarted then
     TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
     pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, maxWeight, true) end)
-  else
+  elseif oxStarted then
     if not CreatedStashes[stashId] then
       exports.ox_inventory:RegisterStash(stashId, zone.label or stashId, slots, maxWeight, true)
       CreatedStashes[stashId] = true
     end
     exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
+  else
+    TriggerClientEvent('QBCore:Notify', src, 'No hay inventario disponible.', 'error')
   end
 end)
 
@@ -770,8 +773,9 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
   if not ok then return end
   local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
   local items = SanitizeShopItems(zone.data and zone.data.items or {})
-  local useQb = GetResourceState('qb-inventory') == 'started'
-  if useQb then
+  local qbStarted = GetResourceState('qb-inventory') == 'started'
+  local oxStarted = GetResourceState('ox_inventory') == 'started'
+  if qbStarted then
     local shopItems = {}
     for _, it in ipairs(items) do
       shopItems[#shopItems+1] = { name = it.name, price = it.price, amount = it.count, info = it.info }
@@ -786,11 +790,13 @@ RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
       local useServerEvent = major >= 2
       TriggerClientEvent('qb-jobcreator:client:openInvShop', src, sid, useServerEvent)
     end)
-  else
+  elseif oxStarted then
     for _, it in ipairs(items) do
       it.metadata = it.info; it.info = nil
     end
     pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
+  else
+    TriggerClientEvent('QBCore:Notify', src, 'No hay inventario disponible.', 'error')
   end
 end)
 
