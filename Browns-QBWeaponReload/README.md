@@ -10,7 +10,7 @@ Discord Server: https://discord.gg/dGRHNbX5xc
 
 [EXPORTS] (Reloads Weapon, CLIENT SIDED)
 
-exports['Browns-QBWeaponReload']:ReloadWeapon() 
+exports['Browns-QBWeaponReload']:ReloadWeapon()
 
 [INSTALLATION] (IF YOU NEED HELP SETTING UP, OR FEEL LIKE YOU MAY BREAK SOMETHING CONTACT ME AT MY DISCORD ABOVE)
 
@@ -30,36 +30,16 @@ find the 'weapons:client:AddAmmo' event (should be at around line 77) then DELET
 
 go to qb-weapons > server > main.lua 
 
-# STEP 5: 
+# STEP 5:
 
-delete all of the QBCore.Functions.CreateUsableItem functions (FOR AMMO ONLY) (Should be at about line: 304) 
+restore the QBCore.Functions.CreateUseableItem functions for each ammo type in `qb-weapons/server/main.lua` and make them trigger the new `inventory:client:UseAmmo` event. They should look like this:
 
-THE ONES THAT YOU WANT TO DELETE SHOULD LOOK LIKE THIS:
+```
+for ammoItem, _ in pairs(Config.AmmoTypes) do
+    QBCore.Functions.CreateUseableItem(ammoItem, function(source, item)
+        TriggerClientEvent('inventory:client:UseAmmo', source)
+    end)
+end
+```
 
-QBCore.Functions.CreateUseableItem('pistol_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_PISTOL', 12, item)
-end)
-
-QBCore.Functions.CreateUseableItem('rifle_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_RIFLE', 30, item)
-end)
-
-QBCore.Functions.CreateUseableItem('smg_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_SMG', 20, item)
-end)
-
-QBCore.Functions.CreateUseableItem('shotgun_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_SHOTGUN', 10, item)
-end)
-
-QBCore.Functions.CreateUseableItem('mg_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_MG', 30, item)
-end)
-
-QBCore.Functions.CreateUseableItem('snp_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_SNIPER', 10, item)
-end)
-
-QBCore.Functions.CreateUseableItem('emp_ammo', function(source, item)
-    TriggerClientEvent('weapons:client:AddAmmo', source, 'AMMO_EMPLAUNCHER', 10, item)
-end)
+Using an ammo item now calls the exported `ReloadWeapon` function. Players can still press **R** thanks to the key mapping in `client.lua`.

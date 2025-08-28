@@ -67,6 +67,10 @@ function ReloadWeapon() -- Creating the reloading functionality
     end
 end
 
+RegisterNetEvent('inventory:client:UseAmmo', function()
+    ReloadWeapon()
+end)
+
 RegisterCommand('browns_reload', function(source) -- the reload function to create an export
     ReloadWeapon()
 end)
