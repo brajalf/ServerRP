@@ -5,6 +5,7 @@ local JobsFile = _G.JobsFile
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
 local CreatedShops = {}
+local CreatedStashes = {}
 
 local function SanitizeShopItems(items)
   local list = {}
@@ -653,7 +654,10 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
     TriggerClientEvent('inventory:client:SetCurrentStash', src, stashId)
     pcall(function() exports['qb-inventory']:OpenStash(src, stashId, slots, maxWeight, true) end)
   else
-    exports.ox_inventory:RegisterStash(stashId, zone.label or stashId, slots, maxWeight, true)
+    if not CreatedStashes[stashId] then
+      exports.ox_inventory:RegisterStash(stashId, zone.label or stashId, slots, maxWeight, true)
+      CreatedStashes[stashId] = true
+    end
     exports.ox_inventory:forceOpenInventory(src, 'stash', stashId)
   end
 end)
