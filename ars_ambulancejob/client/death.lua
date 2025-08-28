@@ -10,8 +10,10 @@ local TaskPlayAnim                 = TaskPlayAnim
 local FreezeEntityPosition         = FreezeEntityPosition
 local ClearPedTasks                = ClearPedTasks
 local SetEntityHealth              = SetEntityHealth
+local GetEntityHealth              = GetEntityHealth
 local SetEntityInvincible          = SetEntityInvincible
 local SetEveryoneIgnorePlayer      = SetEveryoneIgnorePlayer
+local IsEntityDead                 = IsEntityDead
 local GetGameTimer                 = GetGameTimer
 local IsControlJustPressed         = IsControlJustPressed
 local TriggerServerEvent           = TriggerServerEvent
@@ -23,6 +25,9 @@ local NetworkGetPlayerIndexFromPed = NetworkGetPlayerIndexFromPed
 local IsPedAPlayer                 = IsPedAPlayer
 local IsPedDeadOrDying             = IsPedDeadOrDying
 local IsPedFatallyInjured          = IsPedFatallyInjured
+
+local deathCheckThread
+local startDeathCheckThread
 
 
 function stopPlayerDeath()
@@ -64,6 +69,7 @@ function stopPlayerDeath()
 
     playerSpawned()
     healPlayer()
+    startDeathCheckThread()
 end
 
 function healPlayer()
@@ -242,6 +248,23 @@ local function initPlayerDeath(logged_dead)
     end)
 end
 
+startDeathCheckThread = function()
+    if deathCheckThread then return end
+    deathCheckThread = CreateThread(function()
+        while not player.isDead do
+            local playerPed = cache.ped or PlayerPedId()
+            if IsEntityDead(playerPed) or GetEntityHealth(playerPed) <= 0 then
+                TriggerServerEvent('ars_ambulancejob:updateDeathStatus', { isDead = true })
+                LocalPlayer.state:set("dead", true, true)
+                initPlayerDeath()
+                break
+            end
+            Wait(1000)
+        end
+        deathCheckThread = nil
+    end)
+end
+
 function onPlayerLoaded()
     exports.spawnmanager:setAutoSpawn(false) -- for qbcore
 
@@ -284,6 +307,7 @@ AddEventHandler('gameEventTriggered', function(event, data)
     utils.debug(LocalPlayer.state.injuries)
 end)
 
+startDeathCheckThread()
 
 exports("isDead", function()
     return player.isDead
