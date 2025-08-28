@@ -25,10 +25,12 @@ AddEventHandler('QBCore:Server:OnGangUpdate', function(source, gang)
     inventory.player.groups[gang.name] = gang.grade.level
 end)
 
+--[[
 AddEventHandler('onResourceStart', function(resource)
     if resource ~= 'qb-weapons' and resource ~= 'qb-shops' then return end
     StopResource(resource)
 end)
+]]
 
 ---@param item SlotWithItem?
 ---@return SlotWithItem?
