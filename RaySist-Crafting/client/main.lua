@@ -146,23 +146,32 @@ function OpenCraftingTable(tableConfig)
 
     -- Get player inventory for checking materials
     QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetPlayerInventory', function(inventory)
-        -- Filter categories based on the table's allowed categories
-        local filteredCategories = {}
-        for _, category in pairs(Config.Categories) do
-            for _, allowedCategory in pairs(tableConfig.allowedCategories) do
-                if category.name == allowedCategory then
-                    table.insert(filteredCategories, category)
-                    break
+        -- Filter recipes based on the table's allowed categories and player job
+        local filteredRecipes = {}
+        local playerJob = PlayerData.job and PlayerData.job.name or nil
+        for _, recipe in pairs(Config.Recipes) do
+            local jobMatch = (not recipe.job) or (recipe.job == playerJob)
+            if jobMatch then
+                for _, allowedCategory in pairs(tableConfig.allowedCategories) do
+                    if recipe.category == allowedCategory then
+                        filteredRecipes[#filteredRecipes+1] = recipe
+                        break
+                    end
                 end
             end
         end
 
-        -- Filter recipes based on the table's allowed categories
-        local filteredRecipes = {}
-        for _, recipe in pairs(Config.Recipes) do
+        -- Filter categories based on allowed categories and available recipes for job
+        local filteredCategories = {}
+        for _, category in pairs(Config.Categories) do
             for _, allowedCategory in pairs(tableConfig.allowedCategories) do
-                if recipe.category == allowedCategory then
-                    table.insert(filteredRecipes, recipe)
+                if category.name == allowedCategory then
+                    for _, r in pairs(filteredRecipes) do
+                        if r.category == category.name then
+                            filteredCategories[#filteredCategories+1] = category
+                            break
+                        end
+                    end
                     break
                 end
             end

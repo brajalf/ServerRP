@@ -17,6 +17,7 @@ A modern crafting system for FiveM QBCore framework.
 - Configurable crafting tables with qb-target integration
 - Multiple crafting locations support
 - Category-based item organization
+- Optional job-restricted recipes
 
 ## Installation
 
@@ -41,6 +42,7 @@ The script is highly configurable through the `config.lua` file:
 - Create custom crafting categories
 - Define crafting recipes with ingredients, time, and blueprint requirements
 - Enable/disable skill-based crafting
+- Restrict recipes to specific jobs with the optional `job` field
 
 ## Usage
 

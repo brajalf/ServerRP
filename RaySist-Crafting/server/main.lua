@@ -6,6 +6,24 @@ local CraftingData = {
     recipes = {}
 }
 
+local function FilterRecipesForJob(recipes, job)
+    local filtered = {}
+    for _, r in pairs(recipes or {}) do
+        if not r.job or r.job == job then
+            filtered[#filtered+1] = r
+        end
+    end
+    return filtered
+end
+
+local function GetCraftingDataForJob(job)
+    return {
+        zones = CraftingData.zones,
+        categories = CraftingData.categories,
+        recipes = FilterRecipesForJob(CraftingData.recipes, job)
+    }
+end
+
 local function LoadCraftingData()
     local categories = MySQL.query.await('SELECT * FROM crafting_categories') or {}
     local recipes = MySQL.query.await('SELECT * FROM crafting_recipes') or {}
@@ -34,15 +52,22 @@ end
 CreateThread(function()
     LoadCraftingData()
     Wait(100)
-    TriggerClientEvent('RaySist-Crafting:client:SyncData', -1, CraftingData)
+    local players = QBCore.Functions.GetQBPlayers()
+    for _, Player in pairs(players) do
+        local job = Player.PlayerData.job.name
+        TriggerClientEvent('RaySist-Crafting:client:SyncData', Player.PlayerData.source, GetCraftingDataForJob(job))
+    end
 end)
 
 AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
-    TriggerClientEvent('RaySist-Crafting:client:SyncData', Player.PlayerData.source, CraftingData)
+    local job = Player.PlayerData.job.name
+    TriggerClientEvent('RaySist-Crafting:client:SyncData', Player.PlayerData.source, GetCraftingDataForJob(job))
 end)
 
 QBCore.Functions.CreateCallback('RaySist-Crafting:server:GetCraftingData', function(source, cb)
-    cb(CraftingData)
+    local Player = QBCore.Functions.GetPlayer(source)
+    local job = Player and Player.PlayerData.job.name or nil
+    cb(GetCraftingDataForJob(job))
 end)
 
 QBCore.Functions.CreateCallback('RaySist-Crafting:server:AddZone', function(source, cb, zone)

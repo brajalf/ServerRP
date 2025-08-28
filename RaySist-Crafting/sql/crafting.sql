@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS crafting_recipes (
     time INT DEFAULT 0,
     ingredients LONGTEXT,
     require_blueprint TINYINT(1) DEFAULT 0,
-    blueprint_item VARCHAR(50) DEFAULT NULL
+    blueprint_item VARCHAR(50) DEFAULT NULL,
+    job VARCHAR(50) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS crafting_zones (

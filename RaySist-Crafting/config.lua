@@ -70,6 +70,7 @@ Config.Categories = {
 }
 
 -- Crafting Recipes
+-- Optional field `job` restricts recipes to players with that job
 Config.Recipes = {
     -- Weapons
     {
@@ -83,7 +84,8 @@ Config.Recipes = {
             { item = "rubber", amount = 20, label = "Rubber" }
         },
         requireBlueprint = false,
-        blueprintItem = "pistol_blueprint"
+        blueprintItem = "pistol_blueprint",
+        job = "police" -- Only police can craft this
     },
     {
         name = "weapon_smg",
