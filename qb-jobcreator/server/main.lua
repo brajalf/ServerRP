@@ -739,10 +739,16 @@ local function playerInJobZone(src, zone, ztype)
   if not Player or not Player.PlayerData then return false end
   local jd = Player.PlayerData.job or {}
   local cid = Player.PlayerData.citizenid
-  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return false end
+  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then
+    TriggerClientEvent('QBCore:Notify', src, 'No tienes acceso a esta tienda.', 'error')
+    return false
+  end
   local coords = GetEntityCoords(GetPlayerPed(src))
   local dist = #(coords - vector3(zone.coords.x, zone.coords.y, zone.coords.z))
-  if dist > (zone.radius or 2.0) + 0.1 then return false end
+  if dist > (zone.radius or 2.0) + 0.1 then
+    TriggerClientEvent('QBCore:Notify', src, 'Acércate más a la zona para abrir la tienda.', 'error')
+    return false
+  end
   return true, zone, Player
 end
 
