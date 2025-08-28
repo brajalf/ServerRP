@@ -5,10 +5,10 @@
 local QBCore = GetResourceState('qb-core'):find('start') and exports['qb-core']:GetCoreObject() or nil
 local ESX = GetResourceState('es_extended'):find('start') and exports['es_extended']:getSharedObject() or nil
 
-local function registerPharmacies()
-    local useOx = GetResourceState('ox_inventory') == 'started'
-    local useQb = GetResourceState('qb-inventory') == 'started'
+local useOx = GetResourceState('ox_inventory') == 'started'
+local useQb = GetResourceState('qb-inventory') == 'started'
 
+local function registerPharmacies()
     if not useOx and not useQb then return end
 
     for _, hospital in pairs(Config.Hospitals) do
@@ -48,9 +48,9 @@ end
 -- codex/replace-openinventory-with-custom-event
 
 local function OpenShop(src, shopId, items)
-    if GetResourceState('ox_inventory') == 'started' then
+    if useOx then
         exports.ox_inventory:forceOpenInventory(src, 'shop', { id = shopId, items = items })
-    else
+    elseif useQb then
         exports['qb-inventory']:OpenShop(src, shopId)
     end
 end
@@ -107,7 +107,10 @@ end)
 AddEventHandler('onResourceStart', function(resource)
     if resource ~= GetCurrentResourceName() then return end
 
-    if GetResourceState('ox_inventory') == 'started' or GetResourceState('qb-inventory') == 'started' then
+    useOx = GetResourceState('ox_inventory') == 'started'
+    useQb = GetResourceState('qb-inventory') == 'started'
+
+    if useOx or useQb then
         registerPharmacies()
     end
 end)
