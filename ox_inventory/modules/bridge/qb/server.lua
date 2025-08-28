@@ -25,13 +25,6 @@ AddEventHandler('QBCore:Server:OnGangUpdate', function(source, gang)
     inventory.player.groups[gang.name] = gang.grade.level
 end)
 
---[[
-AddEventHandler('onResourceStart', function(resource)
-    if resource ~= 'qb-weapons' and resource ~= 'qb-shops' then return end
-    StopResource(resource)
-end)
-]]
-
 ---@param item SlotWithItem?
 ---@return SlotWithItem?
 local function setItemCompatibilityProps(item)
@@ -93,17 +86,6 @@ AddEventHandler('QBCore:Server:PlayerLoaded', setupPlayer)
 SetTimeout(500, function()
     QBCore = exports['qb-core']:GetCoreObject()
     server.GetPlayerFromId = QBCore.Functions.GetPlayer
-    local weapState = GetResourceState('qb-weapons')
-
-    if weapState ~= 'missing' and (weapState == 'started' or weapState == 'starting') then
-        StopResource('qb-weapons')
-    end
-
-    local shopState = GetResourceState('qb-shops')
-
-    if shopState ~= 'missing' and (shopState == 'started' or shopState == 'starting') then
-        StopResource('qb-shops')
-    end
 
     for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do setupPlayer(Player) end
 end)
