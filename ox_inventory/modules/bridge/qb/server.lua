@@ -641,6 +641,14 @@ RegisterNetEvent('qb-inventory:server:BuyItem', function(shopId, itemName, price
     TriggerClientEvent('QBCore:Notify', src, ('Compraste %s x%s'):format(itemName, count), 'success')
 end)
 
+RegisterNetEvent('qb-inventory:server:snowball', function(action)
+    if action == 'add' then
+        Inventory.AddItem(source, 'weapon_snowball', 1)
+    elseif action == 'remove' then
+        Inventory.RemoveItem(source, 'weapon_snowball', 1)
+    end
+end)
+
 -- update item metadata
 export('qb-inventory.SetMetadata', function(source, name, metadata, amount, slot)
     if not name then return false end
