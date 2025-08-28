@@ -2,6 +2,7 @@ config = {}
 
 -- accepted inventories: --
 -- 'qb-inventory'
+-- 'lj-inventory'
 -- 'ps-inventory'
 -- 'ox_inventory'
 

@@ -1,5 +1,5 @@
 # Browns QB Reload Weapons by Brown Development
-# NOW WORKS WITH qb, ps, & lj inventory!!!
+# Now works with qb, lj, ps, and ox inventory through a configurable bridge!
 # Preview Video: https://youtu.be/TLSnJvRJPEI
 
 
@@ -43,3 +43,11 @@ end
 ```
 
 Using an ammo item now calls the exported `ReloadWeapon` function. Players can still press **R** thanks to the key mapping in `client.lua`.
+
+## Inventory Configuration
+
+Set your inventory system in `config.lua` to one of the supported values: `qb-inventory`, `lj-inventory`, `ps-inventory`, or `ox_inventory`. The script automatically selects the correct adapter through the new inventory bridge.
+
+## Manual Testing
+
+Manual reload test cases for each supported inventory are available in [TESTING.md](TESTING.md).

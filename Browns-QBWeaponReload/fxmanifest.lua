@@ -6,6 +6,7 @@ client_scripts {
     'code/client.lua'
 }
 server_scripts {
+    'code/inventory_bridge.lua',
     'code/server.lua'
 }
 shared_scripts {
