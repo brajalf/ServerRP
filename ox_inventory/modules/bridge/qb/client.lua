@@ -111,6 +111,11 @@ local function ItemBox(items, type, amount)
 end
 export('qb-inventory.ItemBox', ItemBox)
 
+RegisterNetEvent('qb-inventory:client:ItemBox', ItemBox)
+RegisterNetEvent('qb-inventory:client:CheckWeapon', function(weapon)
+    TriggerEvent('qb-weapons:client:CheckWeapon', weapon)
+end)
+
 export('qb-inventory.ShowHotbar', function()
     SendNUIMessage({ action = 'toggleHotbar', state = true })
 end)
