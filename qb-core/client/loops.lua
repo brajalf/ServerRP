@@ -16,7 +16,10 @@ CreateThread(function()
                 local ped = PlayerPedId()
                 local currentHealth = GetEntityHealth(ped)
                 local decreaseThreshold = math.random(5, 10)
-                SetEntityHealth(ped, currentHealth - decreaseThreshold)
+                ApplyDamageToPed(ped, decreaseThreshold)
+                if currentHealth - decreaseThreshold <= 0 then
+                    TriggerServerEvent('ars_ambulancejob:updateDeathStatus', { isDead = true })
+                end
             end
         end
         Wait(QBCore.Config.StatusInterval)
