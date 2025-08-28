@@ -798,50 +798,15 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
   local src = source
-  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'crafting')
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
   local rname = recipeKey or (zone.data and zone.data.recipe)
-  local recipe = Config.CraftingRecipes and Config.CraftingRecipes[rname]
-  if not recipe then
+  if not rname then
     TriggerClientEvent('QBCore:Notify', src, 'Receta no válida', 'error')
     return
   end
-  for _, req in ipairs(recipe.inputs or {}) do
-    local need = req.amount or req.qty or 1
-    local have = 0
-    if Config.Integrations.UseQbInventory then
-      local it = Player.Functions.GetItemByName(req.item)
-      have = (it and it.amount) or 0
-    else
-      have = exports.ox_inventory:Search(src, 'count', req.item) or 0
-    end
-    if have < need then
-      TriggerClientEvent('QBCore:Notify', src, 'Faltan materiales', 'error')
-      return
-    end
-  end
-  TriggerClientEvent('qb-jobcreator:client:craftProgress', src, recipe.time or 3000)
-  SetTimeout(recipe.time or 3000, function()
-    local P = QBCore.Functions.GetPlayer(src)
-    if not P then return end
-    for _, req in ipairs(recipe.inputs or {}) do
-      local qty = req.amount or req.qty or 1
-      if Config.Integrations.UseQbInventory then
-        P.Functions.RemoveItem(req.item, qty)
-      else
-        exports.ox_inventory:RemoveItem(src, req.item, qty)
-      end
-    end
-    local out = recipe.output or {}
-    if out.item then
-      local q = out.amount or out.qty or 1
-      if Config.Integrations.UseQbInventory then
-        P.Functions.AddItem(out.item, q)
-      else
-        exports.ox_inventory:AddItem(src, out.item, q)
-      end
-    end
-  end)
+  -- Delegar el proceso de crafteo al recurso RaySist-Crafting
+  TriggerClientEvent('RaySist-Crafting:client:CraftItem', src, rname)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
