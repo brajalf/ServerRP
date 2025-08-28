@@ -15,8 +15,12 @@ local function SanitizeShopItems(items)
       local name = it.name:lower()
       local price = math.floor(tonumber(it.price) or 0)
       local count = math.floor(tonumber(it.count or it.amount or 1) or 1)
-      local info = type(it.info) == 'table' and it.info or nil
-      list[#list+1] = { name = name, price = price, count = count, info = info }
+      price = math.max(price, 0)
+      count = math.max(count, 1)
+      if price > 0 and count > 0 then
+        local info = type(it.info) == 'table' and it.info or nil
+        list[#list+1] = { name = name, price = price, count = count, info = info }
+      end
     end
   end
   return list
