@@ -50,14 +50,22 @@ function ReloadWeapon() -- Creating the reloading functionality
                                 AddAmmoToPed(ped, weapons, sum + new_total)
                                 TriggerServerEvent("qb-weapons:server:UpdateWeaponAmmo", weaponData, sum + new_total)
                                 TriggerServerEvent('browns_reload:RemoveAmmoItem', item, sum)
-                                TriggerEvent('qb-inventory:client:ItemBox', QBCore.Shared.Items[item], "remove")
+                                if config.inventory == 'ox_inventory' then
+                                    -- ox_inventory handles item removal server-side; no ItemBox needed
+                                else
+                                    TriggerEvent('qb-inventory:client:ItemBox', QBCore.Shared.Items[item], "remove")
+                                end
                             else
                                 local new_total = GetAmmoInPedWeapon(ped, weapons)
                                 SetAmmoInClip(ped, weapons, 0)
                                 AddAmmoToPed(ped, weapons, count + new_total)
                                 TriggerServerEvent("qb-weapons:server:UpdateWeaponAmmo", weaponData, count + new_total)
                                 TriggerServerEvent('browns_reload:RemoveAmmoItem', item, count)
-                                TriggerEvent('qb-inventory:client:ItemBox', QBCore.Shared.Items[item], "remove")
+                                if config.inventory == 'ox_inventory' then
+                                    -- ox_inventory handles item removal server-side; no ItemBox needed
+                                else
+                                    TriggerEvent('qb-inventory:client:ItemBox', QBCore.Shared.Items[item], "remove")
+                                end
                             end
                         end
                     end
