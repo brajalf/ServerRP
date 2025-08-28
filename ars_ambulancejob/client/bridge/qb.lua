@@ -26,6 +26,7 @@ function toggleClothes(toggle, clothes)
 
         if Config.ClothingScript and Config.ClothingScript ~= 'core' then
             local model = GetEntityModel(playerPed)
+            local data
 
             if model == GetHashKey('mp_m_freemode_01') then
                 data = clothes.male[jobGrade] or clothes.male[1]
