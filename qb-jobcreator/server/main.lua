@@ -756,24 +756,41 @@ RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
   end
 end)
 
-RegisterNetEvent('qb-jobcreator:server:teleport', function(zoneId, index)
+RegisterNetEvent('qb-jobcreator:server:teleport', function(zoneId, fromIdx, toIdx)
   local src = source
-  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'teleport')
-  if not ok then return end
+  local zone = findZoneById(zoneId)
+  if not zone or zone.ztype ~= 'teleport' then return end
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player or not Player.PlayerData then return end
+  local jd = Player.PlayerData.job or {}
+  local cid = Player.PlayerData.citizenid
+  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return end
+
   local d = zone.data or {}
   local to = d.to
-  local dest
+  local dests = {}
   if type(to) == 'table' then
-    if to[1] then
-      dest = to[tonumber(index) or 1]
-    elseif to.x then
-      dest = to
-    end
+    if to[1] then dests = to elseif to.x then dests = { to } end
   end
-  if not (dest and dest.x and dest.y and dest.z) then return end
+
+  local function getPos(idx)
+    if idx == 0 then return zone.coords end
+    return dests[tonumber(idx) or 0]
+  end
+
+  fromIdx = tonumber(fromIdx) or 0
+  toIdx   = tonumber(toIdx)   or 0
+  local fromPos = getPos(fromIdx)
+  local destPos = getPos(toIdx)
+  if not (fromPos and destPos and destPos.x and destPos.y and destPos.z) then return end
+
+  local coords = GetEntityCoords(GetPlayerPed(src))
+  local radius = zone.radius or 2.0
+  if #(coords - vector3(fromPos.x, fromPos.y, fromPos.z)) > radius + 0.1 then return end
+
   local ped = GetPlayerPed(src)
-  SetEntityCoords(ped, dest.x+0.0, dest.y+0.0, dest.z+0.0, false, false, false, true)
-  if dest.w then SetEntityHeading(ped, dest.w+0.0) end
+  SetEntityCoords(ped, destPos.x+0.0, destPos.y+0.0, destPos.z+0.0, false, false, false, true)
+  if destPos.w then SetEntityHeading(ped, destPos.w+0.0) end
 end)
 
 RegisterNetEvent('qb-jobcreator:server:charge', function(zoneId, targetId)

@@ -5,7 +5,12 @@ local Active = {}
 local function removeAll()
   if next(Active) then
     for _, z in pairs(Active) do
-      if Config.Integrations.UseQbTarget and z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+      if Config.Integrations.UseQbTarget then
+        if z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+        if z._subZones then
+          for _, name in ipairs(z._subZones) do exports['qb-target']:RemoveZone(name) end
+        end
+      end
       if z._popArea then RemovePopMultiplierArea(z._popArea) end
       if z._stop ~= nil then z._stop = true end
     end
@@ -387,41 +392,81 @@ local function addTargetForZone(z)
     })
 
   elseif z.ztype == 'teleport' then
-    table.insert(opts, {
-      label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
-      canInteract = function() return canUseZone(z, false) end,
-      action = function()
-        local d = z.data or {}
-        local to = d.to
-        if type(to) ~= 'table' then
-          QBCore.Functions.Notify('Destino no configurado.', 'error')
-          return
-        end
+    local d = z.data or {}
+    local to = d.to
+    local dests = {}
+    if type(to) == 'table' then
+      if to[1] then dests = to elseif to.x then dests = { to } end
+    end
 
-        if to.x then
-          TriggerServerEvent('qb-jobcreator:server:teleport', z.id, 1)
-          return
+    if usingTarget then
+      local function buildOpts(from)
+        local options = {}
+        if from ~= 0 then
+          table.insert(options, {
+            label = z.label or 'Origen', icon = 'fa-solid fa-person-arrow-up-from-line',
+            canInteract = function() return canUseZone(z, false) end,
+            action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, 0) end
+          })
         end
-
-        if not to[1] then
-          QBCore.Functions.Notify('Destino no configurado.', 'error')
-          return
-        end
-
-        if GetResourceState('qb-menu') == 'started' then
-          local menu = { { header = 'Selecciona destino', isMenuHeader = true } }
-          for i, dest in ipairs(to) do
-            menu[#menu+1] = {
-              header = dest.label or ('Destino '..i),
-              params = { event = 'qb-jobcreator:client:teleportSelect', args = { zone = z.id, index = i } }
-            }
+        for i, dest in ipairs(dests) do
+          if i ~= from then
+            table.insert(options, {
+              label = dest.label or ('Destino '..i), icon = 'fa-solid fa-person-arrow-up-from-line',
+              canInteract = function() return canUseZone(z, false) end,
+              action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, i) end
+            })
           end
-          exports['qb-menu']:openMenu(menu)
-        else
-          TriggerServerEvent('qb-jobcreator:server:teleport', z.id, 1)
+        end
+        return options
+      end
+
+      if #dests == 0 then
+        opts = {
+          {
+            label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
+            canInteract = function() return false end,
+            action = function() QBCore.Functions.Notify('Destino no configurado.', 'error') end
+          }
+        }
+      else
+        opts = buildOpts(0)
+        z._subZones = {}
+        for i, dest in ipairs(dests) do
+          local subName = ('%s_t%d'):format(name, i)
+          local zoneOpts = buildOpts(i)
+          exports['qb-target']:AddBoxZone(subName, vector3(dest.x, dest.y, dest.z), size, size, {
+            name = subName, heading = 0.0, minZ = dest.z-1.0, maxZ = dest.z+2.0
+          }, { options = zoneOpts, distance = radius + 0.5 })
+          z._subZones[#z._subZones+1] = subName
         end
       end
-    })
+    else
+      opts = {
+        {
+          label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
+          canInteract = function() return canUseZone(z, false) end,
+          action = function()
+            if #dests == 0 then
+              QBCore.Functions.Notify('Destino no configurado.', 'error')
+              return
+            end
+            if GetResourceState('qb-menu') == 'started' and #dests > 1 then
+              local menu = { { header = 'Selecciona destino', isMenuHeader = true } }
+              for i, dest in ipairs(dests) do
+                menu[#menu+1] = {
+                  header = dest.label or ('Destino '..i),
+                  params = { event = 'qb-jobcreator:client:teleportSelect', args = { zone = z.id, index = i } }
+                }
+              end
+              exports['qb-menu']:openMenu(menu)
+            else
+              TriggerServerEvent('qb-jobcreator:server:teleport', z.id, 0, 1)
+            end
+          end
+        }
+      }
+    end
 
   elseif z.ztype == 'crafting' then
     table.insert(opts, {
@@ -494,7 +539,7 @@ end
 
 RegisterNetEvent('qb-jobcreator:client:teleportSelect', function(data)
   if not data or not data.zone or not data.index then return end
-  TriggerServerEvent('qb-jobcreator:server:teleport', data.zone, data.index)
+  TriggerServerEvent('qb-jobcreator:server:teleport', data.zone, 0, data.index)
 end)
 
 RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
