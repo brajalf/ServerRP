@@ -372,12 +372,49 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
 end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getRecipes', function(src, cb)
-  cb(Config.CraftingRecipes or {})
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(data)
+    cb((data and data.recipes) or {})
+  end)
 end)
 
-RegisterNetEvent('qb-jobcreator:server:saveRecipes', function(recipes)
-  if not ensurePerm(source) then return end
-  Config.CraftingRecipes = recipes or {}
+QBCore.Functions.CreateCallback('qb-jobcreator:server:getCategories', function(src, cb)
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(data)
+    cb((data and data.categories) or {})
+  end)
+end)
+
+local function SyncRay()
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:GetCraftingData', function(dat)
+    if dat then TriggerClientEvent('RaySist-Crafting:client:SyncData', -1, dat) end
+  end)
+end
+
+RegisterNetEvent('qb-jobcreator:server:createCategory', function(cat)
+  local src = source; if not ensurePerm(src) then return end
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:CreateCategory', function()
+    SyncRay()
+  end, cat)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:renameCategory', function(data)
+  local src = source; if not ensurePerm(src) then return end
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:RenameCategory', function()
+    SyncRay()
+  end, data)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:saveRecipe', function(recipe)
+  local src = source; if not ensurePerm(src) then return end
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:SaveRecipe', function()
+    SyncRay()
+  end, recipe)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:deleteRecipe', function(name)
+  local src = source; if not ensurePerm(src) then return end
+  QBCore.Functions.TriggerCallback('RaySist-Crafting:server:DeleteRecipe', function()
+    SyncRay()
+  end, name)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)

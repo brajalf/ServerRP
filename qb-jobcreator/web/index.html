@@ -26,6 +26,7 @@
             <button data-view="employees">Empleados</button>
             <button data-view="stats">Estadísticas</button>
             <button data-view="config">Config</button>
+            <button data-view="crafting">Crafteo</button>
           </nav>
         </aside>
         <main class="content">
@@ -77,6 +78,25 @@
             <div class="panel"><div class="panel-h">Opciones</div>
               <p>Traducciones, integración y exportación JSON.</p>
               <p>Logo actual: <code>web/logo.png</code></p>
+            </div>
+          </section>
+
+          <section id="view-crafting" class="view hidden">
+            <div class="panel">
+              <div class="panel-h">Categorías</div>
+              <div class="toolbar"><button class="btn" id="btn-addcat">+ Categoría</button></div>
+              <table class="table" id="catTable">
+                <thead><tr><th>Nombre</th><th>Etiqueta</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="panel">
+              <div class="panel-h">Recetas</div>
+              <div class="toolbar"><button class="btn" id="btn-addrec">+ Receta</button></div>
+              <table class="table" id="recTable">
+                <thead><tr><th>Nombre</th><th>Etiqueta</th><th>Categoría</th><th>Tiempo</th><th>Blueprint</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+              </table>
             </div>
           </section>
 
