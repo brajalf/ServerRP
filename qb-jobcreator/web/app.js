@@ -71,12 +71,11 @@ const App = (() => {
       row.querySelector('.del').onclick = () => row.remove();
       const setCoords = (c) => {
         if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
-        row.querySelector('.tpx').value = c.x || 0;
-        row.querySelector('.tpy').value = c.y || 0;
-        row.querySelector('.tpz').value = c.z || 0;
-        row.querySelector('.tpw').value = c.w || 0;
+        if (c.x !== undefined) row.querySelector('.tpx').value = c.x;
+        if (c.y !== undefined) row.querySelector('.tpy').value = c.y;
+        if (c.z !== undefined) row.querySelector('.tpz').value = c.z;
+        if (c.w !== undefined) row.querySelector('.tpw').value = c.w;
       };
-      postJ('getCoords', {}).then(setCoords);
       row.querySelector('.tpcoords').onclick = () => {
         postJ('getCoords', {}).then(setCoords);
       };
