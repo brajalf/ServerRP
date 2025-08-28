@@ -80,4 +80,3 @@ end)
 
 exports('ReloadWeapon', ReloadWeapon) -- export to use reload function in other scripts
 
-RegisterKeyMapping('browns_reload', 'reload your weapon', 'keyboard', 'R')  -- Registering the 'R' key as the button to do reload functionality
