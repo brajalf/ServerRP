@@ -4,13 +4,14 @@ author 'Brown Development'
 description 'QB Reload Weapon'
 game 'gta5'
 client_scripts {
+    'config.lua',
     'code/client.lua'
 }
+
 server_scripts {
+    'config.lua',
+    'code/inventory_bridge.lua',
     'code/server.lua'
-}
-shared_scripts {
-    'config.lua'
 }
 dependencies {
     'qb-weapons'
