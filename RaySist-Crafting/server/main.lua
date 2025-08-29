@@ -170,6 +170,10 @@ local function EnsureCraftingTables()
         local tableName = query:match('CREATE TABLE IF NOT EXISTS%s+`?(%w+)`?')
         print(('[RaySist-Crafting] Ensured table %s'):format(tableName or 'unknown'))
     end
+
+    MySQL.query.await(
+        [[ALTER TABLE crafting_zones ADD COLUMN IF NOT EXISTS name VARCHAR(50) UNIQUE]]
+    )
 end
 
 local function LoadCraftingData()
