@@ -28,12 +28,14 @@ end
 local function RayCraft_Add(src, zone)
   return exports['RaySist-Crafting']:AddZone(src, {
     name = (zone.data and zone.data.name) or ('jc_'..zone.job..'_'..zone.id),
-    model = (zone.data and zone.data.model) or 'gr_prop_gr_bench_04b',
     coords = { x = zone.coords.x, y = zone.coords.y, z = zone.coords.z, w = zone.coords.w or 0.0 },
     distance = zone.radius or 2.5,
     allowedCategories = (zone.data and zone.data.allowedCategories) or {},
     requiredJob = zone.job,
-    requiredItems = (zone.data and zone.data.requiredItems) or {}
+    requiredItems = (zone.data and zone.data.requiredItems) or {},
+    useZone = true,
+    radius = zone.radius,
+    spawnObject = false
   })
 end
 

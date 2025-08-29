@@ -26,14 +26,17 @@ end
 
 local function AddZoneFn(src, zone)
     if not QBCore.Functions.HasPermission(src, 'admin') then return nil end
-    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, model, coords, distance, allowed_categories, required_job, required_items) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, coords, distance, allowed_categories, required_job, required_items, use_zone, radius, spawn_object, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         zone.name,
-        zone.model,
         json.encode(zone.coords),
         zone.distance or 2.5,
         json.encode(zone.allowedCategories or {}),
         zone.requiredJob,
-        json.encode(zone.requiredItems or {})
+        json.encode(zone.requiredItems or {}),
+        zone.useZone and 1 or 0,
+        zone.radius or 0.0,
+        zone.spawnObject == false and 0 or 1,
+        zone.model
     })
     if not id then return nil end
     zone.id = id
@@ -172,6 +175,9 @@ local function LoadCraftingData()
         z.coords = json.decode(z.coords or '{}')
         z.allowedCategories = json.decode(z.allowed_categories or '[]')
         z.requiredItems = json.decode(z.required_items or '[]')
+        z.useZone = z.use_zone == 1
+        z.radius = z.radius or 0.0
+        z.spawnObject = z.spawn_object == 1
     end
 
     for _, r in pairs(recipes) do

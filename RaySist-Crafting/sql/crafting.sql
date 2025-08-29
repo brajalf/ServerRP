@@ -20,12 +20,15 @@ CREATE TABLE IF NOT EXISTS crafting_recipes (
 CREATE TABLE IF NOT EXISTS crafting_zones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) UNIQUE,
-    model VARCHAR(100) NOT NULL,
     coords LONGTEXT NOT NULL,
     distance FLOAT DEFAULT 2.5,
     allowed_categories LONGTEXT,
     required_job VARCHAR(50) DEFAULT NULL,
-    required_items LONGTEXT DEFAULT NULL
+    required_items LONGTEXT DEFAULT NULL,
+    use_zone TINYINT(1) DEFAULT 0,
+    radius FLOAT DEFAULT 0.0,
+    spawn_object TINYINT(1) DEFAULT 1,
+    model VARCHAR(100) DEFAULT NULL
 );
 
 -- Initial categories
@@ -46,9 +49,9 @@ INSERT INTO crafting_recipes (name, label, category, time, ingredients, require_
     ('lockpick','Lockpick','illegal',20,'[{"item":"metalscrap","amount":5,"label":"Metal Scrap"},{"item":"plastic","amount":5,"label":"Plastic"}]',0,NULL,NULL);
 
 -- Initial crafting zones
-INSERT INTO crafting_zones (name, model, coords, distance, allowed_categories, required_job) VALUES
-    ('police_table','gr_prop_gr_bench_04b','{"x":-968.11,"y":-3011.98,"z":13.95,"w":56.95}',2.5,'["police_weapons","ammo"]','police'),
-    ('ems_table','prop_tool_bench01','{"x":-963.64,"y":-3004.74,"z":13.95,"w":62.79}',2.5,'["ems"]','ambulance'),
-    ('restaurant_table','prop_cooker_03','{"x":-966.02,"y":-3008.91,"z":13.95,"w":63.94}',2.5,'["restaurant"]','burgershot'),
-    ('bar_table','prop_bar_fridge_01','{"x":-960.0,"y":-3000.0,"z":13.95,"w":0.0}',2.5,'["bar"]','bartender'),
-    ('illegal_table','prop_tool_bench02','{"x":-955.0,"y":-2995.0,"z":13.95,"w":0.0}',2.5,'["illegal"]','criminal');
+INSERT INTO crafting_zones (name, coords, distance, allowed_categories, required_job, required_items, use_zone, radius, spawn_object, model) VALUES
+    ('police_table','{"x":-968.11,"y":-3011.98,"z":13.95,"w":56.95}',2.5,'["police_weapons","ammo"]','police',NULL,0,2.5,1,'gr_prop_gr_bench_04b'),
+    ('ems_table','{"x":-963.64,"y":-3004.74,"z":13.95,"w":62.79}',2.5,'["ems"]','ambulance',NULL,0,2.5,1,'prop_tool_bench01'),
+    ('restaurant_table','{"x":-966.02,"y":-3008.91,"z":13.95,"w":63.94}',2.5,'["restaurant"]','burgershot',NULL,0,2.5,1,'prop_cooker_03'),
+    ('bar_table','{"x":-960.0,"y":-3000.0,"z":13.95,"w":0.0}',2.5,'["bar"]','bartender',NULL,0,2.5,1,'prop_bar_fridge_01'),
+    ('illegal_table','{"x":-955.0,"y":-2995.0,"z":13.95,"w":0.0}',2.5,'["illegal"]','criminal',NULL,0,2.5,1,'prop_tool_bench02');
