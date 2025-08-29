@@ -26,6 +26,7 @@ end
 
 local function AddZoneFn(src, zone)
     if not QBCore.Functions.HasPermission(src, 'admin') then return nil end
+    zone.name = zone.name or ('jc_%s_%d'):format(zone.requiredJob or 'job', os.time())
     local id = MySQL.insert.await('INSERT INTO crafting_zones (name, coords, distance, allowed_categories, required_job, required_items, use_zone, radius, min_z, max_z, length, width, heading, spawn_object, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         zone.name,
         json.encode(zone.coords),
