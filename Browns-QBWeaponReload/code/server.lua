@@ -1,5 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
-local Inventory = require('code.inventory_bridge')
+local Inventory = require 'code.inventory_bridge'
 
 -- Ammo type to item mapping
 local AmmoTypes = {

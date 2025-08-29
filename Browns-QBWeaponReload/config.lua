@@ -6,4 +6,4 @@ config = {}
 -- 'ps-inventory'
 -- 'ox_inventory'
 
-config.inventory = 'ox_inventory' 
+config.inventory = "ox_inventory"
