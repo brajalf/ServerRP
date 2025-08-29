@@ -141,7 +141,8 @@ RegisterNetEvent('qb-weapons:server:TakeBackWeapon', function(k)
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
     local itemdata = Config.WeaponRepairPoints[k].RepairingData.WeaponData
-    itemdata.info.quality = 100
+    itemdata.info.durability = itemdata.info.quality or 100
+    itemdata.info.quality = nil
     exports['qb-inventory']:AddItem(src, itemdata.name, 1, false, itemdata.info, 'qb-weapons:server:TakeBackWeapon')
     TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[itemdata.name], 'add')
     Config.WeaponRepairPoints[k].IsRepairing = false
