@@ -26,7 +26,7 @@ end
 
 local function AddZoneFn(src, zone)
     if not QBCore.Functions.HasPermission(src, 'admin') then return nil end
-    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, coords, distance, allowed_categories, required_job, required_items, use_zone, radius, spawn_object, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
+    local id = MySQL.insert.await('INSERT INTO crafting_zones (name, coords, distance, allowed_categories, required_job, required_items, use_zone, radius, min_z, max_z, length, width, heading, spawn_object, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         zone.name,
         json.encode(zone.coords),
         zone.distance or 2.5,
@@ -34,7 +34,12 @@ local function AddZoneFn(src, zone)
         zone.requiredJob,
         json.encode(zone.requiredItems or {}),
         zone.useZone and 1 or 0,
-        zone.radius or 0.0,
+        zone.radius,
+        zone.minZ,
+        zone.maxZ,
+        zone.length,
+        zone.width,
+        zone.heading,
         zone.spawnObject == false and 0 or 1,
         zone.model
     })
@@ -176,7 +181,12 @@ local function LoadCraftingData()
         z.allowedCategories = json.decode(z.allowed_categories or '[]')
         z.requiredItems = json.decode(z.required_items or '[]')
         z.useZone = z.use_zone == 1
-        z.radius = z.radius or 0.0
+        z.radius = tonumber(z.radius)
+        z.minZ = tonumber(z.min_z)
+        z.maxZ = tonumber(z.max_z)
+        z.length = tonumber(z.length)
+        z.width = tonumber(z.width)
+        z.heading = tonumber(z.heading)
         z.spawnObject = z.spawn_object == 1
     end
 
