@@ -181,8 +181,9 @@ local function GetClosestPlayerToMe(radius)
 end
 
 local function openCraftMenu(z)
-  if not z or not z.data or not z.data.name then return end
-  TriggerEvent('RaySist-Crafting:client:OpenCrafting', { tableName = z.data.name })
+  if not z or not ((z.data and z.data.name) or (z.job and z.id)) then return end
+  local name = (z.data and z.data.name) or ('jc_' .. z.job .. '_' .. z.id)
+  TriggerEvent('RaySist-Crafting:client:OpenCrafting', { tableName = name })
 end
 
 -- Puente para delegar el crafteo en RaySist-Crafting
