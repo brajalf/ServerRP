@@ -303,6 +303,12 @@ export('qb-inventory.SetItemData', function(invId, itemName, key, value, slot)
     elseif key == 'durability' or key == 'quality' then
         Inventory.SetDurability(invId, slotId, value)
         return true
+    elseif key == 'ammo' then
+        local slotItem = Inventory.GetSlot(invId, slotId)
+        local metadata = slotItem and slotItem.metadata or {}
+        metadata.ammo = value
+        Inventory.SetMetadata(invId, slotId, metadata)
+        return true
     end
 
     error(("qb-inventory.SetItemData no es compatible con la clave '%s'"):format(key))
