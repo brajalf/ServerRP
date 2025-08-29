@@ -83,6 +83,30 @@ RegisterNetEvent('qb-jobcreator:client:openInvShop', function(id, useServerEvent
   end
 end)
 
+RegisterNetEvent('qb-jobcreator:client:openShopMenu', function(zoneId, items)
+  if GetResourceState('qb-menu') ~= 'started' then
+    TriggerEvent('QBCore:Notify', 'Menú no disponible.', 'error')
+    return
+  end
+  local menu = { { header = 'Tienda', isMenuHeader = true } }
+  for _, it in ipairs(items or {}) do
+    local info = QBCore.Shared.Items[it.name] or {}
+    local label = info.label or it.name
+    menu[#menu+1] = {
+      header = string.format('%s - $%d', label, it.price or 0),
+      txt = string.format('Stock: %d', it.amount or 0),
+      params = { event = 'qb-jobcreator:client:selectShopItem', args = { zoneId = zoneId, item = it.name } }
+    }
+  end
+  menu[#menu+1] = { header = 'Cerrar', params = { event = '' } }
+  exports['qb-menu']:openMenu(menu)
+end)
+
+RegisterNetEvent('qb-jobcreator:client:selectShopItem', function(data)
+  if not data or not data.zoneId or not data.item then return end
+  TriggerServerEvent('qb-jobcreator:server:buyItem', data.zoneId, data.item)
+end)
+
 RegisterNUICallback('close', function(_, cb) ForceClose(); cb(true) end)
 
 -- ===== CRUD Trabajos =====

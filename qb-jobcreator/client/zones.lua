@@ -287,7 +287,7 @@ local function addTargetForZone(z)
       label = 'Abrir tienda', icon = 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
-        TriggerServerEvent('qb-jobcreator:server:openShop', z.id)
+        TriggerServerEvent('qb-jobcreator:server:getShopItems', z.id)
       end
     })
 

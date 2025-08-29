@@ -13,16 +13,15 @@ local function assertEqual(actual, expected, msg)
   end
 end
 
--- negative price -> discarded
-local result1 = sanitize({{name='apple', price=-5, count=2}})
+local result1 = sanitize({{name='apple', price=-5, amount=2}})
 assertEqual(#result1, 0, "Item with negative price should be discarded")
 
--- negative count -> sanitized to 1
-local result2 = sanitize({{name='banana', price=10, count=-3}})
-assertEqual(result2[1].count, 1, "Negative count should be sanitized to 1")
+-- negative amount -> sanitized to 1
+local result2 = sanitize({{name='banana', price=10, amount=-3}})
+assertEqual(result2[1].amount, 1, "Negative amount should be sanitized to 1")
 
 -- zero price -> discarded
-local result3 = sanitize({{name='free', price=0, count=1}})
+local result3 = sanitize({{name='free', price=0, amount=1}})
 assertEqual(#result3, 0, "Item with zero price should be discarded")
 
 print("All tests passed")

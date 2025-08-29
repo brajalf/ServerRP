@@ -4,7 +4,6 @@ local JobsFile = _G.JobsFile
 
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
-local CreatedShops = {}
 local CreatedStashes = {}
 
 local function SanitizeShopItems(items)
@@ -14,12 +13,12 @@ local function SanitizeShopItems(items)
     if type(it) == 'table' and type(it.name) == 'string' and it.name ~= '' then
       local name = it.name:lower()
       local price = math.floor(tonumber(it.price) or 0)
-      local count = math.floor(tonumber(it.count or it.amount or 1) or 1)
+      local amount = math.floor(tonumber(it.amount or it.count or 1) or 1)
       price = math.max(price, 0)
-      count = math.max(count, 1)
-      if price > 0 and count > 0 then
+      amount = math.max(amount, 1)
+      if price > 0 and amount > 0 then
         local info = type(it.info) == 'table' and it.info or nil
-        list[#list+1] = { name = name, price = price, count = count, info = info }
+        list[#list+1] = { name = name, price = price, amount = amount, info = info }
       end
     end
   end
@@ -484,20 +483,6 @@ RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
         local ox = exports.ox_inventory
         if ox and ox.RemoveStash then ox:RemoveStash(stashId) end
       end)
-    elseif dz.ztype == 'shop' then
-      local sid = ('jc_shop_%s_%s'):format(dz.job, dz.id)
-      CreatedShops[sid] = nil
-      if GetResourceState('qb-inventory') == 'started' then
-        pcall(function()
-          local inv = exports['qb-inventory']
-          if inv and inv.RemoveShop then inv:RemoveShop(sid) end
-        end)
-      else
-        pcall(function()
-          local ox = exports.ox_inventory
-          if ox and ox.RemoveShop then ox:RemoveShop(sid) end
-        end)
-      end
     elseif dz.ztype == 'crafting' then
       RayCraft_Delete(src, dz.data and dz.data.rayId)
     end
@@ -767,37 +752,43 @@ RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   end
 end)
 
-RegisterNetEvent('qb-jobcreator:server:openShop', function(zoneId)
+RegisterNetEvent('qb-jobcreator:server:getShopItems', function(zoneId)
   local src = source
   local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'shop')
   if not ok then return end
-  local sid = ('jc_shop_%s_%s'):format(zone.job, zone.id)
-  local items = SanitizeShopItems(zone.data and zone.data.items or {})
-  local qbStarted = GetResourceState('qb-inventory') == 'started'
-  local oxStarted = GetResourceState('ox_inventory') == 'started'
-  if qbStarted then
-    local shopItems = {}
-    for _, it in ipairs(items) do
-      shopItems[#shopItems+1] = { name = it.name, price = it.price, amount = it.count, info = it.info }
-    end
-    pcall(function()
-      if not CreatedShops[sid] then
-        exports['qb-inventory']:CreateShop({ name = sid, label = zone.label or 'Shop', items = shopItems })
-        CreatedShops[sid] = true
-      end
-      local ver = GetResourceMetadata('qb-inventory', 'version', 0) or '0'
-      local major = tonumber(ver:match('^(%d+)')) or 0
-      local useServerEvent = major >= 2
-      TriggerClientEvent('qb-jobcreator:client:openInvShop', src, sid, useServerEvent)
-    end)
-  elseif oxStarted then
-    for _, it in ipairs(items) do
-      it.metadata = it.info; it.info = nil
-    end
-    pcall(function() exports.ox_inventory:forceOpenInventory(src, 'shop', { id = sid, items = items }) end)
-  else
-    TriggerClientEvent('QBCore:Notify', src, 'No hay inventario disponible.', 'error')
+  TriggerClientEvent('qb-jobcreator:client:openShopMenu', src, zone.id, zone.data and zone.data.items or {})
+end)
+
+RegisterNetEvent('qb-jobcreator:server:buyItem', function(zoneId, itemName)
+  local src = source
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'shop')
+  if not ok then return end
+  itemName = type(itemName) == 'string' and itemName:lower() or ''
+  local items = zone.data and zone.data.items or {}
+  local item
+  for _, it in ipairs(items) do
+    if it.name == itemName then item = it break end
   end
+  if not item or (item.amount or 0) <= 0 then
+    TriggerClientEvent('QBCore:Notify', src, 'Sin stock', 'error')
+    return
+  end
+  local price = item.price or 0
+  if price <= 0 then return end
+  if Player.Functions.GetMoney('cash') >= price then
+    Player.Functions.RemoveMoney('cash', price, 'jobcreator-shop-buy')
+  elseif Player.Functions.GetMoney('bank') >= price then
+    Player.Functions.RemoveMoney('bank', price, 'jobcreator-shop-buy')
+  else
+    TriggerClientEvent('QBCore:Notify', src, 'Fondos insuficientes', 'error')
+    return
+  end
+  local added = Player.Functions.AddItem(item.name, 1, false, item.info)
+  if not added then
+    TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
+    return
+  end
+  item.amount = (item.amount or 1) - 1
 end)
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)

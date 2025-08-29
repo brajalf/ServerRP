@@ -28,7 +28,7 @@ const App = (() => {
       row.innerHTML = `
         <div><input class="input siname" placeholder="Ítem" value="${data.name || ''}"/></div>
         <div><input class="input siprice" placeholder="Precio" type="number" value="${data.price || 0}"/></div>
-        <div><input class="input sicount" placeholder="Cantidad" type="number" value="${data.count || 1}"/></div>
+        <div><input class="input siamount" placeholder="Cantidad" type="number" value="${data.amount || 1}"/></div>
         <div><input class="input siinfo" placeholder='Metadata JSON' value='${data.info ? JSON.stringify(data.info) : ''}'/></div>
         <div><button class="btn danger del">X</button></div>`;
       wrap.appendChild(row);
@@ -42,11 +42,11 @@ const App = (() => {
         const name = r.querySelector('.siname').value.trim();
         if (!name) return;
         const price = Number(r.querySelector('.siprice').value) || 0;
-        const count = Number(r.querySelector('.sicount').value) || 1;
+        const amount = Number(r.querySelector('.siamount').value) || 1;
         const infoTxt = r.querySelector('.siinfo').value.trim();
         let info;
         if (infoTxt) { try { info = JSON.parse(infoTxt); } catch { info = infoTxt; } }
-        list.push({ name, price, count, info });
+        list.push({ name, price, amount, info });
       });
       return list;
     };
