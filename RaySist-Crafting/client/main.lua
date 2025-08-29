@@ -19,14 +19,8 @@ end)
 
 local function BuildCraftingTables(zones)
     for _, data in pairs(activeTables) do
-        if data.model then
-            exports['qb-target']:RemoveTargetModel(data.model)
-        end
         if data.zone then
             exports['qb-target']:RemoveZone(data.zone)
-        end
-        if data.object and DoesEntityExist(data.object) then
-            DeleteObject(data.object)
         end
     end
     activeTables = {}
@@ -34,9 +28,6 @@ local function BuildCraftingTables(zones)
     Config.CraftingTables = zones or {}
 
     for _, zone in pairs(Config.CraftingTables) do
-        local model = zone.model
-        if type(model) == 'string' then model = GetHashKey(model) end
-
         local targetOptions = {
             options = {
                 {
@@ -50,48 +41,24 @@ local function BuildCraftingTables(zones)
             distance = zone.distance or 2.5
         }
 
-        local obj = nil
-        if zone.useZone or not model then
-            local center = vector3(zone.coords.x, zone.coords.y, zone.coords.z)
-            if zone.radius then
-                exports['qb-target']:AddCircleZone(zone.name, center, zone.radius, {
-                    name = zone.name,
-                    debugPoly = Config.Debug,
-                    useZ = zone.useZ ~= false
-                }, targetOptions)
-            else
-                exports['qb-target']:AddBoxZone(zone.name, center, zone.length or 1.0, zone.width or 1.0, {
-                    name = zone.name,
-                    heading = zone.heading or 0.0,
-                    debugPoly = Config.Debug,
-                    minZ = zone.minZ,
-                    maxZ = zone.maxZ
-                }, targetOptions)
-            end
-
-            table.insert(activeTables, { id = zone.id or zone.name, zone = zone.name })
+        local center = vector3(zone.coords.x, zone.coords.y, zone.coords.z)
+        if zone.radius then
+            exports['qb-target']:AddCircleZone(zone.name, center, zone.radius, {
+                name = zone.name,
+                debugPoly = Config.Debug,
+                useZ = zone.useZ ~= false
+            }, targetOptions)
         else
-            exports['qb-target']:AddTargetModel(model, targetOptions)
-
-            if zone.coords and zone.spawnObject ~= false then
-                RequestModel(model)
-                while not HasModelLoaded(model) do
-                    Wait(0)
-                end
-
-                obj = CreateObject(model, zone.coords.x, zone.coords.y, zone.coords.z - 1.0, false, false, false)
-                SetEntityHeading(obj, zone.coords.w)
-                FreezeEntityPosition(obj, true)
-                SetEntityAsMissionEntity(obj, true, true)
-                SetModelAsNoLongerNeeded(model)
-
-                if Config.Debug then
-                    print("Created crafting table at: " .. zone.coords.x .. ", " .. zone.coords.y .. ", " .. zone.coords.z)
-                end
-            end
-
-            table.insert(activeTables, { id = zone.id or zone.name, model = model, object = obj })
+            exports['qb-target']:AddBoxZone(zone.name, center, zone.length or 1.0, zone.width or 1.0, {
+                name = zone.name,
+                heading = zone.heading or 0.0,
+                debugPoly = Config.Debug,
+                minZ = zone.minZ,
+                maxZ = zone.maxZ
+            }, targetOptions)
         end
+
+        table.insert(activeTables, { id = zone.id or zone.name, zone = zone.name })
     end
 end
 
