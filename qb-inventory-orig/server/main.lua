@@ -80,9 +80,9 @@ AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
         ClearInventory(Player.PlayerData.source, filterItems)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'SetInventory', function(items)
-        SetInventory(Player.PlayerData.source, items)
-    end)
+    -- QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, 'SetInventory', function(items)
+    --     SetInventory(Player.PlayerData.source, items)
+    -- end)
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
@@ -113,9 +113,9 @@ AddEventHandler('onResourceStart', function(resourceName)
             ClearInventory(k, filterItems)
         end)
 
-        QBCore.Functions.AddPlayerMethod(k, 'SetInventory', function(items)
-            SetInventory(k, items)
-        end)
+        -- QBCore.Functions.AddPlayerMethod(k, 'SetInventory', function(items)
+        --     SetInventory(k, items)
+        -- end)
 
         Player(k).state.inv_busy = false
     end
@@ -297,7 +297,7 @@ QBCore.Functions.CreateCallback('qb-inventory:server:createDrop', function(sourc
         local itemsTable = setmetatable({ item }, {
             __len = function(t)
                 local length = 0
-                for _ in pairs(t) do length += 1 end
+                for _ in pairs(t) do length = length + 1 end
                 return length
             end
         })

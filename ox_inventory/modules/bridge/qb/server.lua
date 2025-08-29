@@ -78,10 +78,16 @@ local function setupPlayer(Player)
         Inventory.Clear(Player.PlayerData.source, filterItems)
     end)
 
-    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, "SetInventory", function()
-        -- ox_inventory's item structure is not compatible with qb-inventory's one so we don't support it
-        error(
-            'Player.Functions.SetInventory is unsupported for ox_inventory. Try ClearInventory, then add the desired items.')
+    QBCore.Functions.AddPlayerMethod(Player.PlayerData.source, "SetInventory", function(items)
+        Inventory.Clear(Player.PlayerData.source)
+
+        if items then
+            for _, v in pairs(items) do
+                if v and v.name then
+                    Inventory.AddItem(Player.PlayerData.source, v.name, v.amount or v.count or 1, v.info or v.metadata, v.slot)
+                end
+            end
+        end
     end)
 end
 
@@ -206,8 +212,8 @@ function server.convertInventory(playerId, items)
             if item and item.name then
                 local metadata, count = Items.Metadata(playerId, item, data.info, data.amount or data.count or 1)
                 local weight = Inventory.SlotWeight(item, { count = count, metadata = metadata })
-                totalWeight += weight
-                slot += 1
+                totalWeight = totalWeight + weight
+                slot = slot + 1
                 returnData[slot] = {
                     name = item.name,
                     label = item.label,
@@ -356,7 +362,7 @@ export('qb-inventory.GetSlots', function(invId)
 
     local used = 0
     for _, v in pairs(inv.items) do
-        if v then used += 1 end
+        if v then used = used + 1 end
     end
 
     return used, inv.slots - used
@@ -366,7 +372,7 @@ export('qb-inventory.GetItemCount', function(invId, items)
     if type(items) == 'table' then
         local count = 0
         for _, item in pairs(items) do
-            count += Inventory.GetItemCount(invId, item)
+            count = count + Inventory.GetItemCount(invId, item)
         end
         return count
     end
