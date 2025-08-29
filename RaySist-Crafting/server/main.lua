@@ -19,8 +19,8 @@ end
 local function GetCraftingDataForJob(job)
     return {
         zones = CraftingData.zones,
-        categories = CraftingData.categories,
-        recipes = FilterRecipesForJob(CraftingData.recipes, job)
+        categories = Config.Categories,
+        recipes = FilterRecipesForJob(Config.Recipes, job)
     }
 end
 
@@ -180,12 +180,22 @@ local function LoadCraftingData()
     end
 
     CraftingData.zones = zones
-    CraftingData.categories = categories
-    CraftingData.recipes = recipes
+
+    if next(categories) then
+        CraftingData.categories = categories
+        Config.Categories = categories
+    else
+        CraftingData.categories = Config.Categories
+    end
+
+    if next(recipes) then
+        CraftingData.recipes = recipes
+        Config.Recipes = recipes
+    else
+        CraftingData.recipes = Config.Recipes
+    end
 
     Config.CraftingTables = CraftingData.zones
-    Config.Categories = CraftingData.categories
-    Config.Recipes = CraftingData.recipes
 end
 
 CreateThread(function()
