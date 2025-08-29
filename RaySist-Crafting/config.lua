@@ -5,79 +5,120 @@ Config.Debug = false
 -- Crafting Tables with specific item categories
 Config.CraftingTables = {
     {
-        name = "weapons_table",
-        model = `gr_prop_gr_bench_04b`, -- Weapons crafting table prop
-        coords = vector4(-968.11, -3011.98, 13.95, 56.95), -- Example location
+        name = "police_table",
+        model = `gr_prop_gr_bench_04b`,
+        coords = vector4(-968.11, -3011.98, 13.95, 56.95),
         length = 1.0,
         width = 1.0,
         heading = 85.0,
         minZ = 29.0,
         maxZ = 31.0,
         distance = 2.5,
-        allowedCategories = {"weapons", "ammo"}, -- This table only allows weapons and ammo crafting
-        tableLabel = "Weapons Workbench"
+        allowedCategories = {"police_weapons", "ammo"},
+        tableLabel = "Police Workbench",
+        requiredJob = "police"
     },
     {
-        name = "tools_table",
-        model = `prop_tool_bench02`, -- Tools crafting table prop
-        coords = vector4(-966.02, -3008.91, 13.95, 63.94), -- Different location
-        length = 1.0,
-        width = 1.0,
-        heading = 110.5,
-        minZ = 29.0,
-        maxZ = 31.0,
-        distance = 2.5,
-        allowedCategories = {"tools"}, -- This table only allows tools crafting
-        tableLabel = "Tools Workbench"
-    },
-    {
-        name = "medical_table",
-        model = `prop_tool_bench01`, -- Medical crafting table prop
-        coords = vector4(-963.64, -3004.74, 13.95, 62.79), -- Another location
+        name = "ems_table",
+        model = `prop_tool_bench01`,
+        coords = vector4(-963.64, -3004.74, 13.95, 62.79),
         length = 1.0,
         width = 1.0,
         heading = 180.0,
         minZ = 29.0,
         maxZ = 31.0,
         distance = 2.5,
-        allowedCategories = {"medical"}, -- This table only allows medical crafting
-        tableLabel = "Medical Station"
+        allowedCategories = {"ems"},
+        tableLabel = "Medical Station",
+        requiredJob = "ambulance"
+    },
+    {
+        name = "restaurant_table",
+        model = `prop_cooker_03`,
+        coords = vector4(-966.02, -3008.91, 13.95, 63.94),
+        length = 1.0,
+        width = 1.0,
+        heading = 110.5,
+        minZ = 29.0,
+        maxZ = 31.0,
+        distance = 2.5,
+        allowedCategories = {"restaurant"},
+        tableLabel = "Restaurant Kitchen",
+        requiredJob = "burgershot"
+    },
+    {
+        name = "bar_table",
+        model = `prop_bar_fridge_01`,
+        coords = vector4(-960.0, -3000.0, 13.95, 0.0),
+        length = 1.0,
+        width = 1.0,
+        heading = 0.0,
+        minZ = 29.0,
+        maxZ = 31.0,
+        distance = 2.5,
+        allowedCategories = {"bar"},
+        tableLabel = "Bar Counter",
+        requiredJob = "bartender"
+    },
+    {
+        name = "illegal_table",
+        model = `prop_tool_bench02`,
+        coords = vector4(-955.0, -2995.0, 13.95, 0.0),
+        length = 1.0,
+        width = 1.0,
+        heading = 0.0,
+        minZ = 29.0,
+        maxZ = 31.0,
+        distance = 2.5,
+        allowedCategories = {"illegal"},
+        tableLabel = "Illegal Workbench",
+        requiredJob = "criminal"
     }
 }
 
 -- Crafting Categories
 Config.Categories = {
     {
-        name = "weapons",
-        label = "Weapons",
-        icon = "gun"
+        name = "police_weapons",
+        label = "Armas Policiales",
+        icon = "gun",
     },
     {
         name = "ammo",
         label = "Ammunition",
-        icon = "bomb"
+        icon = "bomb",
     },
     {
-        name = "tools",
-        label = "Tools",
-        icon = "toolbox"
+        name = "ems",
+        label = "EMS",
+        icon = "first-aid",
     },
     {
-        name = "medical",
-        label = "Medical",
-        icon = "first-aid"
+        name = "restaurant",
+        label = "Restaurante",
+        icon = "utensils",
+    },
+    {
+        name = "bar",
+        label = "Bar",
+        icon = "beer",
+    },
+    {
+        name = "illegal",
+        label = "Ilegal",
+        icon = "mask",
     }
 }
 
 -- Crafting Recipes
 -- Optional field `job` restricts recipes to players with that job
 Config.Recipes = {
-    -- Weapons
+    -- Police Weapons
     {
         name = "weapon_pistol",
         label = "Pistol",
-        category = "weapons",
-        time = 60, -- seconds to craft
+        category = "police_weapons",
+        time = 60,
         ingredients = {
             { item = "metalscrap", amount = 30, label = "Metal Scrap" },
             { item = "steel", amount = 45, label = "Steel" },
@@ -85,12 +126,12 @@ Config.Recipes = {
         },
         requireBlueprint = false,
         blueprintItem = "pistol_blueprint",
-        job = "police" -- Only police can craft this
+        job = "police"
     },
     {
         name = "weapon_smg",
         label = "SMG",
-        category = "weapons",
+        category = "police_weapons",
         time = 90,
         ingredients = {
             { item = "metalscrap", amount = 50, label = "Metal Scrap" },
@@ -98,7 +139,8 @@ Config.Recipes = {
             { item = "rubber", amount = 30, label = "Rubber" }
         },
         requireBlueprint = true,
-        blueprintItem = "smg_blueprint"
+        blueprintItem = "smg_blueprint",
+        job = "police"
     },
 
     -- Ammo
@@ -151,11 +193,79 @@ Config.Recipes = {
         requireBlueprint = false
     },
 
-    -- Tools
+    -- Restaurant
+    {
+        name = "burger-bleeder",
+        label = "Burger Bleeder",
+        category = "restaurant",
+        time = 10,
+        ingredients = {
+            { item = "bread", amount = 1, label = "Bread" },
+            { item = "meat", amount = 1, label = "Meat" },
+            { item = "lettuce", amount = 1, label = "Lettuce" }
+        },
+        requireBlueprint = false,
+        job = "burgershot"
+    },
+
+    -- Bar
+    {
+        name = "beer",
+        label = "Beer",
+        category = "bar",
+        time = 5,
+        ingredients = {
+            { item = "hops", amount = 2, label = "Hops" },
+            { item = "water_bottle", amount = 1, label = "Water" }
+        },
+        requireBlueprint = false,
+        job = "bartender"
+    },
+
+    -- EMS
+    {
+        name = "bandage",
+        label = "Bandage",
+        category = "ems",
+        time = 15,
+        ingredients = {
+            { item = "cloth", amount = 3, label = "Cloth" },
+            { item = "alcohol", amount = 1, label = "Alcohol" }
+        },
+        requireBlueprint = false,
+        job = "ambulance"
+    },
+    {
+        name = "painkillers",
+        label = "Painkillers",
+        category = "ems",
+        time = 18,
+        ingredients = {
+            { item = "chemicals", amount = 2, label = "Chemicals" },
+            { item = "plastic", amount = 1, label = "Plastic" }
+        },
+        requireBlueprint = false,
+        job = "ambulance"
+    },
+    {
+        name = "firstaid",
+        label = "First Aid Kit",
+        category = "ems",
+        time = 30,
+        ingredients = {
+            { item = "cloth", amount = 5, label = "Cloth" },
+            { item = "alcohol", amount = 3, label = "Alcohol" },
+            { item = "painkillers", amount = 2, label = "Painkillers" }
+        },
+        requireBlueprint = false,
+        job = "ambulance"
+    },
+
+    -- Illegal
     {
         name = "lockpick",
         label = "Lockpick",
-        category = "tools",
+        category = "illegal",
         time = 20,
         ingredients = {
             { item = "metalscrap", amount = 5, label = "Metal Scrap" },
@@ -166,7 +276,7 @@ Config.Recipes = {
     {
         name = "advancedlockpick",
         label = "Advanced Lockpick",
-        category = "tools",
+        category = "illegal",
         time = 33,
         ingredients = {
             { item = "metalscrap", amount = 13, label = "Metal Scrap" },
@@ -177,7 +287,7 @@ Config.Recipes = {
     {
         name = "screwdriverset",
         label = "Screwdriver Set",
-        category = "tools",
+        category = "illegal",
         time = 15,
         ingredients = {
             { item = "metalscrap", amount = 8, label = "Metal Scrap" },
@@ -189,7 +299,7 @@ Config.Recipes = {
     {
         name = "drill",
         label = "Drill",
-        category = "tools",
+        category = "illegal",
         time = 40,
         ingredients = {
             { item = "metalscrap", amount = 20, label = "Metal Scrap" },
@@ -198,42 +308,6 @@ Config.Recipes = {
         },
         requireBlueprint = true,
         blueprintItem = "drill_blueprint"
-    },
-
-    -- Medical
-    {
-        name = "bandage",
-        label = "Bandage",
-        category = "medical",
-        time = 15,
-        ingredients = {
-            { item = "cloth", amount = 3, label = "Cloth" },
-            { item = "alcohol", amount = 1, label = "Alcohol" }
-        },
-        requireBlueprint = false
-    },
-    {
-        name = "painkillers",
-        label = "Painkillers",
-        category = "medical",
-        time = 18,
-        ingredients = {
-            { item = "chemicals", amount = 2, label = "Chemicals" },
-            { item = "plastic", amount = 1, label = "Plastic" }
-        },
-        requireBlueprint = false
-    },
-    {
-        name = "firstaid",
-        label = "First Aid Kit",
-        category = "medical",
-        time = 30,
-        ingredients = {
-            { item = "cloth", amount = 5, label = "Cloth" },
-            { item = "alcohol", amount = 3, label = "Alcohol" },
-            { item = "painkillers", amount = 2, label = "Painkillers" }
-        },
-        requireBlueprint = false
     }
 }
 
