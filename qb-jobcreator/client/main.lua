@@ -244,12 +244,53 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
   SetNuiFocus(true, true)
   SendNUIMessage({ action = 'openCraft', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = Config and Config.InventoryImagePath })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
+    local function getItemCount(name)
+      if GetResourceState('ox_inventory') == 'started' then
+        return exports.ox_inventory:GetItemCount(name) or 0
+      end
+      local pdata = QBCore.Functions.GetPlayerData()
+      local items = pdata and pdata.items or {}
+      local count = 0
+      for _, it in pairs(items) do
+        if it and it.name == name then
+          count = count + (it.amount or it.count or 0)
+        end
+      end
+      return count
+    end
+
+    local transformed = {}
+    for _, recipe in ipairs(recipes or {}) do
+      local mats = {}
+      local haveAny, haveAll = false, true
+      for _, inp in ipairs(recipe.inputs or {}) do
+        local need = tonumber(inp.amount) or 0
+        local have = getItemCount(inp.item)
+        mats[#mats+1] = { item = inp.item, need = need, have = have, noConsume = inp.noConsume }
+        if have >= need and need > 0 then
+          haveAny = true
+        else
+          if have > 0 then haveAny = true end
+          haveAll = false
+        end
+      end
+      local status = 'none'
+      if haveAll and #mats > 0 then status = 'all' elseif haveAny then status = 'some' end
+      transformed[#transformed+1] = {
+        item = recipe.output and recipe.output.item or recipe.name,
+        label = (recipe.output and recipe.output.label) or recipe.name,
+        materials = mats,
+        outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
+        status = status
+      }
+    end
+
     QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
       local ready = {}
       for item, amt in pairs(res and res.inventory or {}) do
         ready[#ready+1] = { id = item, label = item, outputs = { { item = item, amount = amt } }, timestamp = os.time() }
       end
-      SendNUIMessage({ action = 'init', data = { recipes = recipes or {}, queue = res and res.queue or {}, ready = ready } })
+      SendNUIMessage({ action = 'init', data = { recipes = transformed, queue = res and res.queue or {}, ready = ready } })
     end, zoneId)
   end, zoneId)
 end)
