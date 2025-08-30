@@ -205,19 +205,22 @@ RegisterNUICallback('craft', function(data, cb)
   cb({ ok = true })
 end)
 
--- Progress bar for crafting
-RegisterNetEvent('qb-jobcreator:client:progress', function(time, item)
-  local label = 'Crafteando'
-  if item then
-    local info = QBCore.Shared.Items[item]
-    if info and info.label then
-      label = ('Crafteando %s'):format(info.label)
-    end
-  end
-  QBCore.Functions.Progressbar('jc-craft', label, time or 1000, false, true, {
-    disableMovement = true,
-    disableCarMovement = true,
-    disableMouse = false,
-    disableCombat = true,
-  }, {}, {}, {}, function() end, function() end)
+RegisterNUICallback('getQueue', function(data, cb)
+  local zoneId = data and (data.zoneId or data.zone)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
+    cb(res or { queue = {}, inventory = {} })
+  end, zoneId)
+end)
+
+RegisterNUICallback('collectCrafted', function(data, cb)
+  local zoneId = data and (data.zoneId or data.zone)
+  if zoneId then TriggerServerEvent('qb-jobcreator:server:collectCrafted', zoneId) end
+  cb({ ok = true })
+end)
+
+RegisterNUICallback('cancelCraft', function(data, cb)
+  local zoneId = data and (data.zoneId or data.zone)
+  local id = data and data.id
+  if zoneId and id then TriggerServerEvent('qb-jobcreator:server:cancelCraft', zoneId, id) end
+  cb({ ok = true })
 end)
