@@ -1,4 +1,4 @@
-require 'modules.bridge.qb.items_server'
+--require 'modules.bridge.qb.items_server'
 --This file has been modified from the current version to return older functionality that allows for the use of qb-core.
 
 local Inventory = require 'modules.inventory.server'
