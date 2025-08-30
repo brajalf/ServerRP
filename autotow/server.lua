@@ -11,9 +11,9 @@ local function debugPrint(msg)
 end
 
 -- Broadcast alert a todos
-local function broadcastAlert(text, duration)
+local function broadcastAlert(text, duration, title)
   TriggerClientEvent('invictus_tow:client:showAlert', -1, {
-    title = Config.AlertTitle,
+    title = title or Config.AlertTitle,
     text = text or Config.AlertText,
     duration = duration or Config.AlertDuration
   })
@@ -91,6 +91,7 @@ local function startCleanupCycle(manual)
     SetTimeout(8000, function()
       cleanupState.active = false
       print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))
+      broadcastAlert(Config.CleanupCompleteText, nil, Config.CleanupCompleteTitle)
     end)
   end)
 end
