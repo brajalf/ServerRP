@@ -242,7 +242,9 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
   craftZone = zoneId
   uiOpen = true
   SetNuiFocus(true, true)
-  SendNUIMessage({ action = 'openCraft', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = Config and Config.InventoryImagePath })
+  local imagePath = GetConvar('inventory:imagepath', Config and Config.InventoryImagePath or 'nui://ox_inventory/web/images/')
+  if imagePath:sub(-1) ~= '/' then imagePath = imagePath .. '/' end
+  SendNUIMessage({ action = 'openCraft', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = imagePath })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
     local function getItemCount(name)
       if GetResourceState('ox_inventory') == 'started' then
