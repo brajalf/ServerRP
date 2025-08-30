@@ -9,7 +9,6 @@ const App = (() => {
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
     recipes: {},
-    categories: [],
   };
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -218,11 +217,10 @@ const App = (() => {
       applyBranding(pay.branding);
       applyScope();
 
-      postJ('getRecipes').then((r) => {
+      postJ('getCraftingData').then((r) => {
         if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
         else { state.recipes = r || {}; }
       });
-      postJ('getCategories').then((c) => { state.categories = c || []; });
 
       // si viene como boss, entrar directo al panel del trabajo
       if (pay.scope && pay.scope.mode === 'boss' && pay.scope.job) {
@@ -243,11 +241,10 @@ const App = (() => {
       if (payload.scope) state.scope = payload.scope;
       applyBranding(payload.branding);
       applyScope();
-      postJ('getRecipes').then((r) => {
+      postJ('getCraftingData').then((r) => {
         if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
         else { state.recipes = r || {}; }
       });
-      postJ('getCategories').then((c) => { state.categories = c || []; });
       renderAll();
       return;
     }
@@ -255,7 +252,6 @@ const App = (() => {
       const r = payload && payload.recipes;
       if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
       else { state.recipes = r || {}; }
-      state.categories = (payload && payload.categories) || [];
       return;
     }
     if (action === 'hide' || action === 'force-close') { hide(); return; }
@@ -567,105 +563,19 @@ const App = (() => {
   }
 
   function renderCrafting() {
-    const catBody = $('#catTable tbody');
-    catBody.innerHTML = '';
-    (state.categories || []).forEach((c) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${c.name}</td>
-        <td>${c.label || ''}</td>
-        <td>${c.job || ''}</td>
-        <td class="actions-inline"><button class="btn" data-act="ren">Renombrar</button></td>`;
-      tr.querySelector('[data-act="ren"]').onclick = () => {
-        const html = `
-          <div class="row">
-            <div><label>Nombre</label><input id="catname" class="input" value="${c.name}"/></div>
-            <div><label>Etiqueta</label><input id="catlabel" class="input" value="${c.label || ''}"/></div>
-          </div>`;
-        modal('Renombrar Categoría', html, () => {
-          post('renameCategory', { old: c.name, new: $('#catname').value, label: $('#catlabel').value });
-          closeModal();
-          setTimeout(refreshCrafting, 300);
-        });
-      };
-      catBody.appendChild(tr);
-    });
-    $('#btn-addcat').onclick = () => {
-      const jobOpts = Object.values(state.jobs || {}).map((j) => `<option value="${j.name}">${j.label || j.name}</option>`).join('');
-      const html = `
-        <div class="row">
-          <div><label>Nombre</label><input id="catname" class="input"/></div>
-          <div><label>Etiqueta</label><input id="catlabel" class="input"/></div>
-          <div><label>Trabajo</label><select id="catjob" class="input"><option value=""></option>${jobOpts}</select></div>
-        </div>`;
-      modal('Nueva Categoría', html, () => {
-        post('createCategory', { name: $('#catname').value, label: $('#catlabel').value, job: $('#catjob').value });
-        closeModal();
-        setTimeout(refreshCrafting, 300);
-      });
-    };
-
     const recBody = $('#recTable tbody');
     recBody.innerHTML = '';
     Object.values(state.recipes || {}).forEach((r) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${r.name}</td>
-        <td>${r.label || ''}</td>
-        <td>${r.category || ''}</td>
-        <td>${r.job || ''}</td>
-        <td>${r.time || 0}</td>
-        <td>${r.requireBlueprint ? 'Sí' : 'No'}</td>
-        <td class="actions-inline"><button class="btn" data-act="edit">Editar</button><button class="btn danger" data-act="del">X</button></td>`;
-      tr.querySelector('[data-act="edit"]').onclick = () => openRecipeModal(r);
-      tr.querySelector('[data-act="del"]').onclick = () => {
-        confirm('¿Borrar receta?', () => { post('deleteRecipe', { name: r.name }); setTimeout(refreshCrafting, 300); });
-      };
+      const inputs = (r.inputs || []).map((i) => `${i.amount}x ${i.item}`).join(', ');
+      const output = r.output ? `${r.output.amount || 1}x ${r.output.item}` : '';
+      tr.innerHTML = `<td>${r.name}</td><td>${inputs}</td><td>${r.time || 0}</td><td>${output}</td>`;
       recBody.appendChild(tr);
     });
-    $('#btn-addrec').onclick = () => openRecipeModal({});
-  }
-
-  function openRecipeModal(rec) {
-    let collectIngredients = () => [];
-    const catOpts = (state.categories || []).map((c) => `<option value="${c.name}" ${rec && rec.category===c.name?'selected':''}>${c.label || c.name}</option>`).join('');
-    const jobOpts = Object.values(state.jobs || {}).map((j) => `<option value="${j.name}" ${rec && rec.job===j.name?'selected':''}>${j.label || j.name}</option>`).join('');
-    const html = `
-      <div class="row">
-        <div><label>Nombre</label><input id="rname" class="input" value="${rec.name || ''}"/></div>
-        <div><label>Etiqueta</label><input id="rlabel" class="input" value="${rec.label || ''}"/></div>
-      </div>
-      <div class="row">
-        <div><label>Categoría</label><select id="rcategory" class="input">${catOpts}</select></div>
-        <div><label>Trabajo</label><select id="rjob" class="input"><option value=""></option>${jobOpts}</select></div>
-        <div><label>Tiempo (s)</label><input id="rtime" class="input" type="number" value="${rec.time || 0}"/></div>
-      </div>
-      <div class="row">
-        <div><label><input type="checkbox" id="rblue" ${rec.requireBlueprint?'checked':''}/> Requiere blueprint</label></div>
-        <div><label>Item blueprint</label><input id="rblueitem" class="input" value="${rec.blueprintItem || ''}"/></div>
-      </div>
-      <div id="ingBox"></div>`;
-    modal(rec && rec.name ? 'Editar Receta' : 'Nueva Receta', html, () => {
-      const data = {
-        name: $('#rname').value,
-        label: $('#rlabel').value,
-        category: $('#rcategory').value,
-        job: $('#rjob').value,
-        time: Number($('#rtime').value) || 0,
-        requireBlueprint: $('#rblue').checked,
-        blueprintItem: $('#rblueitem').value,
-        ingredients: collectIngredients(),
-      };
-      post('saveRecipe', { recipe: data });
-      closeModal();
-      setTimeout(refreshCrafting, 300);
-    });
-    collectIngredients = renderIngredientSection(document.getElementById('ingBox'), rec.ingredients || []);
   }
 
   function refreshCrafting() {
-    postJ('getCategories').then((c) => { state.categories = c || []; renderCrafting(); });
-    postJ('getRecipes').then((r) => {
+    postJ('getCraftingData').then((r) => {
       if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
       else { state.recipes = r || {}; }
       renderCrafting();
@@ -814,9 +724,7 @@ const App = (() => {
         if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                             data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
         if (t === 'crafting') {
-                            data.recipe = document.getElementById('zrecipe')?.value || '';
-                            data.name = document.getElementById('zname')?.value || '';
-                            data.allowedCategories = Array.from(document.getElementById('zcategories')?.selectedOptions || []).map((o) => o.value);
+                            data.recipes = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
                            }
         if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
         if (t === 'shop')  { data.items = collectShopItems(); }
@@ -873,12 +781,8 @@ const App = (() => {
           box.innerHTML = inp('zveh','Vehículos (rango=modelo, separados por coma)','0=police,2=police2,4=ambulance', d.vehicles || '') +
                           row(inp('zvehdef','Modelo por defecto','police', d.vehicle || ''));
         } else if (t === 'crafting') {
-          const opts = Object.keys(state.recipes || {}).map((r) => `<option ${d.recipe===r?'selected':''}>${r}</option>`).join('');
-          const cats = (state.categories || []).map((c) => `<option value="${c.name}" ${ (d.allowedCategories||[]).includes(c.name)?'selected':'' }>${c.label || c.name}</option>`).join('');
-          box.innerHTML =
-            row(inp('zname','Nombre','Mesa', d.name || '')) +
-            row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
-            row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select></div>`);
+          const opts = Object.keys(state.recipes || {}).map((r) => `<option value="${r}" ${(d.recipes||[]).includes(r)?'selected':''}>${r}</option>`).join('');
+          box.innerHTML = row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${opts}</select></div>`);
         } else if (t === 'cloakroom') {
           box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
         } else if (t === 'shop') {
@@ -938,9 +842,7 @@ const App = (() => {
           if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                               data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
           if (t === 'crafting') {
-            data.recipe = document.getElementById('zrecipe')?.value || '';
-            data.name = document.getElementById('zname')?.value || '';
-            data.allowedCategories = Array.from(document.getElementById('zcategories')?.selectedOptions || []).map((o) => o.value);
+            data.recipes = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
           }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
@@ -1000,11 +902,7 @@ const App = (() => {
                         row(inp('zvehdef','Modelo por defecto','police'));
       } else if (t === 'crafting') {
         const opts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
-        const cats = (state.categories || []).map((c) => `<option value="${c.name}">${c.label || c.name}</option>`).join('');
-        box.innerHTML =
-          row(inp('zname','Nombre','Mesa')) +
-          row(`<div style="flex:1"><label>Categorías</label><select id="zcategories" class="input" multiple>${cats}</select></div>`) +
-          row(`<div><label>Receta</label><select id="zrecipe" class="input">${opts}</select></div>`);
+        box.innerHTML = row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${opts}</select></div>`);
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {
