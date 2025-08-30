@@ -2,7 +2,9 @@ Config = Config or {}
 
 -- Inventario y notificaciones
 Config.InventoryType = Config.InventoryType or 'qb'        -- 'qb', 'ox', 'tgiann', 'custom'
-Config.InventoryImagePath = Config.InventoryImagePath or 'nui://ox_inventory/web/images/'
+local imgPath = GetConvar('inventory:imagepath', Config.InventoryImagePath or 'nui://ox_inventory/web/images/')
+if imgPath:sub(-1) ~= '/' then imgPath = imgPath .. '/' end
+Config.InventoryImagePath = imgPath
 Config.NotifySystem = Config.NotifySystem or 'qb'          -- 'qb', 'ox', 'custom'
 Config.NotifyTitle = Config.NotifyTitle or 'Job Creator'
 
@@ -14,9 +16,8 @@ Config.General = Config.General or {
 }
 
 -- ===== INTERFACE CONFIGURATION / CONFIGURACIÓN DE INTERFAZ =====
-Config.Interface = Config.Interface or {
-  InventoryImagePath = 'nui://ox_inventory/web/images/', -- Ruta a imágenes del inventario / Path to inventory images
-}
+Config.Interface = Config.Interface or {}
+Config.Interface.InventoryImagePath = Config.Interface.InventoryImagePath or Config.InventoryImagePath
 
 -- ===== INVENTORY SYSTEM CONFIGURATION / CONFIGURACIÓN DEL SISTEMA DE INVENTARIO =====
 Config.InventorySystem = Config.InventorySystem or {
