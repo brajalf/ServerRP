@@ -161,20 +161,90 @@ Config.CraftingTables = Config.CraftingTables or {
 -- ===== CRAFTABLE ITEMS / OBJETOS CRAFTEABLES =====
 Config.CraftableItems = Config.CraftableItems or {
   bandage = {
-    table  = 'workshop',                         -- Mesa requerida / Required table
-    time   = 3000,                               -- Tiempo en ms / Time in ms
-    inputs = { { item = 'cloth', amount = 2 } }, -- Materiales necesarios / Required materials
-    output = { item = 'bandage', amount = 1 }    -- Resultado / Result item
+    category = 'medical',
+    job      = 'ambulance',
+    table    = 'workshop',
+    time     = 3000,
+    inputs   = { { item = 'cloth', amount = 2 } },
+    output   = { item = 'bandage', amount = 1 }
   },
-  repairkit = {
-    table  = 'workshop',
-    time   = 8000,
-    inputs = {
+  evidence_bag = {
+    category = 'police',
+    job      = 'police',
+    table    = 'workshop',
+    time     = 4000,
+    inputs   = {
+      { item = 'plastic', amount = 2 },
+      { item = 'paper',   amount = 1 }
+    },
+    output   = { item = 'evidence_bag', amount = 1 }
+  },
+  burger = {
+    category = 'food',
+    job      = 'burgershot',
+    table    = 'workshop',
+    time     = 4000,
+    inputs   = {
+      { item = 'burger-bun',  amount = 1 },
+      { item = 'burger-meat', amount = 1 }
+    },
+    output   = { item = 'burger', amount = 1 }
+  },
+  coffee = {
+    category = 'beverage',
+    job      = 'beanmachine',
+    table    = 'workshop',
+    time     = 2000,
+    inputs   = {
+      { item = 'coffee_beans', amount = 1 },
+      { item = 'water',        amount = 1 }
+    },
+    output   = { item = 'coffee', amount = 1 }
+  },
+  repair_kit = {
+    category = 'mechanic',
+    job      = 'mechanic',
+    table    = 'workshop',
+    time     = 8000,
+    inputs   = {
       { item = 'metalscrap', amount = 4 },
       { item = 'steel',      amount = 2 },
       { item = 'plastic',    amount = 1 }
     },
-    output = { item = 'repairkit', amount = 1 }
+    output   = { item = 'repair_kit', amount = 1 }
+  },
+  tshirt = {
+    category = 'clothing',
+    job      = 'tailor',
+    table    = 'workshop',
+    time     = 5000,
+    inputs   = {
+      { item = 'cloth',  amount = 5 },
+      { item = 'thread', amount = 2 }
+    },
+    output   = { item = 'tshirt', amount = 1 }
+  },
+  cocktail = {
+    category = 'bar',
+    job      = 'bartender',
+    table    = 'workshop',
+    time     = 3000,
+    inputs   = {
+      { item = 'vodka', amount = 1 },
+      { item = 'fruit', amount = 1 },
+      { item = 'ice',   amount = 1 }
+    },
+    output   = { item = 'cocktail', amount = 1 }
+  },
+  lockpick = {
+    category = 'criminal',
+    table    = 'workshop',
+    time     = 5000,
+    inputs   = {
+      { item = 'metalscrap', amount = 2 },
+      { item = 'plastic',    amount = 1 }
+    },
+    output   = { item = 'lockpick', amount = 1 }
   }
 }
 Config.CraftingRecipes = Config.CraftableItems -- Compatibilidad / Compatibility
