@@ -759,7 +759,7 @@ RegisterNetEvent('qb-jobcreator:server:buyItem', function(zoneId, itemName)
     TriggerClientEvent('QBCore:Notify', src, 'Fondos insuficientes', 'error')
     return
   end
-  local added = Player.Functions.AddItem(item.name, 1, false, item.info)
+  local added = Inventory.AddItem(src, item.name, 1, false, item.info)
   if not added then
     TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
     return
@@ -769,12 +769,12 @@ end)
 
 -- === Crafting helpers ===
 local function hasMaterials(Player, recipe)
-  if recipe.blueprint and not Player.Functions.GetItemByName(recipe.blueprint) then
+  local src = Player.PlayerData and Player.PlayerData.source
+  if recipe.blueprint and not Inventory.CheckItem(src, recipe.blueprint, 1) then
     return false, 'blueprint'
   end
   for _, inp in ipairs(recipe.inputs or {}) do
-    local it = Player.Functions.GetItemByName(inp.item)
-    if not it or it.amount < (inp.amount or 1) then
+    if not Inventory.CheckItem(src, inp.item, inp.amount or 1) then
       return false, inp.item
     end
   end
@@ -782,19 +782,21 @@ local function hasMaterials(Player, recipe)
 end
 
 local function consumeMaterials(Player, recipe)
+  local src = Player.PlayerData and Player.PlayerData.source
   local removed = {}
   for _, inp in ipairs(recipe.inputs or {}) do
     local amt = inp.amount or 1
-    Player.Functions.RemoveItem(inp.item, amt)
+    Inventory.RemoveItem(src, inp.item, amt)
     removed[#removed+1] = { item = inp.item, amount = amt }
   end
   return removed
 end
 
 local function giveOutput(Player, recipe)
+  local src = Player.PlayerData and Player.PlayerData.source
   local out = recipe.output or {}
   if not out.item then return false end
-  return Player.Functions.AddItem(out.item, out.amount or 1, false, out.info)
+  return Inventory.AddItem(src, out.item, out.amount or 1, false, out.info)
 end
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
@@ -846,7 +848,7 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
       local added = giveOutput(P, recipe)
       if not added then
         for _, rem in ipairs(removed) do
-          P.Functions.AddItem(rem.item, rem.amount)
+          Inventory.AddItem(src, rem.item, rem.amount)
         end
         TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
         return
@@ -857,7 +859,7 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
       TriggerClientEvent('QBCore:Notify', src, 'Crafteo completado', 'success')
     else
       for _, rem in ipairs(removed) do
-        P.Functions.AddItem(rem.item, rem.amount)
+        Inventory.AddItem(src, rem.item, rem.amount)
       end
       TriggerClientEvent('QBCore:Notify', src, 'Crafteo fallido', 'error')
     end
@@ -870,7 +872,7 @@ RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
   if not ok then return end
   local item = (zone.data and zone.data.item) or 'material'
   local amount = tonumber(zone.data and zone.data.amount) or 1
-  Player.Functions.AddItem(item, amount)
+  Inventory.AddItem(src, item, amount)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
@@ -882,11 +884,10 @@ RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
   local price  = tonumber(data.price) or 10
   local max    = tonumber(data.max) or 10
   local toSociety = data.toSociety ~= false
-  local invItem = Player.Functions.GetItemByName(item)
-  local count = (invItem and invItem.amount) or 0
+  local count = Inventory.CheckItem(src, item)
   local qty = math.min(count, max)
   if qty <= 0 then return end
-  Player.Functions.RemoveItem(item, qty)
+  Inventory.RemoveItem(src, item, qty)
   local reward = price * qty
   if toSociety then
     SocietyAdd(zone.job, reward)

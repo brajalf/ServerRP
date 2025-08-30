@@ -27,7 +27,8 @@ shared_scripts {
   'locales/en.lua',
   'locales/es.lua',
   'config.lua',
-  'shared/sh_utils.lua'
+  'shared/sh_utils.lua',
+  'shared/sh_inventory.lua'
 }
 
 client_scripts {
