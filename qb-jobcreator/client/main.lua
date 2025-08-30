@@ -2,6 +2,7 @@ QBCore = exports['qb-core']:GetCoreObject()
 
 local Jobs, Zones = {}, {}
 local uiOpen = false
+local craftZone = nil
 
 -- Notification wrapper
 local function Notify(msg, typ)
@@ -25,6 +26,7 @@ local function ForceClose()
   SetNuiFocus(false, false)
   SetNuiFocusKeepInput(false)
   uiOpen = false
+  craftZone = nil
   SendNUIMessage({ action = 'hide' })
 end
 
@@ -218,36 +220,58 @@ RegisterNUICallback('updateZone', function(data, cb)
 end)
 
 -- ===== Crafteo =====
-RegisterNUICallback('getCraftingData', function(data, cb)
-  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(list) cb(list or {}) end, data and data.zoneId)
-end)
 
-RegisterNUICallback('craft', function(data, cb)
-  local zoneId = data and (data.zoneId or data.zone)
-  local recipe = data and data.recipe
-  local amount = tonumber(data and data.amount) or 1
-  if zoneId and recipe then
-    TriggerServerEvent('qb-jobcreator:server:craft', zoneId, recipe, amount)
-  end
-  cb({ ok = true })
-end)
-
-RegisterNUICallback('getQueue', function(data, cb)
-  local zoneId = data and (data.zoneId or data.zone)
+local function sendCraftUpdate()
+  if not craftZone then return end
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
-    cb(res or { queue = {}, inventory = {} })
+    local ready = {}
+    for item, amt in pairs(res and res.inventory or {}) do
+      ready[#ready+1] = { id = item, label = item, outputs = { { item = item, amount = amt } }, timestamp = os.time() }
+    end
+    SendNUIMessage({ action = 'update', data = { queue = (res and res.queue) or {}, ready = ready } })
+  end, craftZone)
+end
+
+RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
+  craftZone = zoneId
+  uiOpen = true
+  SetNuiFocus(true, true)
+  SendNUIMessage({ action = 'open', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = Config and Config.InventoryImagePath })
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
+    QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
+      local ready = {}
+      for item, amt in pairs(res and res.inventory or {}) do
+        ready[#ready+1] = { id = item, label = item, outputs = { { item = item, amount = amt } }, timestamp = os.time() }
+      end
+      SendNUIMessage({ action = 'init', data = { recipes = recipes or {}, queue = res and res.queue or {}, ready = ready } })
+    end, zoneId)
   end, zoneId)
 end)
 
-RegisterNUICallback('collectCrafted', function(data, cb)
-  local zoneId = data and (data.zoneId or data.zone)
-  if zoneId then TriggerServerEvent('qb-jobcreator:server:collectCrafted', zoneId) end
-  cb({ ok = true })
+RegisterNUICallback('craft', function(data, cb)
+  if craftZone and data and data.item then
+    TriggerServerEvent('qb-jobcreator:server:craft', craftZone, data.item, tonumber(data.amount) or 1)
+    SetTimeout(200, sendCraftUpdate)
+  end
+  cb(true)
 end)
 
-RegisterNUICallback('cancelCraft', function(data, cb)
-  local zoneId = data and (data.zoneId or data.zone)
-  local id = data and data.id
-  if zoneId and id then TriggerServerEvent('qb-jobcreator:server:cancelCraft', zoneId, id) end
-  cb({ ok = true })
+RegisterNUICallback('collect', function(data, cb)
+  if craftZone then
+    TriggerServerEvent('qb-jobcreator:server:collectCrafted', craftZone)
+    SetTimeout(200, sendCraftUpdate)
+  end
+  cb(true)
+end)
+
+RegisterNUICallback('leaveAll', function(_, cb)
+  if craftZone then
+    QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
+      for _, e in ipairs(res and res.queue or {}) do
+        TriggerServerEvent('qb-jobcreator:server:cancelCraft', craftZone, e.id)
+      end
+      sendCraftUpdate()
+    end, craftZone)
+  end
+  cb(true)
 end)

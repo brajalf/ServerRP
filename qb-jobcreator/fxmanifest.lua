@@ -12,7 +12,9 @@ ui_page 'web/index.html'
 files {
   'web/index.html',
   'web/style.css',
+  'web/crafting.css',
   'web/app.js',
+  'web/crafting.js',
   'web/logo.png',
 }
 

@@ -195,11 +195,7 @@ end
 
 local function openCraftMenu(z)
   if not z or not z.id then return end
-  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
-    SetNuiFocus(true, true)
-    SetNuiFocusKeepInput(false)
-    SendNUIMessage({ action = 'openCraft', payload = { zone = z.id, zoneId = z.id, recipes = recipes or {} } })
-  end, z.id)
+  TriggerEvent('qb-jobcreator:client:openCrafting', z.id)
 end
 
 -- =====================================
