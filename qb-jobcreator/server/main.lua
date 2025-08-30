@@ -813,42 +813,47 @@ RegisterNetEvent('qb-jobcreator:server:buyItem', function(zoneId, itemName)
 end)
 
 -- === Crafting helpers ===
-local function hasMaterials(Player, recipe)
+local function hasMaterials(Player, recipe, amount)
   local src = Player.PlayerData and Player.PlayerData.source
   if recipe.blueprint and not Inventory.CheckItem(src, recipe.blueprint, 1) then
     return false, 'blueprint'
   end
+  amount = tonumber(amount) or 1
   for _, inp in ipairs(recipe.inputs or {}) do
-    if not Inventory.CheckItem(src, inp.item, inp.amount or 1) then
+    local required = (inp.amount or 1) * amount
+    if not Inventory.CheckItem(src, inp.item, required) then
       return false, inp.item
     end
   end
   return true
 end
 
-local function consumeMaterials(Player, recipe)
+local function consumeMaterials(Player, recipe, amount)
   local src = Player.PlayerData and Player.PlayerData.source
   local removed = {}
+  amount = tonumber(amount) or 1
   for _, inp in ipairs(recipe.inputs or {}) do
-    local amt = inp.amount or 1
+    local amt = (inp.amount or 1) * amount
     Inventory.RemoveItem(src, inp.item, amt)
     removed[#removed+1] = { item = inp.item, amount = amt }
   end
   return removed
 end
 
-local function giveOutput(Player, recipe)
+local function giveOutput(Player, recipe, amount)
   local src = Player.PlayerData and Player.PlayerData.source
   local out = recipe.output or {}
   if not out.item then return false end
-  return Inventory.AddItem(src, out.item, out.amount or 1, false, out.info)
+  local total = (out.amount or 1) * (tonumber(amount) or 1)
+  return Inventory.AddItem(src, out.item, total, false, out.info)
 end
 
-RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
+RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amount)
   local src = source
   local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
   recipeKey = type(recipeKey) == 'string' and recipeKey or ''
+  amount = tonumber(amount) or 1
   local allowed = {}
   local data = zone.data or {}
   if data.allowedCategories and #data.allowedCategories > 0 then
@@ -886,14 +891,14 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
     end
   end
 
-  local has, missing = hasMaterials(Player, recipe)
+  local has, missing = hasMaterials(Player, recipe, amount)
   if not has then
     local msg = missing == 'blueprint' and 'Falta el plano requerido' or 'Materiales insuficientes'
     TriggerClientEvent('QBCore:Notify', src, msg, 'error')
     return
   end
 
-  local removed = consumeMaterials(Player, recipe)
+  local removed = consumeMaterials(Player, recipe, amount)
 
   local craftTime = tonumber(recipe.time) or 0
   local skillLevel = 0
@@ -902,9 +907,9 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
     craftTime = math.floor(math.max(craftTime * (1 - (skillLevel / 200)), craftTime * 0.5))
   end
 
-  TriggerClientEvent('qb-jobcreator:client:progress', src, craftTime, recipe.output.item)
+  TriggerClientEvent('qb-jobcreator:client:progress', src, craftTime * amount, recipe.output.item)
 
-  SetTimeout(craftTime, function()
+  SetTimeout(craftTime * amount, function()
     local P = QBCore.Functions.GetPlayer(src)
     if not P then return end
 
@@ -915,7 +920,7 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
     local success = math.random(100) <= chance
 
     if success then
-      local added = giveOutput(P, recipe)
+      local added = giveOutput(P, recipe, amount)
       if not added then
         for _, rem in ipairs(removed) do
           Inventory.AddItem(src, rem.item, rem.amount)

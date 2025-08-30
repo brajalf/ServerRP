@@ -198,8 +198,9 @@ end)
 RegisterNUICallback('craft', function(data, cb)
   local zoneId = data and (data.zoneId or data.zone)
   local recipe = data and data.recipe
+  local amount = tonumber(data and data.amount) or 1
   if zoneId and recipe then
-    TriggerServerEvent('qb-jobcreator:server:craft', zoneId, recipe)
+    TriggerServerEvent('qb-jobcreator:server:craft', zoneId, recipe, amount)
   end
   cb({ ok = true })
 end)
