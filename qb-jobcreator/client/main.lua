@@ -3,6 +3,20 @@ QBCore = exports['qb-core']:GetCoreObject()
 local Jobs, Zones = {}, {}
 local uiOpen = false
 
+-- Notification wrapper
+local function Notify(msg, typ)
+  typ = typ or 'primary'
+  local system = (Config and Config.NotifySystem) or 'qb'
+  local title = (Config and Config.NotifyTitle) or 'Job Creator'
+  if system == 'ox' and lib and lib.notify then
+    lib.notify({ title = title, description = msg, type = typ })
+  elseif system == 'custom' and Config and type(Config.CustomNotify) == 'function' then
+    Config.CustomNotify(msg, typ, title)
+  else
+    TriggerEvent('QBCore:Notify', msg, typ)
+  end
+end
+
 RegisterNetEvent('qb-jobcreator:client:syncAll', function(jobs, zones)
   Jobs, Zones = jobs or {}, zones or {}
 end)
@@ -24,7 +38,7 @@ AddEventHandler('QBCore:Client:OnPlayerLoaded', function() ForceClose() end)
 RegisterNetEvent('qb-jobcreator:client:openUI', function()
   if uiOpen then ForceClose(); return end
   SetNuiFocus(true, true); SetNuiFocusKeepInput(false); uiOpen = true
-  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, branding = Config and Config.Branding or nil, scope = { mode = 'admin' } } })
+  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, branding = Config and Config.Branding or nil, scope = { mode = 'admin' }, inventory = Config and Config.InventoryType, imagePath = Config and Config.InventoryImagePath } })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
     if type(data) == 'table' and data.ok then
       data.scope = { mode = 'admin' }
@@ -52,7 +66,9 @@ RegisterNetEvent('qb-jobcreator:client:openBossUI', function(job)
       totals = { jobs = 0, employees = 0, money = 0 },
       popular = {},
       branding = Config and Config.Branding or nil,
-      scope = { mode = 'boss', job = job }
+      scope = { mode = 'boss', job = job },
+      inventory = Config and Config.InventoryType,
+      imagePath = Config and Config.InventoryImagePath
     }
   })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
@@ -68,24 +84,35 @@ end)
 
 -- Abre una tienda registrada en qb-inventory u ox_inventory
 RegisterNetEvent('qb-jobcreator:client:openInvShop', function(id, useServerEvent)
-  local oxStarted = GetResourceState('ox_inventory') == 'started'
-  local qbStarted = GetResourceState('qb-inventory') == 'started'
-  if oxStarted then
-    exports.ox_inventory:openInventory('shop', id)
-  elseif qbStarted then
-    if useServerEvent then
-      TriggerServerEvent('qb-inventory:server:OpenShop', id)
+  local invType = (Config and Config.InventoryType) or 'qb'
+  if invType == 'ox' then
+    if GetResourceState('ox_inventory') == 'started' then
+      exports.ox_inventory:openInventory('shop', id)
     else
-      TriggerEvent('qb-inventory:client:OpenShop', id)
+      Notify('Inventario OX no disponible.', 'error')
+    end
+  elseif invType == 'tgiann' then
+    if GetResourceState('tgiann-inventory') == 'started' then
+      TriggerServerEvent('inventory:server:OpenInventory', 'shop', id)
+    else
+      Notify('Inventario Tgiann no disponible.', 'error')
     end
   else
-    TriggerEvent('QBCore:Notify', 'No hay inventario disponible.', 'error')
+    if GetResourceState('qb-inventory') == 'started' then
+      if useServerEvent then
+        TriggerServerEvent('qb-inventory:server:OpenShop', id)
+      else
+        TriggerEvent('qb-inventory:client:OpenShop', id)
+      end
+    else
+      Notify('No hay inventario disponible.', 'error')
+    end
   end
 end)
 
 RegisterNetEvent('qb-jobcreator:client:openShopMenu', function(zoneId, items)
   if GetResourceState('qb-menu') ~= 'started' then
-    TriggerEvent('QBCore:Notify', 'Menú no disponible.', 'error')
+    Notify('Menú no disponible.', 'error')
     return
   end
   local menu = { { header = 'Tienda', isMenuHeader = true } }

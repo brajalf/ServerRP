@@ -1,5 +1,11 @@
 Config = Config or {}
 
+-- Inventario y notificaciones
+Config.InventoryType = Config.InventoryType or 'qb'        -- 'qb', 'ox', 'tgiann', 'custom'
+Config.InventoryImagePath = Config.InventoryImagePath or 'nui://qb-inventory/html/images/'
+Config.NotifySystem = Config.NotifySystem or 'qb'          -- 'qb', 'ox', 'custom'
+Config.NotifyTitle = Config.NotifyTitle or 'Job Creator'
+
 -- ===== GENERAL CONFIGURATION / CONFIGURACIÓN GENERAL =====
 Config.General = Config.General or {
   MaxQueueSize      = 25,  -- Longitud máxima de la cola de crafteo / Maximum crafting queue length
