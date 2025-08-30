@@ -11,10 +11,10 @@ local function debugPrint(msg)
 end
 
 -- Broadcast alert a todos
-local function broadcastAlert(duration)
+local function broadcastAlert(text, duration)
   TriggerClientEvent('invictus_tow:client:showAlert', -1, {
     title = Config.AlertTitle,
-    text = Config.AlertText,
+    text = text or Config.AlertText,
     duration = duration or Config.AlertDuration
   })
 end
@@ -43,17 +43,42 @@ local function startCleanupCycle(manual)
     Config.ResourceName, token, manual and ' [MANUAL]' or '')
   )
 
-  broadcastAlert(Config.AlertDuration)
+  local function schedule(delay, cb)
+    SetTimeout(delay, function()
+      if cleanupState.cancelled or token ~= cleanupState.token then
+        if cleanupState.active then
+          print(('^2[%s]^7 Ciclo %s cancelado. No se realizará limpieza.'):format(Config.ResourceName, token))
+          cleanupState.active = false
+        end
+        return
+      end
+      cb()
+    end)
+  end
 
-  SetTimeout(Config.AlertDuration * 1000, function()
-    -- Si fue cancelado, notificar y salir
-    if cleanupState.cancelled or token ~= cleanupState.token then
-      print(('^2[%s]^7 Ciclo %s cancelado. No se realizará limpieza.'):format(Config.ResourceName, token))
-      cleanupState.active = false
-      return
-    end
+  schedule(0, function()
+    broadcastAlert(Config.CountdownMessages['10m'])
+  end)
 
-    -- Enviar a clientes a limpiar (lado cliente filtra y borra solo si son owners de la entidad)
+  schedule(5 * 60 * 1000, function()
+    broadcastAlert(Config.CountdownMessages['5m'])
+  end)
+
+  schedule(9 * 60 * 1000, function()
+    broadcastAlert(Config.CountdownMessages['1m'])
+  end)
+
+  schedule(9 * 60 * 1000 + 20 * 1000, function()
+    broadcastAlert(Config.CountdownMessages['40s'])
+  end)
+
+  schedule(9 * 60 * 1000 + 40 * 1000, function()
+    broadcastAlert(Config.CountdownMessages['20s'])
+  end)
+
+  schedule(10 * 60 * 1000, function()
+    broadcastAlert(Config.AlertText)
+
     TriggerClientEvent('invictus_tow:client:doCleanup', -1, {
       minDist = Config.MinDistanceFromAnyPlayer,
       skipEmergency = Config.SkipEmergencyVehicles,
@@ -63,7 +88,6 @@ local function startCleanupCycle(manual)
       debug = Config.Debug
     }, token)
 
-    -- Por seguridad, cerrar el ciclo tras unos segundos (los clientes reportan conteo)
     SetTimeout(8000, function()
       cleanupState.active = false
       print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))

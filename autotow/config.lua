@@ -39,5 +39,14 @@ Config.AlertText   = 'Se eliminarán vehículos desocupados en breve.'
 Config.CancelTitle = 'LIMPIEZA CANCELADA'
 Config.CancelText  = 'Un administrador canceló la limpieza.'
 
+-- Mensajes escalonados de advertencia antes de la limpieza
+Config.CountdownMessages = {
+  ['10m'] = 'Se eliminarán vehículos desocupados en 10 minutos.',
+  ['5m']  = 'Se eliminarán vehículos desocupados en 5 minutos.',
+  ['1m']  = 'Se eliminarán vehículos desocupados en 1 minuto.',
+  ['40s'] = 'Se eliminarán vehículos desocupados en 40 segundos.',
+  ['20s'] = 'Se eliminarán vehículos desocupados en 20 segundos.'
+}
+
 -- Debug (muestra mensajes y toasts)
 Config.Debug = false
