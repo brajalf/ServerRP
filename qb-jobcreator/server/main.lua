@@ -25,22 +25,15 @@ local function SanitizeShopItems(items)
   return list
 end
 
-local function RayCraft_Add(src, zone)
-  return exports['RaySist-Crafting']:AddZone(src, {
-    name = (zone.data and zone.data.name) or ('jc_'..zone.job..'_'..zone.id),
-    coords = { x = zone.coords.x, y = zone.coords.y, z = zone.coords.z, w = zone.coords.w or 0.0 },
-    distance = zone.radius or 2.5,
-    allowedCategories = (zone.data and zone.data.allowedCategories) or {},
-    requiredJob = zone.job,
-    requiredItems = (zone.data and zone.data.requiredItems) or {},
-    useZone = true,
-    radius = zone.radius,
-    spawnObject = false
-  })
-end
-
-local function RayCraft_Delete(src, rid)
-  if rid then exports['RaySist-Crafting']:DeleteZone(src, rid) end
+local function SanitizeRecipeList(recipes)
+  local list = {}
+  if type(recipes) ~= 'table' then return list end
+  for _, name in ipairs(recipes) do
+    if type(name) == 'string' and Config.CraftingRecipes[name] then
+      list[#list+1] = name
+    end
+  end
+  return list
 end
 
 -- ===== Helpers =====
@@ -367,47 +360,26 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
   cb(list)
 end)
 
-QBCore.Functions.CreateCallback('qb-jobcreator:server:getRecipes', function(src, cb)
-  local Player = QBCore.Functions.GetPlayer(src)
-  local job = Player and Player.PlayerData.job.name or nil
-  local data = exports['RaySist-Crafting']:GetCraftingData(job)
-  cb((data and data.recipes) or {})
-end)
-
-QBCore.Functions.CreateCallback('qb-jobcreator:server:getCategories', function(src, cb)
-  local Player = QBCore.Functions.GetPlayer(src)
-  local job = Player and Player.PlayerData.job.name or nil
-  local data = exports['RaySist-Crafting']:GetCraftingData(job)
-  cb((data and data.categories) or {})
-end)
-
-local function SyncRay()
-  local dat = exports['RaySist-Crafting']:GetCraftingData(nil)
-  if dat then TriggerClientEvent('RaySist-Crafting:client:SyncData', -1, dat) end
-end
-
-RegisterNetEvent('qb-jobcreator:server:createCategory', function(cat)
-  local src = source; if not ensurePerm(src) then return end
-  exports['RaySist-Crafting']:CreateCategory(src, cat)
-  SyncRay()
-end)
-
-RegisterNetEvent('qb-jobcreator:server:renameCategory', function(data)
-  local src = source; if not ensurePerm(src) then return end
-  exports['RaySist-Crafting']:RenameCategory(src, data)
-  SyncRay()
-end)
-
-RegisterNetEvent('qb-jobcreator:server:saveRecipe', function(recipe)
-  local src = source; if not ensurePerm(src) then return end
-  exports['RaySist-Crafting']:SaveRecipe(src, recipe)
-  SyncRay()
-end)
-
-RegisterNetEvent('qb-jobcreator:server:deleteRecipe', function(name)
-  local src = source; if not ensurePerm(src) then return end
-  exports['RaySist-Crafting']:DeleteRecipe(src, name)
-  SyncRay()
+QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function(src, cb, zoneId)
+  if not zoneId then
+    local all = {}
+    for name, r in pairs(Config.CraftingRecipes or {}) do
+      all[#all + 1] = { name = name, inputs = r.inputs or {}, time = r.time or 0, output = r.output }
+    end
+    cb(all)
+    return
+  end
+  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
+  if not ok then cb({}) return end
+  local allowed = zone.data and zone.data.recipes or {}
+  local res = {}
+  for _, name in ipairs(allowed) do
+    local r = Config.CraftingRecipes[name]
+    if r then
+      res[#res + 1] = { name = name, inputs = r.inputs or {}, time = r.time or 0, output = r.output }
+    end
+  end
+  cb(res)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
@@ -432,7 +404,11 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       zone.data.clearRadius = tonumber(zone.data.clearRadius) or Config.Zone.ClearRadius
     end
   end
-  if zone.ztype == 'shop' then zone.data.items = SanitizeShopItems(zone.data.items) end
+  if zone.ztype == 'shop' then
+    zone.data.items = SanitizeShopItems(zone.data.items)
+  elseif zone.ztype == 'crafting' then
+    zone.data.recipes = SanitizeRecipeList(zone.data.recipes)
+  end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
   if not id then return end
@@ -444,13 +420,10 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
-  if nz.ztype == 'shop' then nz.data.items = SanitizeShopItems(nz.data.items) end
-  if nz.ztype == 'crafting' then
-    local rid = RayCraft_Add(src, nz)
-    if rid then
-      nz.data.rayId = rid
-      DB.UpdateZone(nz.id, { data = nz.data })
-    end
+  if nz.ztype == 'shop' then
+    nz.data.items = SanitizeShopItems(nz.data.items)
+  elseif nz.ztype == 'crafting' then
+    nz.data.recipes = SanitizeRecipeList(nz.data.recipes)
   end
   Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
@@ -485,8 +458,6 @@ RegisterNetEvent('qb-jobcreator:server:deleteZone', function(id)
         local ox = exports.ox_inventory
         if ox and ox.RemoveStash then ox:RemoveStash(stashId) end
       end)
-    elseif dz.ztype == 'crafting' then
-      RayCraft_Delete(src, dz.data and dz.data.rayId)
     end
   end
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
@@ -673,7 +644,11 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype old = z break end end
   if not allowAdminOrBoss(src, job or '') then return end
   if type(data) == 'table' then
-    if ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
+    if ztype == 'shop' then
+      data.items = SanitizeShopItems(data.items)
+    elseif ztype == 'crafting' then
+      data.recipes = SanitizeRecipeList(data.recipes)
+    end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
   end
@@ -684,20 +659,16 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     for idx, z in ipairs(Runtime.Zones) do
       if z.id == id then
         local nd = json.decode(r.data or '{}') or {}
-        if ztype == 'shop' then nd.items = SanitizeShopItems(nd.items) end
+        if ztype == 'shop' then
+          nd.items = SanitizeShopItems(nd.items)
+        elseif ztype == 'crafting' then
+          nd.recipes = SanitizeRecipeList(nd.recipes)
+        end
         Runtime.Zones[idx] = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,
           coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
           data = nd
         }
-        if ztype == 'crafting' then
-          RayCraft_Delete(src, old and old.data and old.data.rayId)
-          local rid = RayCraft_Add(src, Runtime.Zones[idx])
-          if rid then
-            Runtime.Zones[idx].data.rayId = rid
-            DB.UpdateZone(id, { data = Runtime.Zones[idx].data })
-          end
-        end
         break
       end
     end
@@ -795,15 +766,31 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
   local src = source
-  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
+  local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
-  local rname = recipeKey or (zone.data and zone.data.recipe)
-  if not rname then
+  recipeKey = type(recipeKey) == 'string' and recipeKey or ''
+  local allowed = {}
+  for _, n in ipairs(zone.data and zone.data.recipes or {}) do allowed[n] = true end
+  if not allowed[recipeKey] then
+    TriggerClientEvent('QBCore:Notify', src, 'Receta no permitida', 'error')
+    return
+  end
+  local recipe = Config.CraftingRecipes[recipeKey]
+  if not recipe or not recipe.output then
     TriggerClientEvent('QBCore:Notify', src, 'Receta no válida', 'error')
     return
   end
-  -- Delegar el proceso de crafteo al recurso RaySist-Crafting
-  TriggerClientEvent('RaySist-Crafting:client:CraftItem', src, rname)
+  for _, inp in ipairs(recipe.inputs or {}) do
+    local it = Player.Functions.GetItemByName(inp.item)
+    if not it or it.amount < (inp.amount or 1) then
+      TriggerClientEvent('QBCore:Notify', src, 'Materiales insuficientes', 'error')
+      return
+    end
+  end
+  for _, inp in ipairs(recipe.inputs or {}) do
+    Player.Functions.RemoveItem(inp.item, inp.amount or 1)
+  end
+  Player.Functions.AddItem(recipe.output.item, recipe.output.amount or 1)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
