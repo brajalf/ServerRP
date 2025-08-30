@@ -105,6 +105,23 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
     time   = 3000,
     output = { item = 'bandage', amount = 1 }
   },
+  lockpick = {
+    inputs = {
+      { item = 'metalscrap', amount = 2 },
+      { item = 'plastic',    amount = 1 }
+    },
+    time   = 5000,
+    output = { item = 'lockpick', amount = 1 }
+  },
+  repairkit = {
+    inputs = {
+      { item = 'metalscrap', amount = 4 },
+      { item = 'steel',      amount = 2 },
+      { item = 'plastic',    amount = 1 }
+    },
+    time   = 8000,
+    output = { item = 'repairkit', amount = 1 }
+  },
 }
 
 -- Integración de garajes

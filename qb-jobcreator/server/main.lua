@@ -361,25 +361,28 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
 end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function(src, cb, zoneId)
-  if not zoneId then
-    local all = {}
-    for name, r in pairs(Config.CraftingRecipes or {}) do
-      all[#all + 1] = { name = name, inputs = r.inputs or {}, time = r.time or 0, output = r.output }
+  local function fmt(name, recipe)
+    return { name = name, inputs = recipe.inputs or {}, time = recipe.time or 0, output = recipe.output }
+  end
+
+  if zoneId then
+    local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
+    if not ok then cb({}) return end
+
+    local list = {}
+    for _, name in ipairs(zone.data and zone.data.recipes or {}) do
+      local r = Config.CraftingRecipes[name]
+      if r then list[#list + 1] = fmt(name, r) end
     end
-    cb(all)
+    cb(list)
     return
   end
-  local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
-  if not ok then cb({}) return end
-  local allowed = zone.data and zone.data.recipes or {}
-  local res = {}
-  for _, name in ipairs(allowed) do
-    local r = Config.CraftingRecipes[name]
-    if r then
-      res[#res + 1] = { name = name, inputs = r.inputs or {}, time = r.time or 0, output = r.output }
-    end
+
+  local all = {}
+  for name, r in pairs(Config.CraftingRecipes or {}) do
+    all[#all + 1] = fmt(name, r)
   end
-  cb(res)
+  cb(all)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
