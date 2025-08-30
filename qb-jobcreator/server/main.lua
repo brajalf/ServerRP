@@ -745,6 +745,10 @@ local function playerInJobZone(src, zone, ztype)
   return true, zone, Player
 end
 
+local function isPlayerInRange(src, zoneId, ztype)
+  return playerInJobZone(src, findZoneById(zoneId), ztype)
+end
+
 RegisterNetEvent('qb-jobcreator:server:openStash', function(zoneId)
   local src = source
   local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'stash')
