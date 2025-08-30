@@ -14,16 +14,14 @@ Config.AlertDuration = 20
 Config.MinDistanceFromAnyPlayer = 0
 
 -- Exclusiones / filtros
-Config.SkipEmergencyVehicles = true      -- Clase 18
-Config.SkipBoatsAndAircraft = true       -- 14=boats, 15=heli, 16=planes, 21=trains
+Config.SkipEmergencyVehicles = false     -- Clase 18
+Config.SkipBoatsAndAircraft = false      -- 14=boats, 15=heli, 16=planes, 21=trains
 
 -- Lista de modelos prohibidos para borrar
-Config.BlacklistedModels = {
-  `police`, `police2`, `police3`, `police4`, `policeb`, `policet`, `sheriff`, `sheriff2`,
-}
+Config.BlacklistedModels = {}
 
 -- Clases a omitir además de las de arriba (puedes añadir más)
-Config.BlacklistedClasses = { 18 } -- emergencia
+Config.BlacklistedClasses = {}
 
 -- Comandos
 Config.CommandCancel = 'towcancel'
