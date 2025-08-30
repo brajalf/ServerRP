@@ -103,6 +103,9 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
   bandage = {
     inputs = { { item = 'cloth', amount = 2 } },
     time   = 3000,
+    blueprint = nil,
+    skill = nil,
+    successChance = 100,
     output = { item = 'bandage', amount = 1 }
   },
   lockpick = {
@@ -111,6 +114,9 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
       { item = 'plastic',    amount = 1 }
     },
     time   = 5000,
+    blueprint = nil,
+    skill = nil,
+    successChance = 100,
     output = { item = 'lockpick', amount = 1 }
   },
   repairkit = {
@@ -120,6 +126,9 @@ Config.CraftingRecipes = Config.CraftingRecipes or {
       { item = 'plastic',    amount = 1 }
     },
     time   = 8000,
+    blueprint = nil,
+    skill = nil,
+    successChance = 100,
     output = { item = 'repairkit', amount = 1 }
   },
 }
