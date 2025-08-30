@@ -247,7 +247,7 @@ Config.CraftableItems = Config.CraftableItems or {
     output   = { item = 'lockpick', amount = 1 }
   },
   --Uwu Cafe
-  cupcake_morango = {
+  BurgerBuffet = {
     category = 'food',
     job      = 'uwu',
     table    = 'workshop',
@@ -257,7 +257,7 @@ Config.CraftableItems = Config.CraftableItems or {
       { item = 'frango',  amount = 1 },
       { item = 'barra-manteiga', amount = 1 }
     },
-    output   = { item = 'croissant', amount = 1 }
+    output   = { item = 'cupcake_morango', amount = 1 }
   }
 }
 Config.CraftingRecipes = Config.CraftableItems -- Compatibilidad / Compatibility
