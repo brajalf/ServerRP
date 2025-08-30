@@ -1067,10 +1067,14 @@ const CraftUI = (() => {
           : 'nui://qb-inventory/html/images/';
         const imgSrc = `${base}${out}.png`;
         let maxCraft = Infinity;
+        let haveAll = true;
+        let haveAny = false;
         const inputs = (rec.inputs || [])
           .map(i => {
             const need = i.amount || i.qty || 1;
             const have = inventory[i.item] || 0;
+            if (have < need) haveAll = false;
+            if (have > 0) haveAny = true;
             maxCraft = Math.min(maxCraft, Math.floor(have / need) || 0);
             const cls = have < need ? ' class="missing"' : '';
             return `<li${cls}>${need}x ${i.item}</li>`;
@@ -1078,10 +1082,20 @@ const CraftUI = (() => {
           .join('');
         if (maxCraft === Infinity) maxCraft = 0;
         const disabled = maxCraft <= 0 ? ' disabled' : '';
+        let status;
+        if ((rec.inputs || []).length === 0 || haveAll) status = 'green';
+        else if (haveAny) status = 'yellow';
+        else status = 'red';
         card.innerHTML = `
           <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
           <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
           <button class="btn craft-btn" data-recipe="${name}" data-max="${maxCraft}"${disabled}>Fabricar</button>`;
+        card.classList.add(`status-${status}`);
+        card.title = status === 'green'
+          ? 'Tienes todos los materiales'
+          : status === 'yellow'
+            ? 'Te faltan algunos materiales'
+            : 'No tienes materiales';
         wrap.appendChild(card);
       });
     }
