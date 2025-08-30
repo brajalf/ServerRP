@@ -1,0 +1,77 @@
+:root {
+  --bg: rgba(10, 14, 22, 0.65);
+  --card: rgba(17, 25, 40, 0.9);
+  --text: #e6efff;
+  --accent: #39d0ff;
+  --accent-dim: #0f5d78;
+  --cancel: #ff4d4d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  color: var(--text);
+}
+
+.hidden { display: none; }
+
+#overlay, #cancel {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  pointer-events: none; /* no bloquea el juego */
+}
+
+.card {
+  width: 460px;
+  max-width: calc(100vw - 24px);
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.45);
+  padding: 22px 24px 18px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  animation: pop 200ms ease-out;
+}
+
+.card.cancel {
+  border-color: rgba(255,77,77,0.35);
+}
+
+.title {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.text {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.brand {
+  margin-top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.countdown {
+  margin-top: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.ring { position: relative; width: 140px; height: 140px; }
+.ring-svg { transform: rotate(-90deg); width: 140px; height: 140px; }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 12; }
+.ring-fg { fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; stroke-dasharray: 339.292; stroke-dashoffset: 0; transition: stroke-dashoffset 0.95s linear; }
+.seconds { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 36px; text-shadow: 0 2px 14px rgba(0,0,0,0.45); }
+
+@keyframes pop { from { transform: translateY(4px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
