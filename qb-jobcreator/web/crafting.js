@@ -35,7 +35,7 @@ function renderAll(){
   setupSearch();
 }
 
-function iconPath(item){ return `${CraftApp.images}${item}.png`; }
+function iconPath(img){ return `${CraftApp.images}${img}`; }
 function cardStateClass(status){ return status === 'all' ? 'state-all' : status === 'some' ? 'state-some' : 'state-none'; }
 
 function renderCards(){
@@ -49,8 +49,10 @@ function renderCards(){
   for (const r of recipes){
     const card = document.createElement('div');
     card.className = `card ${cardStateClass(r.status)} ${(r.lockedByJob || r.lockedBySkill) ? 'locked' : ''}`;
+    const imgSrc = iconPath(r.image);
+    const errSrc = iconPath('placeholder.png');
     card.innerHTML = `
-      <div class="img"><img src="${iconPath(r.item)}" onerror="this.style.opacity=.2"></div>
+      <div class="img"><img src="${imgSrc}" onerror="this.src='${errSrc}'"></div>
       <div class="title">${r.label || r.item}</div>
       <div class="hint">${CraftApp.locale.click_to_info || 'Click to view information'}</div>
       <div class="qtyRow">
@@ -83,8 +85,10 @@ function renderSidebars(){
   for (const it of q){
     const row = document.createElement('div');
     row.className='queueItem';
+    const imgSrc = iconPath(`${it.item}.png`);
+    const errSrc = iconPath('placeholder.png');
     row.innerHTML = `
-      <img src="${iconPath(it.item)}" width="32" height="32" onerror="this.style.opacity=.2">
+      <img src="${imgSrc}" width="32" height="32" onerror="this.src='${errSrc}'">
       <div>
         <div><b>${it.label}</b></div>
         <div class="badge">${it.amount}x</div>
@@ -98,8 +102,10 @@ function renderSidebars(){
   for (const it of ready){
     const row = document.createElement('div');
     row.className='collectItem';
+    const imgSrc = iconPath(`${(it.outputs?.[0]?.item || 'unknown')}.png`);
+    const errSrc = iconPath('placeholder.png');
     row.innerHTML = `
-      <img src="${iconPath(it.outputs?.[0]?.item || 'unknown')}" width="32" height="32" onerror="this.style.opacity=.2">
+      <img src="${imgSrc}" width="32" height="32" onerror="this.src='${errSrc}'">
       <div>
         <div><b>${it.label}</b></div>
         <div class="badge">${new Date(it.timestamp*1000).toLocaleTimeString()}</div>
@@ -123,8 +129,10 @@ function showModal(r){
   for (const m of r.materials||[]){
     const row = document.createElement('div');
     row.className='mat';
+    const imgSrc = iconPath(`${m.item}.png`);
+    const errSrc = iconPath('placeholder.png');
     row.innerHTML = `
-      <img src="${iconPath(m.item)}" width="36" height="36" onerror="this.style.opacity=.2">
+      <img src="${imgSrc}" width="36" height="36" onerror="this.src='${errSrc}'">
       <div>${m.item}</div>
       <div class="need">${m.have||0}/${m.need}${m.noConsume?' (tool)':''}</div>
     `;
@@ -134,8 +142,10 @@ function showModal(r){
   for (const o of r.outputs||[]){
     const row = document.createElement('div');
     row.className='out';
+    const imgSrc = iconPath(`${o.item}.png`);
+    const errSrc = iconPath('placeholder.png');
     row.innerHTML = `
-      <img src="${iconPath(o.item)}" width="36" height="36" onerror="this.style.opacity=.2">
+      <img src="${imgSrc}" width="36" height="36" onerror="this.src='${errSrc}'">
       <div>${o.item}</div>
       <div class="need">x${o.amount}</div>
     `;
