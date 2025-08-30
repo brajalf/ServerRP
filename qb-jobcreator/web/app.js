@@ -724,7 +724,9 @@ const App = (() => {
         if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                             data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
         if (t === 'crafting') {
-                            data.recipes = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
+                            const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
+                            const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
+                            if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
                            }
         if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
         if (t === 'shop')  { data.items = collectShopItems(); }
@@ -781,8 +783,11 @@ const App = (() => {
           box.innerHTML = inp('zveh','Vehículos (rango=modelo, separados por coma)','0=police,2=police2,4=ambulance', d.vehicles || '') +
                           row(inp('zvehdef','Modelo por defecto','police', d.vehicle || ''));
         } else if (t === 'crafting') {
-          const opts = Object.keys(state.recipes || {}).map((r) => `<option value="${r}" ${(d.recipes||[]).includes(r)?'selected':''}>${r}</option>`).join('');
-          box.innerHTML = row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${opts}</select></div>`);
+          const catList = Array.from(new Set(Object.values(state.recipes || {}).map(r => r.category || 'General')));
+          const catOpts = catList.map((c) => `<option value="${c}" ${(d.allowedCategories||[]).includes(c)?'selected':''}>${c}</option>`).join('');
+          const recOpts = Object.keys(state.recipes || {}).map((r) => `<option value="${r}" ${(d.recipes||[]).includes(r)?'selected':''}>${r}</option>`).join('');
+          box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
+                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`);
         } else if (t === 'cloakroom') {
           box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
         } else if (t === 'shop') {
@@ -842,7 +847,9 @@ const App = (() => {
           if (t === 'garage'){ data.vehicles = document.getElementById('zveh')?.value || '';
                               data.vehicle  = document.getElementById('zvehdef')?.value || ''; }
           if (t === 'crafting') {
-            data.recipes = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
+            const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
+            const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
+            if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
           }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
@@ -901,8 +908,11 @@ const App = (() => {
         box.innerHTML = inp('zveh','Vehículos (rango=modelo, separados por coma)','0=police,2=police2,4=ambulance') +
                         row(inp('zvehdef','Modelo por defecto','police'));
       } else if (t === 'crafting') {
-        const opts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
-        box.innerHTML = row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${opts}</select></div>`);
+        const catList = Array.from(new Set(Object.values(state.recipes || {}).map(r => r.category || 'General')));
+        const catOpts = catList.map((c) => `<option value="${c}">${c}</option>`).join('');
+        const recOpts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
+        box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
+                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`);
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {
