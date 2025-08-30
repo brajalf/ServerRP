@@ -1,5 +1,40 @@
 Config = Config or {}
 
+-- ===== GENERAL CONFIGURATION / CONFIGURACIÓN GENERAL =====
+Config.General = Config.General or {
+  MaxQueueSize      = 25,  -- Longitud máxima de la cola de crafteo / Maximum crafting queue length
+  MaxItemsPerPlayer = 5,   -- Máx. ítems en cola por jugador / Max items in queue per player
+  Language          = 'es' -- Idioma del sistema ('es','en',...) / System language
+}
+
+-- ===== INTERFACE CONFIGURATION / CONFIGURACIÓN DE INTERFAZ =====
+Config.Interface = Config.Interface or {
+  InventoryImagePath = 'html/images', -- Ruta a imágenes del inventario / Path to inventory images
+}
+
+-- ===== INVENTORY SYSTEM CONFIGURATION / CONFIGURACIÓN DEL SISTEMA DE INVENTARIO =====
+Config.InventorySystem = Config.InventorySystem or {
+  InventoryType = 'qb', -- Tipo de inventario usado ('qb','ox','custom') / Inventory type in use
+}
+
+-- ===== SKILL SYSTEM / SISTEMA DE HABILIDADES =====
+Config.SkillSystem = Config.SkillSystem or {
+  DevSkillTree = false, -- Habilitar árbol de habilidades de desarrollo / Enable development skill tree
+  SkillCategories = {   -- Categorías base de habilidades / Base skill categories
+    crafting = { label = 'Crafting' }, -- Habilidad de fabricación / Crafting skill
+    medical  = { label = 'Medical' }   -- Habilidad médica / Medical skill
+  }
+}
+
+-- ===== LOCKED ITEMS DISPLAY / VISUALIZACIÓN DE ÍTEMS BLOQUEADOS =====
+Config.LockedItemsDisplay = Config.LockedItemsDisplay or {
+  showLocked   = true,       -- Mostrar ítems bloqueados / Show locked items
+  showLockIcon = true,       -- Mostrar icono de candado / Display lock icon
+  lockIcon     = 'lock.png', -- Ruta del icono de candado / Lock icon path
+  lockColor    = '#FF0000',  -- Color del icono / Lock icon color
+  lockLabel    = 'Bloqueado' -- Texto de bloqueo / Locked label
+}
+
 -- Marca y UI
 Config.Branding = Config.Branding or {
   Title = 'LatinLife RP',
@@ -101,45 +136,42 @@ Config.ZoneTypes = Config.ZoneTypes or {
   'blip','boss','stash','garage','crafting','cloakroom','shop','collect','spawner','sell','alarm','register','anim','music','teleport'
 }
 
-Config.CraftingRecipes = Config.CraftingRecipes or {
+-- ===== JOB COLORS / COLORES DE TRABAJO =====
+Config.JobColors = Config.JobColors or {
+  police    = { r = 0,   g = 0,   b = 255 }, -- Policía en azul / Police shown as blue
+  ambulance = { r = 255, g = 0,   b = 0   }, -- Ambulancia en rojo / Ambulance shown as red
+  mechanic  = { r = 255, g = 165, b = 0   }  -- Mecánico en naranja / Mechanic shown as orange
+}
+
+-- ===== CRAFTING TABLES / MESAS DE FABRICACIÓN =====
+Config.CraftingTables = Config.CraftingTables or {
+  workshop = {                                  -- ID de la mesa / Table ID
+    coords = vector3(0.0, 0.0, 0.0),            -- Coordenadas / Coordinates
+    jobs   = { 'mechanic' },                    -- Trabajos permitidos / Allowed jobs
+    radius = 2.0                                -- Radio de interacción / Interaction radius
+  }
+}
+
+-- ===== CRAFTABLE ITEMS / OBJETOS CRAFTEABLES =====
+Config.CraftableItems = Config.CraftableItems or {
   bandage = {
-    category = 'medical',
-    time   = 3000,
-    blueprint = nil,
-    job = nil,
-    inputs = { { item = 'cloth', amount = 2 } },
-    skill = nil,
-    successChance = 100,
-    output = { item = 'bandage', amount = 1 }
-  },
-  lockpick = {
-    category = 'tools',
-    time   = 5000,
-    blueprint = nil,
-    job = nil,
-    inputs = {
-      { item = 'metalscrap', amount = 2 },
-      { item = 'plastic',    amount = 1 }
-    },
-    skill = nil,
-    successChance = 100,
-    output = { item = 'lockpick', amount = 1 }
+    table  = 'workshop',                         -- Mesa requerida / Required table
+    time   = 3000,                               -- Tiempo en ms / Time in ms
+    inputs = { { item = 'cloth', amount = 2 } }, -- Materiales necesarios / Required materials
+    output = { item = 'bandage', amount = 1 }    -- Resultado / Result item
   },
   repairkit = {
-    category = 'tools',
+    table  = 'workshop',
     time   = 8000,
-    blueprint = nil,
-    job = nil,
     inputs = {
       { item = 'metalscrap', amount = 4 },
       { item = 'steel',      amount = 2 },
       { item = 'plastic',    amount = 1 }
     },
-    skill = nil,
-    successChance = 100,
     output = { item = 'repairkit', amount = 1 }
-  },
+  }
 }
+Config.CraftingRecipes = Config.CraftableItems -- Compatibilidad / Compatibility
 
 -- Integración de garajes
 Config.Garages = {
