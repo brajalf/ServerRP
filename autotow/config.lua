@@ -10,10 +10,6 @@ Config.IntervalMinutes = 30
 -- Duración del aviso en pantalla antes de limpiar (en segundos)
 Config.AlertDuration = 20
 
--- Sonido (si no hay archivo, la NUI hará un beep con WebAudio)
-Config.SoundEnabled = true
-Config.SoundFile = 'alert.ogg' -- Debe existir en html/ si lo usas
-
 -- Distancia mínima a cualquier jugador para poder borrar un vehículo
 Config.MinDistanceFromAnyPlayer = 10.0
 
@@ -37,7 +33,7 @@ Config.CommandTrigger = 'towtrigger' -- disparo manual
 Config.AceCancel  = 'invictus.tow.cancel'
 Config.AceTrigger = 'invictus.tow.trigger'
 
--- Mensajes en NUI
+-- Mensajes de alerta
 Config.AlertTitle  = 'LIMPIEZA DE VEHÍCULOS'
 Config.AlertText   = 'Se eliminarán vehículos desocupados en breve.'
 Config.CancelTitle = 'LIMPIEZA CANCELADA'

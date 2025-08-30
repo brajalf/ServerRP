@@ -10,14 +10,12 @@ local function debugPrint(msg)
   end
 end
 
--- Broadcast NUI alert a todos
+-- Broadcast alert a todos
 local function broadcastAlert(duration)
   TriggerClientEvent('invictus_tow:client:showAlert', -1, {
     title = Config.AlertTitle,
     text = Config.AlertText,
-    duration = duration or Config.AlertDuration,
-    sound = Config.SoundEnabled,
-    soundFile = Config.SoundFile
+    duration = duration or Config.AlertDuration
   })
 end
 

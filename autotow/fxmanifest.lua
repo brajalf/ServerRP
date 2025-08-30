@@ -6,19 +6,11 @@ game 'gta5'
 
 name 'invictus_autotow'
 author 'INVICTUS TECHNOLOGY TIC S.A.S.'
-description 'Automated Tow Script for FiveM — QBCore compatible. Removes unoccupied vehicles with animated NUI alert, countdown, sound, ACE permissions, and cancel command.'
+description 'Automated Tow Script for FiveM — QBCore compatible. Removes unoccupied vehicles with on-screen notifications, ACE permissions, and cancel command.'
 version '1.0.0'
 
-ui_page 'html/index.html'
-
-files {
-  'html/index.html',
-  'html/style.css',
-  'html/script.js',
-  --'html/alert.ogg'
-}
-
 shared_scripts {
+  '@ox_lib/init.lua',
   'config.lua'
 }
 
@@ -29,3 +21,5 @@ client_scripts {
 server_scripts {
   'server.lua'
 }
+
+dependency 'ox_lib'

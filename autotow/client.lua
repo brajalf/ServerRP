@@ -85,25 +85,23 @@ local function tryDeleteVehicle(veh)
   return not DoesEntityExist(veh)
 end
 
--- NUI: mostrar alerta
 RegisterNetEvent('invictus_tow:client:showAlert', function(payload)
-  SendNUIMessage({
-    action = 'show',
-    title = payload.title,
-    text = payload.text,
-    duration = payload.duration,
-    sound = payload.sound,
-    soundFile = payload.soundFile
+  lib.notify({
+    title = payload.title or Config.AlertTitle,
+    description = payload.text or Config.AlertText,
+    position = 'top',
+    duration = (payload.duration or Config.AlertDuration) * 1000,
+    type = 'inform'
   })
 end)
 
--- NUI: mostrar cancelación
 RegisterNetEvent('invictus_tow:client:showCancel', function(payload)
-  SendNUIMessage({
-    action = 'cancel',
-    title = payload.title,
-    text = payload.text,
-    duration = payload.duration
+  lib.notify({
+    title = payload.title or Config.CancelTitle,
+    description = payload.text or Config.CancelText,
+    position = 'top',
+    duration = (payload.duration or 4) * 1000,
+    type = 'error'
   })
 end)
 
@@ -142,6 +140,6 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
 
   TriggerServerEvent('invictus_tow:server:report', token, removed)
   if Config.Debug then
-    SendNUIMessage({ action = 'toast', text = ('Borrados: %s'):format(removed) })
+    dprint(('Borrados: %s'):format(removed))
   end
 end)

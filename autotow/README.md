@@ -1,15 +1,13 @@
 # invictus_autotow
 
-Automated Tow Script for FiveM – **QBCore** compatible. Elimina vehículos desocupados cada X minutos (configurable) tras mostrar una **alerta NUI** con **countdown**, **anillo de progreso**, **sonido opcional**, **comando de cancelación** y **permisos ACE**.
+Automated Tow Script for FiveM – **QBCore** compatible. Elimina vehículos desocupados cada X minutos (configurable) tras mostrar una **notificación** y permite cancelar mediante **ACE permissions**.
 
 ## ✨ Características
 - ⏱️ Limpieza automática cada `Config.IntervalMinutes` minutos
-- 🖥️ Alerta NUI animada con cuenta regresiva y anillo de progreso
-- 🔊 Sonido opcional (`html/alert.ogg`) con *fallback* WebAudio si no existe
+- 📣 Notificaciones en pantalla con ox_lib
 - 👥 Verificación de **todos los asientos** antes de borrar un vehículo
 - 🧯 Filtros: distancia a jugadores, clases/vehículos en blacklist, emergencia/boats/aircraft opcional
 - 🛡️ Permisos **ACE** para cancelar o disparar manualmente
-- ❌ Comando de cancelación con mensaje animado en NUI
 - 🧩 100% configurable desde `config.lua`
 - 🔧 Compatible con Lua 5.4 / fxmanifest (cerulean)
 
