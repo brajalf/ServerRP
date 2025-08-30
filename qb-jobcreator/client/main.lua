@@ -263,34 +263,38 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
 
     local transformed = {}
     local oxItems = {}
+    local showLocked = Config.LockedItemsDisplay and Config.LockedItemsDisplay.showLocked
     if GetResourceState('ox_inventory') == 'started' then
       oxItems = exports.ox_inventory:Items() or {}
     end
     for _, recipe in ipairs(recipes or {}) do
-      local mats = {}
-      local haveAny, haveAll = false, true
-      for _, inp in ipairs(recipe.inputs or {}) do
-        local need = tonumber(inp.amount) or 0
-        local have = getItemCount(inp.item)
-        mats[#mats+1] = { item = inp.item, need = need, have = have, noConsume = inp.noConsume }
-        if have >= need and need > 0 then
-          haveAny = true
-        else
-          if have > 0 then haveAny = true end
-          haveAll = false
+      if not recipe.lockedByJob or showLocked then
+        local mats = {}
+        local haveAny, haveAll = false, true
+        for _, inp in ipairs(recipe.inputs or {}) do
+          local need = tonumber(inp.amount) or 0
+          local have = getItemCount(inp.item)
+          mats[#mats+1] = { item = inp.item, need = need, have = have, noConsume = inp.noConsume }
+          if have >= need and need > 0 then
+            haveAny = true
+          else
+            if have > 0 then haveAny = true end
+            haveAll = false
+          end
         end
+        local status = 'none'
+        if haveAll and #mats > 0 then status = 'all' elseif haveAny then status = 'some' end
+        local info = oxItems[recipe.output and recipe.output.item or recipe.name] or {}
+        transformed[#transformed+1] = {
+          item = recipe.output and recipe.output.item or recipe.name,
+          label = (recipe.output and recipe.output.label) or recipe.name,
+          materials = mats,
+          outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
+          status = status,
+          image = info.image,
+          lockedByJob = recipe.lockedByJob
+        }
       end
-      local status = 'none'
-      if haveAll and #mats > 0 then status = 'all' elseif haveAny then status = 'some' end
-      local info = oxItems[recipe.output and recipe.output.item or recipe.name] or {}
-      transformed[#transformed+1] = {
-        item = recipe.output and recipe.output.item or recipe.name,
-        label = (recipe.output and recipe.output.label) or recipe.name,
-        materials = mats,
-        outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
-        status = status,
-        image = info.image
-      }
     end
 
     QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
