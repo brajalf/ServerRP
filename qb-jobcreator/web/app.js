@@ -1025,6 +1025,7 @@ const CraftUI = (() => {
   let queue = [];
   let tableInv = {};
   let qTimer = null;
+  let searchText = '';
 
   function buildCategories() {
     categories = {};
@@ -1061,75 +1062,83 @@ const CraftUI = (() => {
   function renderRecipes() {
     const wrap = document.getElementById('craft-list');
     wrap.innerHTML = '';
-      (categories[currentCategory] || []).forEach(({ name, rec }) => {
-        const card = document.createElement('div');
-        card.className = 'craft-item';
-        const out = rec.output && rec.output.item || name;
-        const base = invMode === 'ox_inventory'
-          ? 'nui://ox_inventory/web/images/'
-          : 'nui://qb-inventory/html/images/';
-        const imgSrc = `${base}${out}.png`;
-        let maxCraft = Infinity;
-        let haveAll = true;
-        let haveAny = false;
-        const inputs = (rec.inputs || [])
-          .map(i => {
-            const need = i.amount || i.qty || 1;
-            const have = inventory[i.item] || 0;
-            if (have < need) haveAll = false;
-            if (have > 0) haveAny = true;
-            maxCraft = Math.min(maxCraft, Math.floor(have / need) || 0);
-            const cls = have < need ? ' class="missing"' : '';
-            return `<li${cls}>${need}x ${i.item}</li>`;
-          })
-          .join('');
-        if (maxCraft === Infinity) maxCraft = 0;
-        const disabled = maxCraft <= 0 ? ' disabled' : '';
-        let status;
-        if ((rec.inputs || []).length === 0 || haveAll) status = 'green';
-        else if (haveAny) status = 'yellow';
-        else status = 'red';
-        card.innerHTML = `
-          <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
-          <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
-          <button class="btn craft-btn" data-recipe="${name}" data-max="${maxCraft}"${disabled}>Fabricar</button>`;
-        card.classList.add(`status-${status}`);
-        card.title = status === 'green'
-          ? 'Tienes todos los materiales'
-          : status === 'yellow'
-            ? 'Te faltan algunos materiales'
-            : 'No tienes materiales';
-        wrap.appendChild(card);
-      });
-    }
-
-  function ensureQueueWrap() {
-    let wrap = document.getElementById('craft-queue');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'craft-queue';
-      document.querySelector('#craft .craft-panel').appendChild(wrap);
-    }
-    return wrap;
+    const list = categories[currentCategory] || [];
+    const filtered = searchText
+      ? list.filter(({ name, rec }) => {
+          const n = name.toLowerCase();
+          const l = (rec.label || '').toLowerCase();
+          const d = (rec.description || '').toLowerCase();
+          return n.includes(searchText) || l.includes(searchText) || d.includes(searchText);
+        })
+      : list;
+    filtered.forEach(({ name, rec }) => {
+      const card = document.createElement('div');
+      card.className = 'craft-item';
+      const outs = rec.outputs || (rec.output ? [rec.output] : []);
+      const base = invMode === 'ox_inventory'
+        ? 'nui://ox_inventory/web/images/'
+        : 'nui://qb-inventory/html/images/';
+      const outIcons = outs
+        .map(o => `<img src="${base}${o.item}.png" alt="${o.item}" onerror="this.onerror=null;this.src='logo.png';">`)
+        .join('');
+      const outputsText = outs.map(o => `${o.amount || 1}x ${o.item}`).join(', ');
+      let maxCraft = Infinity;
+      let haveAll = true;
+      let haveAny = false;
+      const inputs = (rec.inputs || [])
+        .map(i => {
+          const need = i.amount || i.qty || 1;
+          const have = inventory[i.item] || 0;
+          if (have < need) haveAll = false;
+          if (have > 0) haveAny = true;
+          maxCraft = Math.min(maxCraft, Math.floor(have / need) || 0);
+          const cls = have < need ? ' class="missing"' : '';
+          return `<li${cls}>${need}x ${i.item}</li>`;
+        })
+        .join('');
+      if (maxCraft === Infinity) maxCraft = 0;
+      const disabled = maxCraft <= 0 ? ' disabled' : '';
+      let status;
+      if ((rec.inputs || []).length === 0 || haveAll) status = 'green';
+      else if (haveAny) status = 'yellow';
+      else status = 'red';
+      card.innerHTML = `
+        <div class="icon-wrap">${outIcons}</div>
+        <div class="materials"><strong>${rec.label || name}</strong>${rec.description ? `<p class="desc">${rec.description}</p>` : ''}<ul>${inputs}</ul><div class="outputs">${outputsText}</div></div>
+        <button class="btn craft-btn" data-recipe="${name}" data-max="${maxCraft}"${disabled}>Fabricar</button>`;
+      card.classList.add(`status-${status}`);
+      card.title = status === 'green'
+        ? 'Tienes todos los materiales'
+        : status === 'yellow'
+          ? 'Te faltan algunos materiales'
+          : 'No tienes materiales';
+      wrap.appendChild(card);
+    });
   }
 
   function renderQueue() {
-    const wrap = ensureQueueWrap();
-    let html = '<h3>Cola</h3>';
-    if (queue.length === 0) html += '<div>Sin tareas</div>';
+    const pendingWrap = document.getElementById('craft-pending');
+    const collectWrap = document.getElementById('craft-collect');
+
+    let pHtml = '<h3>Pending Items</h3>';
+    if (queue.length === 0) pHtml += '<div>Sin tareas</div>';
     queue.forEach((q) => {
       const rec = recipes[q.recipe] || {};
       const label = rec.label || (rec.output && rec.output.item) || q.recipe;
       const remaining = Math.max(0, Math.floor((q.finish - Date.now()) / 1000));
-      html += `<div class="q-item">${label} x${q.amount} (${remaining}s) <button class="btn cancel-craft" data-id="${q.id}">Cancelar</button></div>`;
+      pHtml += `<div class="q-item">${label} x${q.amount} (${remaining}s) <button class="btn cancel-craft" data-id="${q.id}">Cancelar</button></div>`;
     });
-    const ready = Object.entries(tableInv)
-      .map(([item, amt]) => `<div class="q-ready">${item} x${amt}</div>`)
-      .join('');
-    if (ready) {
-      html += `<h4>Listo</h4>${ready}<button class="btn collect-craft">Recoger</button>`;
+    pendingWrap.innerHTML = pHtml;
+
+    let cHtml = '<h3>Items to Collect</h3>';
+    const readyItems = Object.entries(tableInv);
+    if (readyItems.length === 0) {
+      cHtml += '<div>Vacío</div>';
+    } else {
+      cHtml += readyItems.map(([item, amt]) => `<div class="q-ready">${item} x${amt}</div>`).join('');
+      cHtml += '<button class="btn collect-craft">Recoger</button>';
     }
-    wrap.innerHTML = html;
+    collectWrap.innerHTML = cHtml;
   }
 
   function updateQueue() {
@@ -1150,6 +1159,15 @@ const CraftUI = (() => {
     renderCategories();
     renderRecipes();
     renderInventory();
+    const searchInput = document.getElementById('craft-search');
+    if (searchInput) {
+      searchText = '';
+      searchInput.value = '';
+      searchInput.oninput = (e) => {
+        searchText = e.target.value.toLowerCase();
+        renderRecipes();
+      };
+    }
     updateQueue();
     qTimer = setInterval(updateQueue, 5000);
     document.getElementById('craft').classList.remove('hidden');
