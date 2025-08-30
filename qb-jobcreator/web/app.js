@@ -224,7 +224,7 @@ const App = (() => {
       applyBranding(pay.branding);
       applyScope();
 
-      postJ('getCraftingData').then((r) => {
+      postJ('getCraftingTable').then((r) => {
         if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
         else { state.recipes = r || {}; }
       });
@@ -248,7 +248,7 @@ const App = (() => {
       if (payload.scope) state.scope = payload.scope;
       applyBranding(payload.branding);
       applyScope();
-      postJ('getCraftingData').then((r) => {
+      postJ('getCraftingTable').then((r) => {
         if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
         else { state.recipes = r || {}; }
       });
@@ -582,7 +582,7 @@ const App = (() => {
   }
 
   function refreshCrafting() {
-    postJ('getCraftingData').then((r) => {
+    postJ('getCraftingTable').then((r) => {
       if (Array.isArray(r)) { const o = {}; r.forEach((x) => { if (x && x.name) o[x.name] = x; }); state.recipes = o; }
       else { state.recipes = r || {}; }
       renderCrafting();

@@ -206,6 +206,12 @@ RegisterNUICallback('createZone', function(data, cb) TriggerServerEvent('qb-jobc
 RegisterNUICallback('deleteZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:deleteZone', data.id); cb({ ok = true }) end)
 RegisterNUICallback('getCoords', function(_, cb) local p = GetEntityCoords(PlayerPedId()); cb({ x = p.x, y = p.y, z = p.z }) end)
 
+RegisterNUICallback('getCraftingTable', function(data, cb)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingTable', function(list)
+    cb(list or {})
+  end, data and data.zoneId)
+end)
+
 -- Lista de cercanos (por si la UI lo usa)
 RegisterNUICallback('nearbyPlayers', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getNearbyPlayers', function(list)

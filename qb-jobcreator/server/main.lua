@@ -402,7 +402,7 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
   cb(list)
 end)
 
-QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function(src, cb, zoneId)
+local function CollectCraftingData(src, zoneId)
   local function fmt(name, recipe)
     return {
       name = name,
@@ -417,7 +417,7 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function
 
   if zoneId then
     local ok, zone = playerInJobZone(src, findZoneById(zoneId), 'crafting')
-    if not ok then cb({}) return end
+    if not ok then return {} end
 
     local list = {}
     local data = zone.data or {}
@@ -436,15 +436,22 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function
         if r then list[#list + 1] = fmt(name, r) end
       end
     end
-    cb(list)
-    return
+    return list
   end
 
   local all = {}
   for name, r in pairs(Config.CraftingRecipes or {}) do
     all[#all + 1] = fmt(name, r)
   end
-  cb(all)
+  return all
+end
+
+QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function(src, cb, zoneId)
+  cb(CollectCraftingData(src, zoneId))
+end)
+
+QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingTable', function(src, cb, zoneId)
+  cb(CollectCraftingData(src, zoneId))
 end)
 
 RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
