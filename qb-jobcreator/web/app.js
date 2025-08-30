@@ -1217,13 +1217,14 @@ const CraftUI = (() => {
       renderRecipes();
     }
     if (data.action === 'craftProgress') {
-      const prog = document.getElementById('craft-progress');
+      const prog = document.getElementById('craftCraftingBar');
       prog.classList.remove('hidden');
       const pct = data.progress || 0;
-      prog.querySelector('.bar').style.width = `${pct}%`;
+      document.getElementById('craftProgressInner').style.width = `${pct}%`;
     }
     if (data.action === 'craftResult') {
-      document.getElementById('craft-progress').classList.add('hidden');
+      document.getElementById('craftCraftingBar').classList.add('hidden');
+      document.getElementById('craftProgressInner').style.width = '0%';
       if (data.inventory) {
         inventory = data.inventory;
         renderInventory();
