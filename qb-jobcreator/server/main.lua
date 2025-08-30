@@ -6,6 +6,7 @@ local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
 local CreatedStashes = {}
 local findZoneById
+local playerInJobZone
 
 local function SanitizeShopItems(items)
   local list = {}
@@ -107,6 +108,25 @@ local function Multi_Has(citizenid, job)
     if ok then return has end
   end
   return false
+end
+
+playerInJobZone = function(src, zone, ztype)
+  if not zone or (ztype and zone.ztype ~= ztype) then return false end
+  local Player = QBCore.Functions.GetPlayer(src)
+  if not Player or not Player.PlayerData then return false end
+  local jd = Player.PlayerData.job or {}
+  local cid = Player.PlayerData.citizenid
+  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then
+    TriggerClientEvent('QBCore:Notify', src, 'No tienes acceso a esta tienda.', 'error')
+    return false
+  end
+  local coords = GetEntityCoords(GetPlayerPed(src))
+  local dist = #(coords - vector3(zone.coords.x, zone.coords.y, zone.coords.z))
+  if dist > (zone.radius or 2.0) + 0.1 then
+    TriggerClientEvent('QBCore:Notify', src, 'Acércate más a la zona para abrir la tienda.', 'error')
+    return false
+  end
+  return true, zone, Player
 end
 
 -- ===== Permisos genéricos (admin/ACE) =====
@@ -724,25 +744,6 @@ function findZoneById(id)
   for _, z in ipairs(Runtime.Zones) do
     if z.id == id then return z end
   end
-end
-
-local function playerInJobZone(src, zone, ztype)
-  if not zone or (ztype and zone.ztype ~= ztype) then return false end
-  local Player = QBCore.Functions.GetPlayer(src)
-  if not Player or not Player.PlayerData then return false end
-  local jd = Player.PlayerData.job or {}
-  local cid = Player.PlayerData.citizenid
-  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then
-    TriggerClientEvent('QBCore:Notify', src, 'No tienes acceso a esta tienda.', 'error')
-    return false
-  end
-  local coords = GetEntityCoords(GetPlayerPed(src))
-  local dist = #(coords - vector3(zone.coords.x, zone.coords.y, zone.coords.z))
-  if dist > (zone.radius or 2.0) + 0.1 then
-    TriggerClientEvent('QBCore:Notify', src, 'Acércate más a la zona para abrir la tienda.', 'error')
-    return false
-  end
-  return true, zone, Player
 end
 
 local function isPlayerInRange(src, zoneId, ztype)
