@@ -734,6 +734,12 @@ const App = (() => {
                             const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
                             const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
                             if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
+                            data.category = document.getElementById('zcateg')?.value || '';
+                            const jobStr = document.getElementById('zjob')?.value || '';
+                            if (jobStr.includes(',')) data.job = jobStr.split(',').map(s=>s.trim()).filter(s=>s);
+                            else if (jobStr !== '') data.job = jobStr;
+                            const icon = document.getElementById('zicon')?.value || '';
+                            if (icon) data.icon = icon;
                            }
         if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
         if (t === 'shop')  { data.items = collectShopItems(); }
@@ -793,8 +799,11 @@ const App = (() => {
           const catList = Array.from(new Set(Object.values(state.recipes || {}).map(r => r.category || 'General')));
           const catOpts = catList.map((c) => `<option value="${c}" ${(d.allowedCategories||[]).includes(c)?'selected':''}>${c}</option>`).join('');
           const recOpts = Object.keys(state.recipes || {}).map((r) => `<option value="${r}" ${(d.recipes||[]).includes(r)?'selected':''}>${r}</option>`).join('');
+          const jobVal = Array.isArray(d.job) ? d.job.join(',') : (d.job || '');
           box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
-                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`);
+                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`) +
+                        row(inp('zcateg','Categoría','food', d.category || '') + inp('zjob','Job Lock','', jobVal)) +
+                        row(inp('zicon','Icono','fa-solid fa-hammer', d.icon || ''));
         } else if (t === 'cloakroom') {
           box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
         } else if (t === 'shop') {
@@ -857,6 +866,12 @@ const App = (() => {
             const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
             const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
             if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
+            data.category = document.getElementById('zcateg')?.value || '';
+            const jobStr = document.getElementById('zjob')?.value || '';
+            if (jobStr.includes(',')) data.job = jobStr.split(',').map(s=>s.trim()).filter(s=>s);
+            else if (jobStr !== '') data.job = jobStr;
+            const icon = document.getElementById('zicon')?.value || '';
+            if (icon) data.icon = icon;
           }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
@@ -919,7 +934,9 @@ const App = (() => {
         const catOpts = catList.map((c) => `<option value="${c}">${c}</option>`).join('');
         const recOpts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
         box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
-                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`);
+                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`) +
+                        row(inp('zcateg','Categoría','food') + inp('zjob','Job Lock','')) +
+                        row(inp('zicon','Icono','fa-solid fa-hammer'));
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {

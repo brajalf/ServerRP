@@ -194,6 +194,10 @@ AddEventHandler('onResourceStart', function(res)
   LoadAll()
 end)
 
+exports('GetZones', function()
+  return Runtime.Zones
+end)
+
 AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
   local src = Player and Player.PlayerData and Player.PlayerData.source
   if not src then return end
@@ -470,6 +474,17 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   elseif zone.ztype == 'crafting' then
     zone.data.allowedCategories = SanitizeCategoryList(zone.data.allowedCategories)
     zone.data.recipes = SanitizeRecipeList(zone.data.recipes)
+    zone.data.category = type(zone.data.category) == 'string' and zone.data.category or nil
+    if type(zone.data.job) == 'string' then
+      zone.data.job = zone.data.job ~= '' and zone.data.job or nil
+    elseif type(zone.data.job) == 'table' then
+      local jobs = {}
+      for _, j in ipairs(zone.data.job) do if type(j) == 'string' and j ~= '' then jobs[#jobs+1] = j end end
+      zone.data.job = (#jobs > 0) and jobs or nil
+    else
+      zone.data.job = nil
+    end
+    zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
   end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
@@ -487,6 +502,11 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   elseif nz.ztype == 'crafting' then
     nz.data.allowedCategories = SanitizeCategoryList(nz.data.allowedCategories)
     nz.data.recipes = SanitizeRecipeList(nz.data.recipes)
+    nz.data.category = type(nz.data.category) == 'string' and nz.data.category or nil
+    if type(nz.data.job) ~= 'string' and type(nz.data.job) ~= 'table' then
+      nz.data.job = nil
+    end
+    nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
   end
   Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
@@ -712,6 +732,17 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     elseif ztype == 'crafting' then
       data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
+      data.category = type(data.category) == 'string' and data.category or nil
+      if type(data.job) == 'string' then
+        data.job = data.job ~= '' and data.job or nil
+      elseif type(data.job) == 'table' then
+        local jobs = {}
+        for _, j in ipairs(data.job) do if type(j) == 'string' and j ~= '' then jobs[#jobs+1] = j end end
+        data.job = (#jobs > 0) and jobs or nil
+      else
+        data.job = nil
+      end
+      data.icon = type(data.icon) == 'string' and data.icon or nil
     end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
@@ -728,6 +759,9 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         elseif ztype == 'crafting' then
           nd.allowedCategories = SanitizeCategoryList(nd.allowedCategories)
           nd.recipes = SanitizeRecipeList(nd.recipes)
+          nd.category = type(nd.category) == 'string' and nd.category or nil
+          if type(nd.job) ~= 'string' and type(nd.job) ~= 'table' then nd.job = nil end
+          nd.icon = type(nd.icon) == 'string' and nd.icon or nil
         end
         Runtime.Zones[idx] = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,
@@ -1098,5 +1132,9 @@ RegisterNetEvent('qb-jobcreator:server:charge', function(zoneId, targetId)
   else
     Player.Functions.AddMoney('cash', amt, 'jobcreator-charge')
   end
+end)
+
+exports('GetZones', function()
+  return Runtime.Zones
 end)
 

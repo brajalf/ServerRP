@@ -1,81 +1,79 @@
 local createdZones = {}
 
-local function addQBTargetBox(station)
-  exports['qb-target']:AddBoxZone(station.id, station.center, station.length, station.width, {
-    name = station.id,
-    heading = station.heading or 0.0,
-    minZ = station.minZ or (station.center.z - 1.0),
-    maxZ = station.maxZ or (station.center.z + 1.0),
-    debugPoly = Config.Debug
-  }, {
-    options = {{
-      icon = 'fa-solid fa-hammer',
-      label = station.name or 'Craft',
-      action = function() TriggerEvent('invictus_craft:client:openStation', station.id) end
-    }},
-    distance = 2.0
-  })
-  createdZones[#createdZones+1] = { type = 'qb', id = station.id }
-end
-
-local function addQBTargetCircle(station)
-  exports['qb-target']:AddCircleZone(station.id, station.center, station.radius or 1.4, {
-    name = station.id, useZ = true, debugPoly = Config.Debug
-  }, {
-    options = {{
-      icon = 'fa-solid fa-hammer',
-      label = station.name or 'Craft',
-      action = function() TriggerEvent('invictus_craft:client:openStation', station.id) end
-    }},
-    distance = 2.0
-  })
-  createdZones[#createdZones+1] = { type = 'qb', id = station.id }
-end
-
-local function addOxTargetBox(station)
-  local zone = exports.ox_target:addBoxZone({
-    coords = station.center,
-    size = vec3(station.length, station.width, (station.maxZ or (station.center.z+1))- (station.minZ or (station.center.z-1))),
-    rotation = station.heading or 0.0,
-    debug = Config.Debug,
-    options = {{
-      name = station.id,
-      icon = 'fa-solid fa-hammer',
-      label = station.name or 'Craft',
-      onSelect = function() TriggerEvent('invictus_craft:client:openStation', station.id) end
-    }}
-  })
-  createdZones[#createdZones+1] = { type = 'ox', id = zone }
-end
-
-CreateThread(function()
-  for _, st in ipairs(Config.Stations) do
-    if Config.InteractionType == 'qb' then
-      if st.type == 'circle' then addQBTargetCircle(st) else addQBTargetBox(st) end
-    elseif Config.InteractionType == 'ox' then
-      addOxTargetBox(st)
-    elseif Config.InteractionType == 'textui' then
-      local hintShown = false
-      CreateThread(function()
-        while true do
-          local sleep = 1000
-          local ped = PlayerPedId()
-          local p = GetEntityCoords(ped)
-          if #(p - st.center) < 2.0 then
-            sleep = 0
-            if not hintShown then
-              hintShown = true
-              if lib and lib.showTextUI then lib.showTextUI(('[E] %s'):format(st.name or 'Craft')) end
-            end
-            if IsControlJustReleased(0, 38) then -- E
-              TriggerEvent('invictus_craft:client:openStation', st.id)
-            end
-          else
-            if hintShown then hintShown = false; if lib and lib.hideTextUI then lib.hideTextUI() end end
-          end
-          Wait(sleep)
-        end
-      end)
+local function clearZones()
+  for _, z in ipairs(createdZones) do
+    if z.type == 'qb' then
+      exports['qb-target']:RemoveZone(z.id)
+    elseif z.type == 'ox' then
+      exports.ox_target:removeZone(z.id)
+    elseif z.type == 'thread' and z.thread then
+      z.thread.stop = true
     end
   end
+  createdZones = {}
+end
+
+local function registerZone(z)
+  local id = tostring(z.id)
+  local name = z.label or 'Craft'
+  local center = vector3(z.coords.x or 0.0, z.coords.y or 0.0, z.coords.z or 0.0)
+  local icon = (z.data and z.data.icon) or 'fa-solid fa-hammer'
+  local radius = z.radius or 1.5
+
+  if Config.InteractionType == 'qb' then
+    exports['qb-target']:AddCircleZone(id, center, radius, { name = id, useZ = true, debugPoly = Config.Debug }, {
+      options = {{ icon = icon, label = name, action = function() TriggerEvent('invictus_craft:client:openStation', id) end }},
+      distance = 2.0
+    })
+    createdZones[#createdZones+1] = { type = 'qb', id = id }
+  elseif Config.InteractionType == 'ox' then
+    local zone = exports.ox_target:addSphereZone({
+      coords = center,
+      radius = radius,
+      debug = Config.Debug,
+      options = {{ name = id, icon = icon, label = name, onSelect = function() TriggerEvent('invictus_craft:client:openStation', id) end }}
+    })
+    createdZones[#createdZones+1] = { type = 'ox', id = zone }
+  elseif Config.InteractionType == 'textui' then
+    local data = { stop = false }
+    data.thread = CreateThread(function()
+      local hintShown = false
+      while not data.stop do
+        local sleep = 1000
+        local ped = PlayerPedId()
+        local p = GetEntityCoords(ped)
+        if #(p - center) < radius then
+          sleep = 0
+          if not hintShown then
+            hintShown = true
+            if lib and lib.showTextUI then lib.showTextUI(('[E] %s'):format(name)) end
+          end
+          if IsControlJustReleased(0, 38) then
+            TriggerEvent('invictus_craft:client:openStation', id)
+          end
+        else
+          if hintShown then
+            hintShown = false
+            if lib and lib.hideTextUI then lib.hideTextUI() end
+          end
+        end
+        Wait(sleep)
+      end
+    end)
+    createdZones[#createdZones+1] = { type = 'thread', thread = data }
+  end
+end
+
+RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
+  clearZones()
+  for _, z in ipairs(zones or {}) do
+    if z.ztype == 'crafting' then
+      registerZone(z)
+    end
+  end
+end)
+
+AddEventHandler('onResourceStop', function(res)
+  if res ~= GetCurrentResourceName() then return end
+  clearZones()
 end)
