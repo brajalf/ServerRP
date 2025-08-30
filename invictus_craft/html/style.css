@@ -1,0 +1,79 @@
+* { box-sizing: border-box; user-select: none; }
+body { margin: 0; font-family: Inter, system-ui, Arial; background: transparent; }
+
+.hidden { display: none !important; }
+
+.app {
+  position: absolute; inset: 5% 5%; background: rgba(7,20,18,.92);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 12px;
+  color: #e8f0ef; display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto auto 1fr;
+  gap: 12px; padding: 16px; overflow: hidden;
+}
+
+.header { grid-column: 1 / span 2; display: flex; align-items: center; justify-content: space-between; }
+.title { font-size: 24px; letter-spacing: .5px; display: flex; align-items: center; gap: 10px; }
+.tag { font-size: 12px; background: #1e2f2c; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); }
+
+.search { position: relative; }
+.search input {
+  background: #0d1715; color: #cfe3e0; border: 1px solid rgba(255,255,255,.1);
+  padding: 10px 34px 10px 12px; border-radius: 8px; width: 260px; outline: none;
+}
+.search i { position: absolute; right: 10px; top: 10px; opacity: .7; }
+
+.statusBar { grid-column: 1 / span 2; display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; }
+.progress { height: 18px; background: #0f1716; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; overflow: hidden; }
+.progress > div { height: 100%; width: 0%; background: linear-gradient(90deg,#8dd4b4,#53a88c); transition: width .2s; }
+.time { font-size: 12px; opacity: .8; text-align: right; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-bottom: 12px; overflow: auto; }
+.card {
+  background: #0e1917; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px;
+  display: grid; grid-template-rows: auto auto auto; gap: 6px;
+}
+.card .img { height: 96px; display: grid; place-items: center; }
+.card .img img { max-height: 96px; max-width: 100px; filter: drop-shadow(0 0 10px rgba(0,0,0,.2)); }
+
+.card .title { text-align: center; font-weight: 600; }
+.card .hint { font-size: 12px; opacity: .7; text-align: center; }
+.card .qtyRow { display: grid; grid-template-columns: 32px 1fr 32px; gap: 6px; align-items: center; }
+.small { height: 32px; background: #142321; border: 1px solid rgba(255,255,255,.08); color: #cfe3e0; border-radius: 8px; }
+.card .btn { margin-top: 6px; }
+
+.card.locked { filter: grayscale(100%); opacity: .65; }
+.card .lock { position: absolute; top: 8px; right: 8px; font-size: 14px; opacity: .8; }
+
+.btn {
+  width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);
+  background: #173430; color: #e8f0ef; font-weight: 700; cursor: pointer;
+}
+.btn.primary { background: linear-gradient(90deg,#53a88c,#2f7a62); }
+.btn.danger { background: #512e2e; }
+
+.sidebar { overflow: auto; display: grid; grid-auto-rows: min-content; gap: 12px; }
+.panel { background:#0e1917; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px; }
+.panel-title { font-weight: 700; margin-bottom: 8px; }
+.panel-body { display: grid; gap: 6px; }
+.panel-body.empty { opacity: .7; font-size: 13px; }
+
+.queueItem, .collectItem {
+  display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 8px;
+  padding: 8px; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: #0c1513;
+}
+.badge { background: #112320; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center; }
+.modal-inner { width: 540px; background:#0d1816; border:1px solid rgba(255,255,255,.1); border-radius: 12px; overflow: hidden; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.xbtn { background: transparent; border: 0; color: #e8f0ef; font-size: 18px; cursor: pointer; }
+
+.modal-body { padding: 12px 16px; display: grid; gap: 10px; }
+.mats, .outs { display: grid; gap: 8px; }
+.mat, .out { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; align-items: center; }
+.mats .need { font-size: 12px; opacity: .8; }
+.qty { display: grid; grid-template-columns: 48px 1fr 48px; gap: 8px; }
+.qty input { background:#0f1a18; border:1px solid rgba(255,255,255,.08); color:#cfe3e0; padding:8px; border-radius:8px; text-align:center; }
+
+.state-all { outline: 2px solid #45d483; }
+.state-some { outline: 2px solid #d1b73f; }
+.state-none { outline: 2px solid #c24b4b; }
