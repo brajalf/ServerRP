@@ -1009,7 +1009,7 @@ const CraftUI = (() => {
   let inventory = 'qb-inventory';
 
   function open(payload) {
-    zoneId = payload.zone;
+    zoneId = payload.zoneId || payload.zone;
     inventory = payload.inventory || 'qb-inventory';
     const recipes = payload.recipes || {};
     const wrap = document.getElementById('craft-list');
@@ -1049,7 +1049,7 @@ const CraftUI = (() => {
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('craft-btn')) {
       const recipe = e.target.dataset.recipe;
-      post('craft', { zone: zoneId, recipe });
+      post('craft', { zoneId: zoneId, recipe });
     }
   });
 

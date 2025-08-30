@@ -194,3 +194,12 @@ end)
 RegisterNUICallback('getCraftingData', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(list) cb(list or {}) end, data and data.zoneId)
 end)
+
+RegisterNUICallback('craft', function(data, cb)
+  local zoneId = data and (data.zoneId or data.zone)
+  local recipe = data and data.recipe
+  if zoneId and recipe then
+    TriggerServerEvent('qb-jobcreator:server:craft', zoneId, recipe)
+  end
+  cb({ ok = true })
+end)
