@@ -1186,7 +1186,7 @@ const CraftUI = (() => {
     renderCategories();
     renderRecipes();
     renderInventory();
-    const searchInput = document.getElementById('craft-search');
+    const searchInput = document.getElementById('craftSearchInput');
     if (searchInput) {
       searchText = '';
       searchInput.value = '';
@@ -1197,12 +1197,12 @@ const CraftUI = (() => {
     }
     updateQueue();
     qTimer = setInterval(updateQueue, 5000);
-    document.getElementById('craft').classList.remove('hidden');
+    document.getElementById('craftApp').classList.remove('hidden');
     visible = true;
   }
 
   function close() {
-    document.getElementById('craft').classList.add('hidden');
+    document.getElementById('craftApp').classList.add('hidden');
     visible = false;
     if (qTimer) { clearInterval(qTimer); qTimer = null; }
   }
