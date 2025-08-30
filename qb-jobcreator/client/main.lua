@@ -291,7 +291,7 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
           materials = mats,
           outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
           status = status,
-          image = info.image,
+          image = info.image or (recipe.output.item .. '.png'),
           lockedByJob = recipe.lockedByJob
         }
       end

@@ -32,7 +32,7 @@ body { margin: 0; font-family: Inter, system-ui, Arial; background: transparent;
   display: grid; grid-template-rows: auto auto auto; gap: 6px;
 }
 .craft-app .card .img { height: 96px; display: grid; place-items: center; }
-.craft-app .card .img img { max-height: 96px; max-width: 100px; filter: drop-shadow(0 0 10px rgba(0,0,0,.2)); }
+.craft-app .card .img img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(0,0,0,.2)); }
 
 .craft-app .card .title { text-align: center; font-weight: 600; }
 .craft-app .card .hint { font-size: 12px; opacity: .7; text-align: center; }
