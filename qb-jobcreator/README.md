@@ -56,4 +56,4 @@ UseOxInventory = false, -- habilita la capa para ox_inventory si el recurso est�
 UseQbInventory = false, -- fuerza el uso de qb-inventory
 ```
 
-Las funciones de manejo de inventario (`CheckItem`, `RemoveItem` y `AddItem`) detectan automáticamente `ox_inventory` y utilizan la integración apropiada.
+Las funciones de manejo de inventario (`HasItem`, `RemoveItem` y `AddItem`) detectan automáticamente `ox_inventory` y utilizan la integración apropiada.

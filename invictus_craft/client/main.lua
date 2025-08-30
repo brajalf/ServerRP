@@ -1,4 +1,6 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local Inventory = require '@qb-jobcreator/shared/sh_inventory.lua'
+local Utils = require '@qb-jobcreator/shared/sh_utils.lua'
 local currentStation = nil
 
 RegisterNetEvent('invictus_craft:client:openStation', function(stationId)

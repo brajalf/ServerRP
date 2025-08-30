@@ -1,4 +1,6 @@
 local createdZones = {}
+local Inventory = require '@qb-jobcreator/shared/sh_inventory.lua'
+local Utils = require '@qb-jobcreator/shared/sh_utils.lua'
 
 local function clearZones()
   for _, z in ipairs(createdZones) do
