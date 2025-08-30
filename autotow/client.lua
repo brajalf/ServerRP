@@ -51,19 +51,6 @@ local function isAnySeatOccupied(veh)
   return false
 end
 
-local function isTooCloseToPlayers(coords, minDist)
-  for _, pid in ipairs(GetActivePlayers()) do
-    local ped = GetPlayerPed(pid)
-    if ped and ped ~= 0 then
-      local pcoords = GetEntityCoords(ped)
-      if #(pcoords - coords) <= (minDist or 25.0) then
-        return true
-      end
-    end
-  end
-  return false
-end
-
 local function tryDeleteVehicle(veh)
   if not DoesEntityExist(veh) then return false end
 
@@ -122,9 +109,6 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
 
       -- No borrar si hay alguien a bordo
       if isAnySeatOccupied(veh) then goto continue end
-
-      local coords = GetEntityCoords(veh)
-      if isTooCloseToPlayers(coords, cfg.minDist) then goto continue end
 
       -- Solo el owner de la entidad elimina para evitar duplicados
       local owner = NetworkGetEntityOwner(veh)
