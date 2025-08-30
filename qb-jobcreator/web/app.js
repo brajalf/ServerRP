@@ -1006,31 +1006,81 @@ const App = (() => {
 const CraftUI = (() => {
   let zoneId = null;
   let visible = false;
-  let inventory = 'qb-inventory';
+  let invMode = 'qb-inventory';
+  let recipes = {};
+  let categories = {};
+  let currentCategory = null;
+  let inventory = {};
 
-  function open(payload) {
-    zoneId = payload.zoneId || payload.zone;
-    inventory = payload.inventory || 'qb-inventory';
-    const recipes = payload.recipes || {};
+  function buildCategories() {
+    categories = {};
+    Object.entries(recipes).forEach(([name, rec]) => {
+      const cat = rec.category || 'General';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push({ name, rec });
+    });
+  }
+
+  function renderCategories() {
+    const wrap = document.getElementById('craft-categories');
+    wrap.innerHTML = '';
+    Object.keys(categories).forEach((cat) => {
+      const btn = document.createElement('button');
+      btn.className = 'cat-btn' + (cat === currentCategory ? ' active' : '');
+      btn.textContent = cat;
+      btn.onclick = () => {
+        currentCategory = cat;
+        renderCategories();
+        renderRecipes();
+      };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function renderInventory() {
+    const wrap = document.getElementById('craft-inventory');
+    wrap.innerHTML = Object.entries(inventory)
+      .map(([item, qty]) => `<div class="inv-item">${item}: ${qty}</div>`)
+      .join('');
+  }
+
+  function renderRecipes() {
     const wrap = document.getElementById('craft-list');
     wrap.innerHTML = '';
-    Object.entries(recipes).forEach(([name, rec]) => {
+    (categories[currentCategory] || []).forEach(({ name, rec }) => {
       const card = document.createElement('div');
       card.className = 'craft-item';
       const out = rec.output && rec.output.item || name;
-      const inputs = (rec.inputs || [])
-        .map(i => `<li>${i.amount || i.qty || 1}x ${i.item}</li>`)
-        .join('');
-      const base = inventory === 'ox_inventory'
+      const base = invMode === 'ox_inventory'
         ? 'nui://ox_inventory/web/images/'
         : 'nui://qb-inventory/html/images/';
       const imgSrc = `${base}${out}.png`;
+      const inputs = (rec.inputs || [])
+        .map(i => {
+          const need = i.amount || i.qty || 1;
+          const have = inventory[i.item] || 0;
+          const cls = have < need ? ' class="missing"' : '';
+          return `<li${cls}>${need}x ${i.item}</li>`;
+        })
+        .join('');
       card.innerHTML = `
         <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
         <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
         <button class="btn craft-btn" data-recipe="${name}">Fabricar</button>`;
       wrap.appendChild(card);
     });
+  }
+
+  function open(payload) {
+    zoneId = payload.zoneId || payload.zone;
+    invMode = payload.inventory || 'qb-inventory';
+    recipes = payload.recipes || {};
+    inventory = payload.inventoryItems || payload.playerInventory || payload.items || payload.inv || {};
+    buildCategories();
+    currentCategory = Object.keys(categories)[0] || null;
+    renderCategories();
+    renderRecipes();
+    renderInventory();
     document.getElementById('craft').classList.remove('hidden');
     visible = true;
   }
@@ -1044,6 +1094,28 @@ const CraftUI = (() => {
     const data = e.data || {};
     if (data.action === 'openCraft') open(data.payload || {});
     if (data.action === 'hide') close();
+    if (data.action === 'updateInventory') {
+      inventory = data.inventory || {};
+      renderInventory();
+      renderRecipes();
+    }
+    if (data.action === 'craftProgress') {
+      const prog = document.getElementById('craft-progress');
+      prog.classList.remove('hidden');
+      const pct = data.progress || 0;
+      prog.querySelector('.bar').style.width = `${pct}%`;
+    }
+    if (data.action === 'craftResult') {
+      document.getElementById('craft-progress').classList.add('hidden');
+      if (data.inventory) {
+        inventory = data.inventory;
+        renderInventory();
+        renderRecipes();
+      }
+      if (typeof toast === 'function') {
+        toast(data.success ? 'Crafteo completado' : 'Fallo de crafteo', data.success ? 'success' : 'error');
+      }
+    }
   });
 
   document.addEventListener('click', (e) => {

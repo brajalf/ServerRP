@@ -46,9 +46,18 @@ body{margin:0;background:transparent;color:var(--text);font:14px/1.4 Inter,syste
 /* ===== Crafteo ===== */
 .craft.hidden{display:none!important}
 .craft{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
-.craft-panel{background:var(--card);padding:20px;border-radius:12px;max-height:80vh;overflow-y:auto;min-width:320px}
+.craft-panel{background:var(--card);padding:20px;border-radius:12px;max-height:80vh;overflow-y:auto;min-width:320px;position:relative}
 .craft-item{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .craft-item img{width:64px;height:64px;object-fit:contain;border-radius:6px}
 .craft-item .materials{flex:1;font-size:14px}
 .craft-item .materials ul{margin:0;padding-left:16px}
+.craft-item .materials .missing{color:var(--danger)}
 .craft-item button{padding:8px 12px}
+
+.craft-cats{display:flex;gap:8px;margin-bottom:10px}
+.craft-cats .cat-btn{background:#232a3d;border:0;color:#cbd5e1;padding:6px 10px;border-radius:8px;cursor:pointer}
+.craft-cats .cat-btn.active{background:var(--primary);color:white}
+.craft-inv{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;font-size:13px}
+.craft-inv .inv-item{background:var(--bg2);padding:4px 8px;border-radius:8px}
+.craft-progress{position:absolute;left:20px;right:20px;bottom:20px;height:8px;background:#1f2433;border-radius:6px;overflow:hidden}
+.craft-progress .bar{height:100%;width:0;background:var(--primary);transition:width .2s}
