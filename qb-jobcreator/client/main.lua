@@ -260,6 +260,10 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
     end
 
     local transformed = {}
+    local oxItems = {}
+    if GetResourceState('ox_inventory') == 'started' then
+      oxItems = exports.ox_inventory:Items() or {}
+    end
     for _, recipe in ipairs(recipes or {}) do
       local mats = {}
       local haveAny, haveAll = false, true
@@ -276,12 +280,14 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
       end
       local status = 'none'
       if haveAll and #mats > 0 then status = 'all' elseif haveAny then status = 'some' end
+      local info = oxItems[recipe.output and recipe.output.item or recipe.name] or {}
       transformed[#transformed+1] = {
         item = recipe.output and recipe.output.item or recipe.name,
         label = (recipe.output and recipe.output.label) or recipe.name,
         materials = mats,
         outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
-        status = status
+        status = status,
+        image = info.image
       }
     end
 
