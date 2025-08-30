@@ -5,8 +5,8 @@ local JobsFile = _G.JobsFile
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
 local CreatedStashes = {}
--- Cola de crafteo e inventario por mesa
-local CraftQueues, CraftInventory = {}, {}
+-- Crafting queues and ready outputs
+local Queues, Ready = {}, {}
 local findZoneById
 local playerInJobZone
 
@@ -814,40 +814,48 @@ RegisterNetEvent('qb-jobcreator:server:buyItem', function(zoneId, itemName)
   item.amount = (item.amount or 1) - 1
 end)
 
--- === Crafting helpers ===
-local function hasMaterials(Player, recipe, amount)
-  local src = Player.PlayerData and Player.PlayerData.source
-  if recipe.blueprint and not Inventory.CheckItem(src, recipe.blueprint, 1) then
-    return false, 'blueprint'
+local function kvKey(license) return ('qb_jobcreator_ready:%s'):format(license) end
+local function loadReady(license)
+  Ready[license] = Ready[license] or {}
+  local raw = GetResourceKvpString(kvKey(license))
+  if raw then
+    local ok, data = pcall(json.decode, raw)
+    if ok and type(data) == 'table' then Ready[license] = data end
   end
-  amount = tonumber(amount) or 1
-  for _, inp in ipairs(recipe.inputs or {}) do
-    local required = (inp.amount or 1) * amount
-    if not Inventory.CheckItem(src, inp.item, required) then
-      return false, inp.item
+  return Ready[license]
+end
+local function saveReady(license)
+  SetResourceKvp(kvKey(license), json.encode(Ready[license] or {}))
+end
+local function getLicense(src)
+  for _, id in ipairs(GetPlayerIdentifiers(src)) do
+    if id:find('license:') then return id end
+  end
+  return GetPlayerIdentifier(src, 0) or ('src:'..src)
+end
+
+local function scheduleFinish(zoneId, src, entry)
+  SetTimeout(entry.time, function()
+    local license = getLicense(src)
+    local ready = loadReady(license)
+    ready[#ready+1] = {
+      id = entry.id,
+      zoneId = zoneId,
+      label = entry.label,
+      outputs = entry.outputs,
+      timestamp = os.time()
+    }
+    saveReady(license)
+    local q = Queues[zoneId] and Queues[zoneId][src]
+    if q then
+      for i, e in ipairs(q.entries) do
+        if e.id == entry.id then table.remove(q.entries, i) break end
+      end
     end
-  end
-  return true
-end
-
-local function consumeMaterials(Player, recipe, amount)
-  local src = Player.PlayerData and Player.PlayerData.source
-  local removed = {}
-  amount = tonumber(amount) or 1
-  for _, inp in ipairs(recipe.inputs or {}) do
-    local amt = (inp.amount or 1) * amount
-    Inventory.RemoveItem(src, inp.item, amt)
-    removed[#removed+1] = { item = inp.item, amount = amt }
-  end
-  return removed
-end
-
-local function giveOutput(Player, recipe, amount)
-  local src = Player.PlayerData and Player.PlayerData.source
-  local out = recipe.output or {}
-  if not out.item then return false end
-  local total = (out.amount or 1) * (tonumber(amount) or 1)
-  return Inventory.AddItem(src, out.item, total, false, out.info)
+    if GetPlayerName(src) then
+      TriggerClientEvent('QBCore:Notify', src, (entry.label .. ' listo para recoger.'), 'success')
+    end
+  end)
 end
 
 RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amount)
@@ -855,7 +863,8 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amoun
   local ok, zone, Player = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
   recipeKey = type(recipeKey) == 'string' and recipeKey or ''
-  amount = tonumber(amount) or 1
+  amount = math.max(1, math.floor(tonumber(amount) or 1))
+
   local allowed = {}
   local data = zone.data or {}
   if data.allowedCategories and #data.allowedCategories > 0 then
@@ -871,20 +880,22 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amoun
     TriggerClientEvent('QBCore:Notify', src, 'Receta no permitida', 'error')
     return
   end
+
   local recipe = Config.CraftingRecipes[recipeKey]
   if not recipe or not recipe.output then
     TriggerClientEvent('QBCore:Notify', src, 'Receta no válida', 'error')
     return
   end
-  local pJob = Player.PlayerData and Player.PlayerData.job and Player.PlayerData.job.name
+
+  local jobName = Player.PlayerData and Player.PlayerData.job and Player.PlayerData.job.name
   if recipe.job then
     local okJob = false
     if type(recipe.job) == 'string' then
-      okJob = recipe.job == pJob
+      okJob = recipe.job == jobName
     elseif type(recipe.job) == 'table' then
-      okJob = recipe.job[pJob] == true
+      okJob = recipe.job[jobName] == true
       if not okJob then
-        for _, j in ipairs(recipe.job) do if j == pJob then okJob = true break end end
+        for _, j in ipairs(recipe.job) do if j == jobName then okJob = true break end end
       end
     end
     if not okJob then
@@ -893,69 +904,82 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amoun
     end
   end
 
-  local has, missing = hasMaterials(Player, recipe, amount)
-  if not has then
-    local msg = missing == 'blueprint' and 'Falta el plano requerido' or 'Materiales insuficientes'
-    TriggerClientEvent('QBCore:Notify', src, msg, 'error')
+  if recipe.blueprint and not Inventory.CheckItem(src, recipe.blueprint, 1) then
+    TriggerClientEvent('QBCore:Notify', src, 'Falta el plano requerido', 'error')
     return
   end
 
-  local removed = consumeMaterials(Player, recipe, amount)
-
-  local craftTime = tonumber(recipe.time) or 0
-  local skillLevel = 0
-  if recipe.skill and GetResourceState('qb-skillz') == 'started' then
-    skillLevel = exports['qb-skillz']:GetSkillLevel(src, recipe.skill) or 0
-    craftTime = math.floor(math.max(craftTime * (1 - (skillLevel / 200)), craftTime * 0.5))
+  for _, inp in ipairs(recipe.inputs or {}) do
+    local need = (inp.amount or 1) * amount
+    if not Inventory.CheckItem(src, inp.item, need) then
+      TriggerClientEvent('QBCore:Notify', src, 'Materiales insuficientes', 'error')
+      return
+    end
+  end
+  for _, inp in ipairs(recipe.inputs or {}) do
+    Inventory.RemoveItem(src, inp.item, (inp.amount or 1) * amount)
   end
 
-  CraftQueues[zoneId] = CraftQueues[zoneId] or {}
+  local craftTime = tonumber(recipe.time) or 0
+  if recipe.skill and GetResourceState('qb-skillz') == 'started' then
+    local skillLevel = exports['qb-skillz']:GetSkillLevel(src, recipe.skill) or 0
+    if skillLevel <= 0 then
+      TriggerClientEvent('QBCore:Notify', src, 'No tienes la habilidad requerida', 'error')
+      return
+    end
+    craftTime = math.floor(math.max(craftTime * (1 - (skillLevel / 200)), craftTime * 0.5))
+  end
+  local totalTime = craftTime * amount
   local now = os.time() * 1000
+  local out = recipe.output
+  local label = recipe.label or out.label or out.item or recipeKey
+  local outputs = { { item = out.item, amount = (out.amount or 1) * amount, info = out.info } }
+
+  Queues[zoneId] = Queues[zoneId] or {}
+  Queues[zoneId][src] = Queues[zoneId][src] or { entries = {} }
+  local entries = Queues[zoneId][src].entries
+
   local entry = {
     id = math.random(100000, 999999),
-    player = src,
     recipe = recipeKey,
+    label = label,
     amount = amount,
-    start = now,
-    finish = now + (craftTime * amount),
-    removed = removed,
-    cancelled = false,
+    time = totalTime,
+    finish = now + totalTime,
+    outputs = outputs
   }
-  table.insert(CraftQueues[zoneId], entry)
 
-  SetTimeout(craftTime * amount, function()
-    if entry.cancelled then return end
-    local q = CraftQueues[zoneId] or {}
-    for i, v in ipairs(q) do
-      if v.id == entry.id then table.remove(q, i) break end
-    end
-    local inv = CraftInventory[zoneId] or {}
-    local out = recipe.output
-    local total = (out.amount or 1) * amount
-    inv[out.item] = (inv[out.item] or 0) + total
-    CraftInventory[zoneId] = inv
-  end)
+  entries[#entries+1] = entry
+  scheduleFinish(zoneId, src, entry)
 end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getQueue', function(src, cb, zoneId)
   local ok = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then cb({ queue = {}, inventory = {} }) return end
-  cb({ queue = CraftQueues[zoneId] or {}, inventory = CraftInventory[zoneId] or {} })
+  local license = getLicense(src)
+  local readyList = loadReady(license)
+  local inv = {}
+  for _, r in ipairs(readyList) do
+    if not zoneId or r.zoneId == zoneId then
+      for _, o in ipairs(r.outputs or {}) do
+        inv[o.item] = (inv[o.item] or 0) + (o.amount or 1)
+      end
+    end
+  end
+  local q = Queues[zoneId] and Queues[zoneId][src] and Queues[zoneId][src].entries or {}
+  cb({ queue = q, inventory = inv })
 end)
 
 RegisterNetEvent('qb-jobcreator:server:cancelCraft', function(zoneId, id)
   local src = source
   local ok = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
-  local q = CraftQueues[zoneId]
+  local q = Queues[zoneId] and Queues[zoneId][src]
   if not q then return end
-  for i, v in ipairs(q) do
-    if v.id == id and v.player == src then
-      v.cancelled = true
-      for _, rem in ipairs(v.removed or {}) do
-        Inventory.AddItem(src, rem.item, rem.amount)
-      end
-      table.remove(q, i)
+  for i, e in ipairs(q.entries) do
+    if e.id == id then
+      table.remove(q.entries, i)
+      TriggerClientEvent('QBCore:Notify', src, 'Crafteo cancelado', 'error')
       break
     end
   end
@@ -965,19 +989,29 @@ RegisterNetEvent('qb-jobcreator:server:collectCrafted', function(zoneId)
   local src = source
   local ok = playerInJobZone(src, findZoneById(zoneId), 'crafting')
   if not ok then return end
-  local inv = CraftInventory[zoneId]
-  if not inv then return end
-  for item, amt in pairs(inv) do
-    if amt > 0 then
-      if Inventory.AddItem(src, item, amt) then
-        inv[item] = nil
-      else
-        TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
-        return
+  local license = getLicense(src)
+  local readyList = loadReady(license)
+  local remaining = {}
+  for _, r in ipairs(readyList) do
+    if r.zoneId == zoneId then
+      local okAll = true
+      for _, o in ipairs(r.outputs or {}) do
+        if not Inventory.AddItem(src, o.item, o.amount, false, o.info) then
+          okAll = false
+          break
+        end
       end
+      if not okAll then
+        remaining[#remaining+1] = r
+        TriggerClientEvent('QBCore:Notify', src, 'Inventario lleno', 'error')
+        break
+      end
+    else
+      remaining[#remaining+1] = r
     end
   end
-  CraftInventory[zoneId] = inv
+  Ready[license] = remaining
+  saveReady(license)
 end)
 
 RegisterNetEvent('qb-jobcreator:server:collect', function(zoneId)
