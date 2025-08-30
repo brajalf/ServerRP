@@ -203,3 +203,20 @@ RegisterNUICallback('craft', function(data, cb)
   end
   cb({ ok = true })
 end)
+
+-- Progress bar for crafting
+RegisterNetEvent('qb-jobcreator:client:progress', function(time, item)
+  local label = 'Crafteando'
+  if item then
+    local info = QBCore.Shared.Items[item]
+    if info and info.label then
+      label = ('Crafteando %s'):format(info.label)
+    end
+  end
+  QBCore.Functions.Progressbar('jc-craft', label, time or 1000, false, true, {
+    disableMovement = true,
+    disableCarMovement = true,
+    disableMouse = false,
+    disableCombat = true,
+  }, {}, {}, {}, function() end, function() end)
+end)

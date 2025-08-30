@@ -27,7 +27,10 @@ Config.CraftingRecipes = {
   metal_bar = {
     inputs = { { item = 'metal_ore', amount = 2 } },
     output = { item = 'metal_bar', amount = 1 },
-    time = 3000
+    time = 3000,
+    blueprint = 'metal_bar_blueprint', -- opcional
+    skill = 'smithing',                -- opcional
+    successChance = 80                 -- 0-100
   }
 }
 ```
@@ -37,7 +40,9 @@ En la tienda del herrero añade `metal_ore` con el precio y stock deseado.  Los 
 
 `qb-jobcreator` ahora incluye un módulo de crafteo propio.  Las recetas se definen en
 `Config.CraftingRecipes` y cada zona de tipo `crafting` puede habilitar una lista de
-recetas permitidas.  Cada receta únicamente requiere `inputs`, `time` y `output`.
+recetas permitidas.  Cada receta requiere `inputs`, `time` y `output`, y puede
+incluir opcionalmente `blueprint`, `skill` y `successChance`.
 
-No se manejan categorías ni planos externos; el servidor verifica los materiales y
-entrega el producto resultante directamente al jugador.
+Se soportan planos opcionales y bonificaciones por habilidad mediante `qb-skillz`;
+el servidor verifica los materiales y entrega el resultado al jugador cuando el
+proceso finaliza.
