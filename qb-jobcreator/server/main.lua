@@ -176,7 +176,23 @@ local function LoadAll()
   end
   for _, z in ipairs(DB.GetZones()) do
     local data = json.decode(z.data or '{}') or {}
-    if z.ztype == 'shop' then data.items = SanitizeShopItems(data.items) end
+    if z.ztype == 'shop' then data.items = SanitizeShopItems(data.items)
+    elseif z.ztype == 'crafting' then
+      data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
+      data.recipes = SanitizeRecipeList(data.recipes)
+      data.category = type(data.category) == 'string' and data.category or nil
+      if type(data.job) ~= 'string' and type(data.job) ~= 'table' then data.job = nil end
+      data.icon = type(data.icon) == 'string' and data.icon or nil
+      if type(data.theme) == 'table' then
+        data.theme = {
+          colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
+          colorSecundario = type(data.theme.colorSecundario) == 'string' and data.theme.colorSecundario or nil,
+          titulo = type(data.theme.titulo) == 'string' and data.theme.titulo or nil,
+        }
+      else
+        data.theme = nil
+      end
+    end
     local coords = json.decode(z.coords or '{}') or {}
     Runtime.Zones[#Runtime.Zones+1] = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
@@ -532,6 +548,16 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       zone.data.job = nil
     end
     zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
+    if type(zone.data.theme) == 'table' then
+      local th = zone.data.theme
+      zone.data.theme = {
+        colorPrimario = type(th.colorPrimario) == 'string' and th.colorPrimario or nil,
+        colorSecundario = type(th.colorSecundario) == 'string' and th.colorSecundario or nil,
+        titulo = type(th.titulo) == 'string' and th.titulo or nil,
+      }
+    else
+      zone.data.theme = nil
+    end
   end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
@@ -554,6 +580,15 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       nz.data.job = nil
     end
     nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
+    if type(nz.data.theme) == 'table' then
+      nz.data.theme = {
+        colorPrimario = type(nz.data.theme.colorPrimario) == 'string' and nz.data.theme.colorPrimario or nil,
+        colorSecundario = type(nz.data.theme.colorSecundario) == 'string' and nz.data.theme.colorSecundario or nil,
+        titulo = type(nz.data.theme.titulo) == 'string' and nz.data.theme.titulo or nil,
+      }
+    else
+      nz.data.theme = nil
+    end
   end
   Runtime.Zones[#Runtime.Zones+1] = nz
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
@@ -790,6 +825,15 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         data.job = nil
       end
       data.icon = type(data.icon) == 'string' and data.icon or nil
+      if type(data.theme) == 'table' then
+        data.theme = {
+          colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
+          colorSecundario = type(data.theme.colorSecundario) == 'string' and data.theme.colorSecundario or nil,
+          titulo = type(data.theme.titulo) == 'string' and data.theme.titulo or nil,
+        }
+      else
+        data.theme = nil
+      end
     end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
@@ -809,6 +853,15 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
           nd.category = type(nd.category) == 'string' and nd.category or nil
           if type(nd.job) ~= 'string' and type(nd.job) ~= 'table' then nd.job = nil end
           nd.icon = type(nd.icon) == 'string' and nd.icon or nil
+          if type(nd.theme) == 'table' then
+            nd.theme = {
+              colorPrimario = type(nd.theme.colorPrimario) == 'string' and nd.theme.colorPrimario or nil,
+              colorSecundario = type(nd.theme.colorSecundario) == 'string' and nd.theme.colorSecundario or nil,
+              titulo = type(nd.theme.titulo) == 'string' and nd.theme.titulo or nil,
+            }
+          else
+            nd.theme = nil
+          end
         end
         Runtime.Zones[idx] = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,

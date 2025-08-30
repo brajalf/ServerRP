@@ -13,7 +13,10 @@ window.addEventListener('message', (e) => {
   if (msg.action === 'openCraft') {
     CraftApp.locale = msg.locale || {};
     CraftApp.images = msg.images || CraftApp.images;
-    $('#craftTitleText').innerText = CraftApp.locale.ui_title || 'KITCHEN';
+    const th = msg.theme || {};
+    if (th.colorPrimario) document.documentElement.style.setProperty('--bg', th.colorPrimario);
+    if (th.colorSecundario) document.documentElement.style.setProperty('--accent', th.colorSecundario);
+    $('#craftTitleText').innerText = th.titulo || CraftApp.locale.ui_title || 'KITCHEN';
     $('#craftCategoryTag').innerText = CraftApp.locale.ui_tab_food || 'FOOD';
     $('#craftPendingTitle').innerText = CraftApp.locale.queue_pending || 'PENDING ITEMS';
     $('#craftCollectTitle').innerText = CraftApp.locale.queue_collect || 'ITEMS TO COLLECT';
