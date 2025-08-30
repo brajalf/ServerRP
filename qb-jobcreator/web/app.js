@@ -1022,6 +1022,9 @@ const CraftUI = (() => {
   let categories = {};
   let currentCategory = null;
   let inventory = {};
+  let queue = [];
+  let tableInv = {};
+  let qTimer = null;
 
   function buildCategories() {
     categories = {};
@@ -1100,6 +1103,43 @@ const CraftUI = (() => {
       });
     }
 
+  function ensureQueueWrap() {
+    let wrap = document.getElementById('craft-queue');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'craft-queue';
+      document.querySelector('#craft .craft-panel').appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  function renderQueue() {
+    const wrap = ensureQueueWrap();
+    let html = '<h3>Cola</h3>';
+    if (queue.length === 0) html += '<div>Sin tareas</div>';
+    queue.forEach((q) => {
+      const rec = recipes[q.recipe] || {};
+      const label = rec.label || (rec.output && rec.output.item) || q.recipe;
+      const remaining = Math.max(0, Math.floor((q.finish - Date.now()) / 1000));
+      html += `<div class="q-item">${label} x${q.amount} (${remaining}s) <button class="btn cancel-craft" data-id="${q.id}">Cancelar</button></div>`;
+    });
+    const ready = Object.entries(tableInv)
+      .map(([item, amt]) => `<div class="q-ready">${item} x${amt}</div>`)
+      .join('');
+    if (ready) {
+      html += `<h4>Listo</h4>${ready}<button class="btn collect-craft">Recoger</button>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  function updateQueue() {
+    postJ('getQueue', { zoneId }).then((data) => {
+      queue = data?.queue || [];
+      tableInv = data?.inventory || {};
+      renderQueue();
+    });
+  }
+
   function open(payload) {
     zoneId = payload.zoneId || payload.zone;
     invMode = payload.inventory || 'qb-inventory';
@@ -1110,6 +1150,8 @@ const CraftUI = (() => {
     renderCategories();
     renderRecipes();
     renderInventory();
+    updateQueue();
+    qTimer = setInterval(updateQueue, 5000);
     document.getElementById('craft').classList.remove('hidden');
     visible = true;
   }
@@ -1117,6 +1159,7 @@ const CraftUI = (() => {
   function close() {
     document.getElementById('craft').classList.add('hidden');
     visible = false;
+    if (qTimer) { clearInterval(qTimer); qTimer = null; }
   }
 
   window.addEventListener('message', (e) => {
@@ -1147,21 +1190,31 @@ const CraftUI = (() => {
     }
   });
 
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('craft-btn')) {
-        const recipe = e.target.dataset.recipe;
-        const max = parseInt(e.target.dataset.max) || 0;
-        let amount = parseInt(prompt('Cantidad a fabricar?') || '0', 10);
-        if (!amount || amount <= 0) return;
-        if (amount > max) {
-          if (typeof toast === 'function') {
-            toast('No hay suficientes materiales', 'error');
-          }
-          return;
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('craft-btn')) {
+      const recipe = e.target.dataset.recipe;
+      const max = parseInt(e.target.dataset.max) || 0;
+      let amount = parseInt(prompt('Cantidad a fabricar?') || '0', 10);
+      if (!amount || amount <= 0) return;
+      if (amount > max) {
+        if (typeof toast === 'function') {
+          toast('No hay suficientes materiales', 'error');
         }
-        window.post('craft', { zoneId: zoneId, recipe, amount });
+        return;
       }
-    });
+      window.post('craft', { zoneId: zoneId, recipe, amount });
+      setTimeout(updateQueue, 200);
+    }
+    if (e.target.classList.contains('cancel-craft')) {
+      const id = parseInt(e.target.dataset.id);
+      window.post('cancelCraft', { zoneId, id });
+      setTimeout(updateQueue, 200);
+    }
+    if (e.target.classList.contains('collect-craft')) {
+      window.post('collectCrafted', { zoneId });
+      setTimeout(updateQueue, 200);
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && visible) {
