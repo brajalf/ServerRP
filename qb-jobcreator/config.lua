@@ -66,6 +66,7 @@ Config.Zone = Config.Zone or {
   TextUIKey  = '[E]',
   ClearArea  = false,
   ClearRadius = 30.0,
+  Debug = false,
 }
 
 -- Plantilla de rangos (puedes añadir más entradas si lo necesitas)

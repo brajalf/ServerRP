@@ -1,6 +1,17 @@
 QBCore = exports['qb-core']:GetCoreObject()
 
 local Active = {}
+local UsedZoneNames = {}
+
+local function uniqueZoneName(base)
+  local name, i = base, 1
+  while UsedZoneNames[name] do
+    i = i + 1
+    name = ('%s_%d'):format(base, i)
+  end
+  UsedZoneNames[name] = true
+  return name
+end
 
 local function removeAll()
   if next(Active) then
@@ -16,6 +27,7 @@ local function removeAll()
     end
   end
   Active = {}
+  UsedZoneNames = {}
 end
 
 local function playerJobData()
@@ -194,9 +206,10 @@ end
 -- =====================================
 local function addTargetForZone(z)
   if not Config.Integrations.UseQbTarget then return end
-  local name = ('jc_%s_%s_%s'):format(z.ztype, z.job, z.id)
+  local name = uniqueZoneName(('jc_%s_%s_%s'):format(z.ztype, z.job, z.id))
   local radius = tonumber(z.radius) or Config.Zone.DefaultRadius or 2.0
-  local size = radius * 2.0
+  local size = (radius + 0.5) * 2.0
+  local distance = radius + 1.0
   local opts = {}
   local usingTarget = GetResourceState('qb-target') == 'started'
   if not usingTarget then
@@ -406,11 +419,12 @@ local function addTargetForZone(z)
         opts = buildOpts(0)
         z._subZones = {}
         for i, dest in ipairs(dests) do
-          local subName = ('%s_t%d'):format(name, i)
+          local subName = uniqueZoneName(('%s_t%d'):format(name, i))
           local zoneOpts = buildOpts(i)
           exports['qb-target']:AddBoxZone(subName, vector3(dest.x, dest.y, dest.z), size, size, {
-            name = subName, heading = 0.0, minZ = dest.z-1.0, maxZ = dest.z+2.0
-          }, { options = zoneOpts, distance = radius + 0.5 })
+            name = subName, heading = 0.0, debugPoly = Config.Zone.Debug, useZ = true,
+            minZ = dest.z-1.0, maxZ = dest.z+2.0
+          }, { options = zoneOpts, distance = distance })
           z._subZones[#z._subZones+1] = subName
         end
       end
@@ -484,8 +498,9 @@ local function addTargetForZone(z)
 
   if #opts > 0 then
     local box = exports['qb-target']:AddBoxZone(name, vector3(z.coords.x, z.coords.y, z.coords.z), size, size, {
-      name = name, heading = 0.0, minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
-    }, { options = opts, distance = radius + 0.5 })
+      name = name, heading = 0.0, debugPoly = Config.Zone.Debug, useZ = true,
+      minZ = z.coords.z-1.0, maxZ = z.coords.z+2.0
+    }, { options = opts, distance = distance })
 
     z._zoneName = name
 
