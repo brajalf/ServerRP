@@ -185,7 +185,7 @@ local function openCraftMenu(z)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(false)
-    SendNUIMessage({ action = 'openCraft', payload = { zone = z.id, recipes = recipes or {} } })
+    SendNUIMessage({ action = 'openCraft', payload = { zone = z.id, zoneId = z.id, recipes = recipes or {} } })
   end, z.id)
 end
 

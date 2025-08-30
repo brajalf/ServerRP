@@ -36,6 +36,21 @@ local function SanitizeRecipeList(recipes)
   return list
 end
 
+local function SanitizeCategoryList(categories)
+  local list = {}
+  if type(categories) ~= 'table' then return list end
+  local valid = {}
+  for _, r in pairs(Config.CraftingRecipes or {}) do
+    if r.category then valid[r.category] = true end
+  end
+  for _, cat in ipairs(categories) do
+    if type(cat) == 'string' and valid[cat] then
+      list[#list+1] = cat
+    end
+  end
+  return list
+end
+
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = {
@@ -362,7 +377,15 @@ end)
 
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function(src, cb, zoneId)
   local function fmt(name, recipe)
-    return { name = name, inputs = recipe.inputs or {}, time = recipe.time or 0, output = recipe.output }
+    return {
+      name = name,
+      inputs = recipe.inputs or {},
+      time = recipe.time or 0,
+      output = recipe.output,
+      category = recipe.category,
+      blueprint = recipe.blueprint,
+      job = recipe.job
+    }
   end
 
   if zoneId then
@@ -370,9 +393,21 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getCraftingData', function
     if not ok then cb({}) return end
 
     local list = {}
-    for _, name in ipairs(zone.data and zone.data.recipes or {}) do
-      local r = Config.CraftingRecipes[name]
-      if r then list[#list + 1] = fmt(name, r) end
+    local data = zone.data or {}
+    local cats = data.allowedCategories
+    if cats and #cats > 0 then
+      local set = {}
+      for _, c in ipairs(cats) do set[c] = true end
+      for name, r in pairs(Config.CraftingRecipes or {}) do
+        if r.category and set[r.category] then
+          list[#list + 1] = fmt(name, r)
+        end
+      end
+    else
+      for _, name in ipairs(data.recipes or {}) do
+        local r = Config.CraftingRecipes[name]
+        if r then list[#list + 1] = fmt(name, r) end
+      end
     end
     cb(list)
     return
@@ -410,6 +445,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   if zone.ztype == 'shop' then
     zone.data.items = SanitizeShopItems(zone.data.items)
   elseif zone.ztype == 'crafting' then
+    zone.data.allowedCategories = SanitizeCategoryList(zone.data.allowedCategories)
     zone.data.recipes = SanitizeRecipeList(zone.data.recipes)
   end
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
@@ -426,6 +462,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   if nz.ztype == 'shop' then
     nz.data.items = SanitizeShopItems(nz.data.items)
   elseif nz.ztype == 'crafting' then
+    nz.data.allowedCategories = SanitizeCategoryList(nz.data.allowedCategories)
     nz.data.recipes = SanitizeRecipeList(nz.data.recipes)
   end
   Runtime.Zones[#Runtime.Zones+1] = nz
@@ -650,6 +687,7 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     if ztype == 'shop' then
       data.items = SanitizeShopItems(data.items)
     elseif ztype == 'crafting' then
+      data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
     end
     data.clearArea = data.clearArea and true or false
@@ -665,6 +703,7 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         if ztype == 'shop' then
           nd.items = SanitizeShopItems(nd.items)
         elseif ztype == 'crafting' then
+          nd.allowedCategories = SanitizeCategoryList(nd.allowedCategories)
           nd.recipes = SanitizeRecipeList(nd.recipes)
         end
         Runtime.Zones[idx] = {
@@ -805,7 +844,16 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
   if not ok then return end
   recipeKey = type(recipeKey) == 'string' and recipeKey or ''
   local allowed = {}
-  for _, n in ipairs(zone.data and zone.data.recipes or {}) do allowed[n] = true end
+  local data = zone.data or {}
+  if data.allowedCategories and #data.allowedCategories > 0 then
+    local set = {}
+    for _, c in ipairs(data.allowedCategories) do set[c] = true end
+    for name, r in pairs(Config.CraftingRecipes or {}) do
+      if r.category and set[r.category] then allowed[name] = true end
+    end
+  else
+    for _, n in ipairs(data.recipes or {}) do allowed[n] = true end
+  end
   if not allowed[recipeKey] then
     TriggerClientEvent('QBCore:Notify', src, 'Receta no permitida', 'error')
     return
@@ -814,6 +862,22 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey)
   if not recipe or not recipe.output then
     TriggerClientEvent('QBCore:Notify', src, 'Receta no válida', 'error')
     return
+  end
+  local pJob = Player.PlayerData and Player.PlayerData.job and Player.PlayerData.job.name
+  if recipe.job then
+    local okJob = false
+    if type(recipe.job) == 'string' then
+      okJob = recipe.job == pJob
+    elseif type(recipe.job) == 'table' then
+      okJob = recipe.job[pJob] == true
+      if not okJob then
+        for _, j in ipairs(recipe.job) do if j == pJob then okJob = true break end end
+      end
+    end
+    if not okJob then
+      TriggerClientEvent('QBCore:Notify', src, 'No tienes el trabajo requerido', 'error')
+      return
+    end
   end
 
   local has, missing = hasMaterials(Player, recipe)
