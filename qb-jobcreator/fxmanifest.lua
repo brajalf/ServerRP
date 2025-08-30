@@ -45,3 +45,5 @@ server_scripts {
   'server/jobsfile.lua',
   'server/main.lua',
 }
+
+server_export 'GetZones'

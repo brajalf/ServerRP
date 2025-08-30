@@ -17,8 +17,27 @@ local function saveReady(license)
   SetResourceKvp(kvKey(license), json.encode(Ready[license] or {}))
 end
 
+local function fetchStations()
+  local list = {}
+  local zones = exports['qb-jobcreator']:GetZones() or {}
+  for _, z in ipairs(zones) do
+    if z.ztype == 'crafting' then
+      list[#list+1] = {
+        id = tostring(z.id),
+        name = z.label or ('Craft '..z.id),
+        category = z.data and z.data.category,
+        job = z.data and z.data.job,
+        icon = z.data and z.data.icon or 'fa-solid fa-hammer'
+      }
+    end
+  end
+  return list
+end
+
 local function findStation(id)
-  for _, s in ipairs(Config.Stations) do if s.id == id then return s end end
+  for _, s in ipairs(fetchStations()) do
+    if tostring(s.id) == tostring(id) then return s end
+  end
 end
 
 local function arrayIncludes(arr, v)
@@ -246,10 +265,11 @@ RegisterNetEvent('invictus_craft:server:leaveAllQueues', function(stationId)
   end
 end)
 
-AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
-  local src = Player.PlayerData.source
-  local stationId = Config.Stations[1] and Config.Stations[1].id
-  if stationId then
-    TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
-  end
-end)
+  AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
+    local src = Player.PlayerData.source
+    local stations = fetchStations()
+    local stationId = stations[1] and stations[1].id
+    if stationId then
+      TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
+    end
+  end)

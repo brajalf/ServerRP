@@ -51,18 +51,8 @@ Config.JobColors = {
 -- ======================================
 -- ESTACIONES (ZONAS) DE CRAFTEO (solo zonas, sin props)
 -- ======================================
-Config.Stations = {
-  {
-    id       = 'kitchen_1',
-    name     = 'KITCHEN',
-    category = 'food',
-    type     = 'box',
-    center   = vec3(1956.17, 4652.55, 40.77),
-    width    = 2.2, length = 2.2, heading = 0.0, minZ = 39.77, maxZ = 42.27,
-    job      = nil,
-    icon     = 'fa-solid fa-utensils'
-  },
-}
+-- Las estaciones se gestionan desde qb-jobcreator
+Config.Stations = {}
 
 -- ======================================
 -- RECETAS
