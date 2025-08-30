@@ -153,7 +153,7 @@ Config.JobColors = Config.JobColors or {
 Config.CraftingTables = Config.CraftingTables or {
   workshop = {                                  -- ID de la mesa / Table ID
     coords = vector3(0.0, 0.0, 0.0),            -- Coordenadas / Coordinates
-    jobs   = { 'mechanic' },                    -- Trabajos permitidos / Allowed jobs
+    jobs   = { 'mechanic', 'police', 'ambulance', 'uwu' },                    -- Trabajos permitidos / Allowed jobs
     radius = 2.0                                -- Radio de interacción / Interaction radius
   }
 }
@@ -165,7 +165,7 @@ Config.CraftableItems = Config.CraftableItems or {
     job      = 'ambulance',
     table    = 'workshop',
     time     = 3000,
-    inputs   = { { item = 'cloth', amount = 2 } },
+    inputs   = { { item = 'cloth', amount = 1 } },
     output   = { item = 'bandage', amount = 1 }
   },
   evidence_bag = {
@@ -174,7 +174,7 @@ Config.CraftableItems = Config.CraftableItems or {
     table    = 'workshop',
     time     = 4000,
     inputs   = {
-      { item = 'plastic', amount = 2 },
+      { item = 'plastic', amount = 1 },
       { item = 'paper',   amount = 1 }
     },
     output   = { item = 'evidence_bag', amount = 1 }
@@ -207,8 +207,8 @@ Config.CraftableItems = Config.CraftableItems or {
     table    = 'workshop',
     time     = 8000,
     inputs   = {
-      { item = 'metalscrap', amount = 4 },
-      { item = 'steel',      amount = 2 },
+      { item = 'metalscrap', amount = 1 },
+      { item = 'steel',      amount = 1 },
       { item = 'plastic',    amount = 1 }
     },
     output   = { item = 'repair_kit', amount = 1 }
@@ -219,8 +219,8 @@ Config.CraftableItems = Config.CraftableItems or {
     table    = 'workshop',
     time     = 5000,
     inputs   = {
-      { item = 'cloth',  amount = 5 },
-      { item = 'thread', amount = 2 }
+      { item = 'cloth',  amount = 1 },
+      { item = 'thread', amount = 1 }
     },
     output   = { item = 'tshirt', amount = 1 }
   },
@@ -241,10 +241,23 @@ Config.CraftableItems = Config.CraftableItems or {
     table    = 'workshop',
     time     = 5000,
     inputs   = {
-      { item = 'metalscrap', amount = 2 },
+      { item = 'metalscrap', amount = 1 },
       { item = 'plastic',    amount = 1 }
     },
     output   = { item = 'lockpick', amount = 1 }
+  },
+  --Uwu Cafe
+  cupcake_morango = {
+    category = 'food',
+    job      = 'uwu',
+    table    = 'workshop',
+    time     = 4000,
+    inputs   = {
+      { item = 'pacote-farinha',  amount = 1 },
+      { item = 'frango',  amount = 1 },
+      { item = 'barra-manteiga', amount = 1 }
+    },
+    output   = { item = 'croissant', amount = 1 }
   }
 }
 Config.CraftingRecipes = Config.CraftableItems -- Compatibilidad / Compatibility
