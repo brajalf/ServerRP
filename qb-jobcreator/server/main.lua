@@ -5,6 +5,7 @@ local JobsFile = _G.JobsFile
 local Runtime = { Jobs = {}, Zones = {} }
 local _lastCreate = {}
 local CreatedStashes = {}
+local findZoneById
 
 local function SanitizeShopItems(items)
   local list = {}
@@ -719,7 +720,7 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
 end)
 
 -- ===== Acciones seguras de zonas =====
-local function findZoneById(id)
+function findZoneById(id)
   for _, z in ipairs(Runtime.Zones) do
     if z.id == id then return z end
   end
