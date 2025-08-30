@@ -35,7 +35,14 @@ function renderAll(){
   setupSearch();
 }
 
-function iconPath(item){ return `${App.images}${item}.png`; }
+function iconPath(item){
+  const name = (item ?? 'unknown')
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_-]/g, '');
+  return `${App.images}${name}.png`;
+}
 function cardStateClass(status){ return status === 'all' ? 'state-all' : status === 'some' ? 'state-some' : 'state-none'; }
 
 function renderCards(){
@@ -50,7 +57,7 @@ function renderCards(){
     const card = document.createElement('div');
     card.className = `card ${cardStateClass(r.status)} ${r.lockedBySkill ? 'locked' : ''}`;
     card.innerHTML = `
-      <div class="img"><img src="${iconPath(r.item)}" onerror="this.style.opacity=.2"></div>
+      <div class="img"><img src="${iconPath(r.item)}" onerror="this.onerror=null;this.src='${iconPath('unknown')}';"></div>
       <div class="title">${r.label || r.item}</div>
       <div class="hint">${App.locale.click_to_info || 'Click to view information'}</div>
       <div class="qtyRow">
@@ -84,7 +91,7 @@ function renderSidebars(){
     const row = document.createElement('div');
     row.className='queueItem';
     row.innerHTML = `
-      <img src="${iconPath(it.item)}" width="32" height="32" onerror="this.style.opacity=.2">
+      <img src="${iconPath(it.item)}" width="32" height="32" onerror="this.onerror=null;this.src='${iconPath('unknown')}';">
       <div>
         <div><b>${it.label}</b></div>
         <div class="badge">${it.amount}x</div>
@@ -99,7 +106,7 @@ function renderSidebars(){
     const row = document.createElement('div');
     row.className='collectItem';
     row.innerHTML = `
-      <img src="${iconPath(it.outputs?.[0]?.item || 'unknown')}" width="32" height="32" onerror="this.style.opacity=.2">
+      <img src="${iconPath(it.outputs?.[0]?.item || 'unknown')}" width="32" height="32" onerror="this.onerror=null;this.src='${iconPath('unknown')}';">
       <div>
         <div><b>${it.label}</b></div>
         <div class="badge">${new Date(it.timestamp*1000).toLocaleTimeString()}</div>
@@ -124,7 +131,7 @@ function showModal(r){
     const row = document.createElement('div');
     row.className='mat';
     row.innerHTML = `
-      <img src="${iconPath(m.item)}" width="36" height="36" onerror="this.style.opacity=.2">
+      <img src="${iconPath(m.item)}" width="36" height="36" onerror="this.onerror=null;this.src='${iconPath('unknown')}';">
       <div>${m.item}</div>
       <div class="need">${m.have||0}/${m.need}${m.noConsume?' (tool)':''}</div>
     `;
@@ -135,7 +142,7 @@ function showModal(r){
     const row = document.createElement('div');
     row.className='out';
     row.innerHTML = `
-      <img src="${iconPath(o.item)}" width="36" height="36" onerror="this.style.opacity=.2">
+      <img src="${iconPath(o.item)}" width="36" height="36" onerror="this.onerror=null;this.src='${iconPath('unknown')}';">
       <div>${o.item}</div>
       <div class="need">x${o.amount}</div>
     `;
