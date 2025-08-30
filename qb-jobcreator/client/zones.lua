@@ -23,6 +23,7 @@ local function removeAll()
         end
       end
       if z._popArea then RemovePopMultiplierArea(z._popArea) end
+      if z._prop and DoesEntityExist(z._prop) then DeleteObject(z._prop) end
       if z._stop ~= nil then z._stop = true end
     end
   end
@@ -466,6 +467,19 @@ local function addTargetForZone(z)
   if not usingTarget then
     if #opts > 0 then
       local zoneVec = vector3(z.coords.x, z.coords.y, z.coords.z)
+      local function spawnZoneProp()
+        local model = `prop_mp_arrow_barrier`
+        RequestModel(model)
+        while not HasModelLoaded(model) do Wait(0) end
+        local obj = CreateObject(model, zoneVec.x, zoneVec.y, zoneVec.z, false, false, false)
+        SetEntityHeading(obj, z.coords.w or 0.0)
+        SetEntityInvincible(obj, true)
+        FreezeEntityPosition(obj, true)
+        SetModelAsNoLongerNeeded(model)
+        return obj
+      end
+      local arrow = spawnZoneProp()
+      z._prop = arrow
       z._stop = false
       CreateThread(function()
         while not z._stop do
@@ -491,6 +505,10 @@ local function addTargetForZone(z)
             Wait(500)
           end
         end
+        if arrow and DoesEntityExist(arrow) then
+          DeleteObject(arrow)
+        end
+        z._prop = nil
       end)
     end
     return
