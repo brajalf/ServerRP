@@ -132,13 +132,14 @@ const App = (() => {
 
   window.resourceName = RESOURCE;
 
-  function post(name, data = {}) {
+  const post = (name, data = {}) => {
     return fetch(`https://${RESOURCE}/${name}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify(data),
     });
-  }
+  };
+  window.post = post;
 
   // --- Helper robusto para NUI JSON (evita "Unexpected end of JSON input")
   async function postJ(name, data = {}) {
@@ -1131,13 +1132,13 @@ const CraftUI = (() => {
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('craft-btn')) {
       const recipe = e.target.dataset.recipe;
-      post('craft', { zoneId: zoneId, recipe });
+      window.post('craft', { zoneId: zoneId, recipe });
     }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && visible) {
-      post('close');
+      window.post('close');
       close();
     }
   });
