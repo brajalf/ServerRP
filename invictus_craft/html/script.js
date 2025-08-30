@@ -48,7 +48,7 @@ function renderCards(){
 
   for (const r of recipes){
     const card = document.createElement('div');
-    card.className = `card ${cardStateClass(r.status)} ${(r.lockedByJob || r.lockedBySkill) ? 'locked' : ''}`;
+    card.className = `card ${cardStateClass(r.status)} ${r.lockedBySkill ? 'locked' : ''}`;
     card.innerHTML = `
       <div class="img"><img src="${iconPath(r.item)}" onerror="this.style.opacity=.2"></div>
       <div class="title">${r.label || r.item}</div>
@@ -59,7 +59,7 @@ function renderCards(){
         <button class="small inc">+</button>
       </div>
       <button class="btn primary craftBtn">${App.locale.craft || 'CRAFT'}</button>
-      ${(r.lockedByJob || r.lockedBySkill) ? `<i class="fa-solid fa-lock lock" title="Locked"></i>` : ''}
+        ${r.lockedBySkill ? `<i class="fa-solid fa-lock lock" title="Locked"></i>` : ''}
     `;
     const qtyInput = card.querySelector('.qtyInput');
     card.querySelector('.dec').onclick = ()=> qtyInput.value = Math.max(1, Number(qtyInput.value)-1);
@@ -68,7 +68,7 @@ function renderCards(){
     card.querySelector('.img').onclick = openModal;
     card.querySelector('.title').onclick = openModal;
     card.querySelector('.craftBtn').onclick = ()=>{
-      if (r.lockedByJob || r.lockedBySkill) return;
+      if (r.lockedBySkill) return;
       fetchNui('craft', { item: r.item, amount: Number(qtyInput.value||1) });
     };
     grid.appendChild(card);

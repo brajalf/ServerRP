@@ -101,21 +101,25 @@ local function buildStationPayload(src, stationId)
 
   for _, r in ipairs(Config.Recipes) do
     if r.category == st.category then
-      local jobLocked = r.requiredJob and not (type(r.requiredJob)=='table' and arrayIncludes(r.requiredJob, jobName) or r.requiredJob == jobName)
-      local skillLocked = not Utils.HasSkill(src, r.skillIID)
-      local status, mats = matsStatusForPlayer(src, r)
+      local jobAllowed = true
+      if r.requiredJob then
+        jobAllowed = type(r.requiredJob) == 'table' and arrayIncludes(r.requiredJob, jobName) or r.requiredJob == jobName
+      end
+      if jobAllowed then
+        local skillLocked = not Utils.HasSkill(src, r.skillIID)
+        local status, mats = matsStatusForPlayer(src, r)
 
-      recipes[#recipes+1] = {
-        item = r.item,
-        label = r.label or r.item,
-        time = r.time,
-        status = status,
-        materials = mats,
-        outputs = r.outputs or { { item = r.item, amount = 1 } },
-        lockedByJob = jobLocked,
-        lockedBySkill = skillLocked,
-        category = r.category
-      }
+        recipes[#recipes+1] = {
+          item = r.item,
+          label = r.label or r.item,
+          time = r.time,
+          status = status,
+          materials = mats,
+          outputs = r.outputs or { { item = r.item, amount = 1 } },
+          lockedBySkill = skillLocked,
+          category = r.category
+        }
+      end
     end
   end
 
