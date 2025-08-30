@@ -2,7 +2,7 @@ Config = Config or {}
 
 -- Inventario y notificaciones
 Config.InventoryType = Config.InventoryType or 'qb'        -- 'qb', 'ox', 'tgiann', 'custom'
-Config.InventoryImagePath = Config.InventoryImagePath or 'nui://qb-inventory/html/images/'
+Config.InventoryImagePath = Config.InventoryImagePath or 'nui://ox_inventory/web/images/'
 Config.NotifySystem = Config.NotifySystem or 'qb'          -- 'qb', 'ox', 'custom'
 Config.NotifyTitle = Config.NotifyTitle or 'Job Creator'
 
@@ -15,12 +15,12 @@ Config.General = Config.General or {
 
 -- ===== INTERFACE CONFIGURATION / CONFIGURACIÓN DE INTERFAZ =====
 Config.Interface = Config.Interface or {
-  InventoryImagePath = 'html/images', -- Ruta a imágenes del inventario / Path to inventory images
+  InventoryImagePath = 'nui://ox_inventory/web/images/', -- Ruta a imágenes del inventario / Path to inventory images
 }
 
 -- ===== INVENTORY SYSTEM CONFIGURATION / CONFIGURACIÓN DEL SISTEMA DE INVENTARIO =====
 Config.InventorySystem = Config.InventorySystem or {
-  InventoryType = 'qb', -- Tipo de inventario usado ('qb','ox','custom') / Inventory type in use
+  InventoryType = 'ox', -- Tipo de inventario usado ('qb','ox','custom') / Inventory type in use
 }
 
 -- ===== SKILL SYSTEM / SISTEMA DE HABILIDADES =====
@@ -62,7 +62,7 @@ Config.Integrations = Config.Integrations or {
   UseOxTarget     = false,
   UseQbManagement = false,   -- fondos de sociedad; si no, fallback propio en DB
   UseQbInventory  = false,
-  UseOxInventory  = false,
+  UseOxInventory  = true,
   UseBossMenu     = true,
   -- Eventos de hospital. Ajusta los nombres según el script que uses
   -- qb-ambulancejob (por defecto):
