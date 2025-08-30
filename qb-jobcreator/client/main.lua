@@ -236,7 +236,7 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
   craftZone = zoneId
   uiOpen = true
   SetNuiFocus(true, true)
-  SendNUIMessage({ action = 'open', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = Config and Config.InventoryImagePath })
+  SendNUIMessage({ action = 'openCraft', locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {}, images = Config and Config.InventoryImagePath })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
     QBCore.Functions.TriggerCallback('qb-jobcreator:server:getQueue', function(res)
       local ready = {}
