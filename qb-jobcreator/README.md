@@ -46,3 +46,14 @@ incluir opcionalmente `blueprint`, `skill` y `successChance`.
 Se soportan planos opcionales y bonificaciones por habilidad mediante `qb-skillz`;
 el servidor verifica los materiales y entrega el resultado al jugador cuando el
 proceso finaliza.
+
+## Integraciones de inventario
+
+En `config.lua`, dentro de `Config.Integrations`, se añadieron las opciones:
+
+```lua
+UseOxInventory = false, -- habilita la capa para ox_inventory si el recurso está iniciado
+UseQbInventory = false, -- fuerza el uso de qb-inventory
+```
+
+Las funciones de manejo de inventario (`CheckItem`, `RemoveItem` y `AddItem`) detectan automáticamente `ox_inventory` y utilizan la integración apropiada.
