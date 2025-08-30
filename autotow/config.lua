@@ -11,7 +11,7 @@ Config.IntervalMinutes = 30
 Config.AlertDuration = 20
 
 -- Distancia mínima a cualquier jugador para poder borrar un vehículo
-Config.MinDistanceFromAnyPlayer = 10.0
+Config.MinDistanceFromAnyPlayer = 0
 
 -- Exclusiones / filtros
 Config.SkipEmergencyVehicles = true      -- Clase 18
