@@ -1058,29 +1058,33 @@ const CraftUI = (() => {
   function renderRecipes() {
     const wrap = document.getElementById('craft-list');
     wrap.innerHTML = '';
-    (categories[currentCategory] || []).forEach(({ name, rec }) => {
-      const card = document.createElement('div');
-      card.className = 'craft-item';
-      const out = rec.output && rec.output.item || name;
-      const base = invMode === 'ox_inventory'
-        ? 'nui://ox_inventory/web/images/'
-        : 'nui://qb-inventory/html/images/';
-      const imgSrc = `${base}${out}.png`;
-      const inputs = (rec.inputs || [])
-        .map(i => {
-          const need = i.amount || i.qty || 1;
-          const have = inventory[i.item] || 0;
-          const cls = have < need ? ' class="missing"' : '';
-          return `<li${cls}>${need}x ${i.item}</li>`;
-        })
-        .join('');
-      card.innerHTML = `
-        <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
-        <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
-        <button class="btn craft-btn" data-recipe="${name}">Fabricar</button>`;
-      wrap.appendChild(card);
-    });
-  }
+      (categories[currentCategory] || []).forEach(({ name, rec }) => {
+        const card = document.createElement('div');
+        card.className = 'craft-item';
+        const out = rec.output && rec.output.item || name;
+        const base = invMode === 'ox_inventory'
+          ? 'nui://ox_inventory/web/images/'
+          : 'nui://qb-inventory/html/images/';
+        const imgSrc = `${base}${out}.png`;
+        let maxCraft = Infinity;
+        const inputs = (rec.inputs || [])
+          .map(i => {
+            const need = i.amount || i.qty || 1;
+            const have = inventory[i.item] || 0;
+            maxCraft = Math.min(maxCraft, Math.floor(have / need) || 0);
+            const cls = have < need ? ' class="missing"' : '';
+            return `<li${cls}>${need}x ${i.item}</li>`;
+          })
+          .join('');
+        if (maxCraft === Infinity) maxCraft = 0;
+        const disabled = maxCraft <= 0 ? ' disabled' : '';
+        card.innerHTML = `
+          <img src="${imgSrc}" alt="${out}" onerror="this.onerror=null;this.src='logo.png';">
+          <div class="materials"><strong>${rec.label || out}</strong><ul>${inputs}</ul></div>
+          <button class="btn craft-btn" data-recipe="${name}" data-max="${maxCraft}"${disabled}>Fabricar</button>`;
+        wrap.appendChild(card);
+      });
+    }
 
   function open(payload) {
     zoneId = payload.zoneId || payload.zone;
@@ -1129,12 +1133,21 @@ const CraftUI = (() => {
     }
   });
 
-  document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('craft-btn')) {
-      const recipe = e.target.dataset.recipe;
-      window.post('craft', { zoneId: zoneId, recipe });
-    }
-  });
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('craft-btn')) {
+        const recipe = e.target.dataset.recipe;
+        const max = parseInt(e.target.dataset.max) || 0;
+        let amount = parseInt(prompt('Cantidad a fabricar?') || '0', 10);
+        if (!amount || amount <= 0) return;
+        if (amount > max) {
+          if (typeof toast === 'function') {
+            toast('No hay suficientes materiales', 'error');
+          }
+          return;
+        }
+        window.post('craft', { zoneId: zoneId, recipe, amount });
+      }
+    });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && visible) {
