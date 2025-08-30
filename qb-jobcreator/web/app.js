@@ -161,6 +161,7 @@ const App = (() => {
   }
 
   // ===== Toasts =====
+  let customNotify = null;
   function ensureToast() {
     if ($('#toast-wrap')) return;
     const w = document.createElement('div');
@@ -175,6 +176,9 @@ const App = (() => {
     document.body.appendChild(w);
   }
   function toast(msg, type = 'info') {
+    if (typeof customNotify === 'function') {
+      return customNotify(msg, type);
+    }
     ensureToast();
     const t = document.createElement('div');
     t.textContent = msg;
@@ -190,6 +194,8 @@ const App = (() => {
       setTimeout(() => t.remove(), 300);
     }, 1800);
   }
+  window.jobCreatorToast = toast;
+  window.setJobCreatorNotify = (fn) => { customNotify = typeof fn === 'function' ? fn : null; };
 
   function show() { $('#app').classList.remove('hidden'); }
   function hide() { $('#app').classList.add('hidden'); }
@@ -1017,7 +1023,8 @@ const App = (() => {
 const CraftUI = (() => {
   let zoneId = null;
   let visible = false;
-  let invMode = 'qb-inventory';
+  let invMode = 'qb';
+  let invImg = 'nui://qb-inventory/html/images/';
   let recipes = {};
   let categories = {};
   let currentCategory = null;
@@ -1075,9 +1082,7 @@ const CraftUI = (() => {
       const card = document.createElement('div');
       card.className = 'craft-item';
       const outs = rec.outputs || (rec.output ? [rec.output] : []);
-      const base = invMode === 'ox_inventory'
-        ? 'nui://ox_inventory/web/images/'
-        : 'nui://qb-inventory/html/images/';
+      const base = invImg;
       const outIcons = outs
         .map(o => `<img src="${base}${o.item}.png" alt="${o.item}" onerror="this.onerror=null;this.src='logo.png';">`)
         .join('');
@@ -1151,7 +1156,12 @@ const CraftUI = (() => {
 
   function open(payload) {
     zoneId = payload.zoneId || payload.zone;
-    invMode = payload.inventory || 'qb-inventory';
+    invMode = payload.inventory || invMode;
+    invImg = payload.imagePath || (invMode === 'ox'
+      ? 'nui://ox_inventory/web/images/'
+      : invMode === 'tgiann'
+        ? 'nui://tgiann-inventory/html/img/'
+        : 'nui://qb-inventory/html/images/');
     recipes = payload.recipes || {};
     inventory = payload.inventoryItems || payload.playerInventory || payload.items || payload.inv || {};
     buildCategories();
