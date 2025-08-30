@@ -10,7 +10,7 @@ const $ = (sel) => document.querySelector(sel);
 
 window.addEventListener('message', (e) => {
   const msg = e.data || {};
-  if (msg.action === 'open') {
+  if (msg.action === 'openCraft') {
     CraftApp.locale = msg.locale || {};
     CraftApp.images = msg.images || CraftApp.images;
     $('#craftTitleText').innerText = CraftApp.locale.ui_title || 'KITCHEN';
