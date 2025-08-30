@@ -112,6 +112,25 @@ local function Multi_Has(citizenid, job)
   return false
 end
 
+local function jobMatches(spec, job)
+  if not spec or not job then return false end
+  if type(spec) == 'string' then
+    return spec == job
+  elseif type(spec) == 'table' then
+    if spec[job] then return true end
+    for _, j in ipairs(spec) do if j == job then return true end end
+  end
+  return false
+end
+
+local function checkRecipeJob(recipeJob, zoneJob, playerJob)
+  if not recipeJob then return true, false end
+  if jobMatches(recipeJob, zoneJob) or jobMatches(recipeJob, playerJob) then
+    return true, false
+  end
+  return false, true
+end
+
 playerInJobZone = function(src, zone, ztype)
   if not zone or (ztype and zone.ztype ~= ztype) then return false end
   local Player = QBCore.Functions.GetPlayer(src)
@@ -403,6 +422,10 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getZones', function(src, c
 end)
 
 local function CollectCraftingData(src, zoneId)
+  local Player = QBCore.Functions.GetPlayer(src)
+  local jobName = Player and Player.PlayerData and Player.PlayerData.job and Player.PlayerData.job.name
+  local showLocked = Config.LockedItemsDisplay and Config.LockedItemsDisplay.showLocked
+
   local function fmt(name, recipe)
     return {
       name = name,
@@ -427,13 +450,25 @@ local function CollectCraftingData(src, zoneId)
       for _, c in ipairs(cats) do set[c] = true end
       for name, r in pairs(Config.CraftingRecipes or {}) do
         if r.category and set[r.category] then
-          list[#list + 1] = fmt(name, r)
+          local allow, locked = checkRecipeJob(r.job, zone.job, jobName)
+          if allow or (locked and showLocked) then
+            local t = fmt(name, r)
+            if locked then t.lockedByJob = true end
+            list[#list + 1] = t
+          end
         end
       end
     else
       for _, name in ipairs(data.recipes or {}) do
         local r = Config.CraftingRecipes[name]
-        if r then list[#list + 1] = fmt(name, r) end
+        if r then
+          local allow, locked = checkRecipeJob(r.job, zone.job, jobName)
+          if allow or (locked and showLocked) then
+            local t = fmt(name, r)
+            if locked then t.lockedByJob = true end
+            list[#list + 1] = t
+          end
+        end
       end
     end
     return list
@@ -441,7 +476,12 @@ local function CollectCraftingData(src, zoneId)
 
   local all = {}
   for name, r in pairs(Config.CraftingRecipes or {}) do
-    all[#all + 1] = fmt(name, r)
+    local allow, locked = checkRecipeJob(r.job, nil, jobName)
+    if allow or (locked and showLocked) then
+      local t = fmt(name, r)
+      if locked then t.lockedByJob = true end
+      all[#all + 1] = t
+    end
   end
   return all
 end
@@ -929,20 +969,10 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amoun
   end
 
   local jobName = Player.PlayerData and Player.PlayerData.job and Player.PlayerData.job.name
-  if recipe.job then
-    local okJob = false
-    if type(recipe.job) == 'string' then
-      okJob = recipe.job == jobName
-    elseif type(recipe.job) == 'table' then
-      okJob = recipe.job[jobName] == true
-      if not okJob then
-        for _, j in ipairs(recipe.job) do if j == jobName then okJob = true break end end
-      end
-    end
-    if not okJob then
-      TriggerClientEvent('QBCore:Notify', src, 'No tienes el trabajo requerido', 'error')
-      return
-    end
+  local allowed = checkRecipeJob(recipe.job, zone.job, jobName)
+  if not allowed then
+    TriggerClientEvent('QBCore:Notify', src, 'No tienes el trabajo requerido', 'error')
+    return
   end
 
   if recipe.blueprint then
