@@ -10,7 +10,7 @@ local function useOx()
   return GetResourceState('ox_inventory') == 'started'
 end
 
-function Inventory.CheckItem(src, item, amount)
+function Inventory.HasItem(src, item, amount)
   local count = 0
   if useOx() then
     count = exports.ox_inventory:Search(src, 'count', item) or 0
@@ -20,10 +20,12 @@ function Inventory.CheckItem(src, item, amount)
     count = it and (it.amount or it.count or 0) or 0
   end
   if amount then
-    return count >= amount
+    return count >= amount, count
   end
-  return count
+  return count > 0, count
 end
+
+Inventory.CheckItem = Inventory.HasItem
 
 function Inventory.RemoveItem(src, item, amount, metadata, slot)
   if useOx() then

@@ -10,12 +10,11 @@ lua54 'yes'
 
 ui_page 'html/index.html'
 
-shared_scripts {
-  '@ox_lib/init.lua',      -- opcional (para notificaciones), quítalo si no usas ox_lib
-  'config.lua',
-  'locales.lua',
-  'shared/bridge.lua'
-}
+  shared_scripts {
+    '@ox_lib/init.lua',      -- opcional (para notificaciones), quítalo si no usas ox_lib
+    'config.lua',
+    'locales.lua',
+  }
 
 client_scripts {
   'client/target.lua',
@@ -33,8 +32,9 @@ files {
   'html/script.js'
 }
 
-dependencies {
-  'qb-core',
-  'ox_inventory'
-  -- 'qb-target' u 'ox_target' (elige uno en config)
-}
+  dependencies {
+    'qb-core',
+    'ox_inventory',
+    'qb-jobcreator'
+    -- 'qb-target' u 'ox_target' (elige uno en config)
+  }

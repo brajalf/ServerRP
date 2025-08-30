@@ -1,4 +1,23 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local Inventory = require '@qb-jobcreator/shared/sh_inventory.lua'
+local Utils = require '@qb-jobcreator/shared/sh_utils.lua'
+
+local function Notify(src, msg, typ)
+  typ = typ or 'inform'
+  if Config.NotifySystem == 'ox' then
+    if src == 0 then
+      if lib and lib.notify then lib.notify({ title = Config.NotifyTitle, description = msg, type = typ }) end
+    else
+      TriggerClientEvent('ox_lib:notify', src, { title = Config.NotifyTitle, description = msg, type = typ })
+    end
+  elseif Config.NotifySystem == 'qb' then
+    if src == 0 then print(('[Notify:%s] %s'):format(typ, msg)) return end
+    TriggerClientEvent('QBCore:Notify', src, msg, typ)
+  else
+    if src == 0 then print(('[Notify:%s] %s'):format(typ, msg)) return end
+    TriggerClientEvent('chat:addMessage', src, { args = { '^2'..Config.NotifyTitle, msg } })
+  end
+end
 
 local Queues = {}           -- [stationId] = { [src] = { entries = { {id, item, amount, endTime, label}, ... } } }
 local Ready  = {}           -- [license] = { {id, stationId, label, outputs, timestamp}, ... }
@@ -52,7 +71,7 @@ end
 
 local function canUseStation(src, station)
   if not station or not station.job then return true end
-  local job = Bridge.GetJob(src)
+  local job = Utils.GetJob(src)
   return type(station.job) == 'table' and arrayIncludes(station.job, job) or station.job == job
 end
 
@@ -61,7 +80,7 @@ local function matsStatusForPlayer(src, recipe)
   local mats = {}
 
   for _,m in ipairs(recipe.materials or {}) do
-    local ok, count = Bridge.HasItem(src, m.item, m.amount)
+    local ok, count = Inventory.HasItem(src, m.item, m.amount)
     mats[#mats+1] = { item = m.item, need = m.amount, have = count, noConsume = m.noConsume or false }
     if not ok then hasAll = false end
     if count > 0 then hasSome = true end
@@ -74,16 +93,16 @@ local function buildStationPayload(src, stationId)
   local st = findStation(stationId)
   if not st then return { error = 'station not found' } end
 
-  local license = Bridge.GetLicense(src)
+  local license = Utils.GetLicense(src)
   local readyList = loadReady(license)
 
   local recipes = {}
-  local jobName = Bridge.GetJob(src)
+  local jobName = Utils.GetJob(src)
 
   for _, r in ipairs(Config.Recipes) do
     if r.category == st.category then
       local jobLocked = r.requiredJob and not (type(r.requiredJob)=='table' and arrayIncludes(r.requiredJob, jobName) or r.requiredJob == jobName)
-      local skillLocked = not Bridge.HasSkill(src, r.skillIID)
+      local skillLocked = not Utils.HasSkill(src, r.skillIID)
       local status, mats = matsStatusForPlayer(src, r)
 
       recipes[#recipes+1] = {
@@ -113,7 +132,7 @@ end
 
 QBCore.Functions.CreateCallback('invictus_craft:server:stationData', function(src, cb, stationId)
   if not canUseStation(src, findStation(stationId)) then
-    Bridge.Notify(src, 'No tienes acceso a esta estación', 'error')
+    Notify(src, 'No tienes acceso a esta estación', 'error')
     cb({}) return
   end
   cb(buildStationPayload(src, stationId))
@@ -122,7 +141,7 @@ end)
 local function scheduleFinish(stationId, src, entry)
   local ms = math.floor((entry.time or 1) * 1000)
   SetTimeout(ms, function()
-    local license = Bridge.GetLicense(src)
+    local license = Utils.GetLicense(src)
     local ready = loadReady(license)
 
     ready[#ready+1] = {
@@ -142,7 +161,7 @@ local function scheduleFinish(stationId, src, entry)
     end
 
     TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
-    Bridge.Notify(src, (entry.label .. ' listo para recoger.'), 'success')
+    Notify(src, (entry.label .. ' listo para recoger.'), 'success')
   end)
 end
 
@@ -150,20 +169,20 @@ RegisterNetEvent('invictus_craft:server:startCraft', function(stationId, item, a
   local src = source
   local st  = findStation(stationId)
   if not st then return end
-  if not canUseStation(src, st) then Bridge.Notify(src, 'No puedes usar esta estación', 'error') return end
+  if not canUseStation(src, st) then Notify(src, 'No puedes usar esta estación', 'error') return end
 
   amount = math.max(1, math.floor(tonumber(amount or 1)))
 
   local recipe = getRecipeByItem(item)
   if not recipe or recipe.category ~= st.category then return end
 
-  local job = Bridge.GetJob(src)
+  local job = Utils.GetJob(src)
   if recipe.requiredJob then
     local ok = type(recipe.requiredJob) == 'table' and arrayIncludes(recipe.requiredJob, job) or recipe.requiredJob == job
-    if not ok then Bridge.Notify(src, _L('job_locked'), 'error') return end
+    if not ok then Notify(src, _L('job_locked'), 'error') return end
   end
-  if not Bridge.HasSkill(src, recipe.skillIID) then
-    Bridge.Notify(src, _L('skill_locked'), 'error')
+  if not Utils.HasSkill(src, recipe.skillIID) then
+    Notify(src, _L('skill_locked'), 'error')
     return
   end
 
@@ -172,7 +191,7 @@ RegisterNetEvent('invictus_craft:server:startCraft', function(stationId, item, a
     if stationQueues[src] then totalQueued = totalQueued + (#stationQueues[src].entries) end
   end
   if totalQueued + 1 > Config.MaxItemsPerPlayer then
-    Bridge.Notify(src, _L('queue_limit'), 'error') return
+    Notify(src, _L('queue_limit'), 'error') return
   end
 
   Queues[stationId] = Queues[stationId] or {}
@@ -181,7 +200,7 @@ RegisterNetEvent('invictus_craft:server:startCraft', function(stationId, item, a
   local entries    = qByStation[src].entries
 
   if #entries >= Config.MaxQueueSize then
-    Bridge.Notify(src, _L('queue_full'), 'error') return
+    Notify(src, _L('queue_full'), 'error') return
   end
 
   local requiredList = {}
@@ -192,14 +211,14 @@ RegisterNetEvent('invictus_craft:server:startCraft', function(stationId, item, a
   end
 
   for _, req in ipairs(requiredList) do
-    local ok, have = Bridge.HasItem(src, req.item, req.amount)
+    local ok, have = Inventory.HasItem(src, req.item, req.amount)
     if not ok then
-      Bridge.Notify(src, _L('not_enough_mats') .. (' (%s %d/%d)'):format(req.item, have, req.amount), 'error')
+      Notify(src, _L('not_enough_mats') .. (' (%s %d/%d)'):format(req.item, have, req.amount), 'error')
       return
     end
   end
   for _, req in ipairs(requiredList) do
-    Bridge.RemoveItem(src, req.item, req.amount)
+    Inventory.RemoveItem(src, req.item, req.amount)
   end
 
   local totalTime = (recipe.time or 1) * amount
@@ -224,13 +243,13 @@ RegisterNetEvent('invictus_craft:server:startCraft', function(stationId, item, a
   entries[#entries+1] = entry
   scheduleFinish(stationId, src, entry)
 
-  Bridge.Notify(src, _L('queued') .. (' (%s x%d)'):format(label, amount), 'success')
+  Notify(src, _L('queued') .. (' (%s x%d)'):format(label, amount), 'success')
   TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
 end)
 
 RegisterNetEvent('invictus_craft:server:collectOutput', function(stationId, collectId)
   local src = source
-  local license = Bridge.GetLicense(src)
+  local license = Utils.GetLicense(src)
   local readyList = loadReady(license)
 
   local idx, data = nil, nil
@@ -241,16 +260,16 @@ RegisterNetEvent('invictus_craft:server:collectOutput', function(stationId, coll
 
   local okAll = true
   for _, o in ipairs(data.outputs or {}) do
-    local ok = Bridge.AddItem(src, o.item, o.amount)
+    local ok = Inventory.AddItem(src, o.item, o.amount)
     if not ok then okAll = false end
   end
 
   if okAll then
     table.remove(readyList, idx)
     saveReady(license)
-    Bridge.Notify(src, ('Recogiste %s'):format(data.label), 'success')
+    Notify(src, ('Recogiste %s'):format(data.label), 'success')
   else
-    Bridge.Notify(src, 'No tienes espacio suficiente', 'error')
+    Notify(src, 'No tienes espacio suficiente', 'error')
   end
 
   TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
@@ -261,7 +280,7 @@ RegisterNetEvent('invictus_craft:server:leaveAllQueues', function(stationId)
   if Queues[stationId] and Queues[stationId][src] then
     Queues[stationId][src] = { entries = {} }
     TriggerClientEvent('invictus_craft:client:update', src, buildStationPayload(src, stationId))
-    Bridge.Notify(src, 'Has salido de la cola', 'inform')
+    Notify(src, 'Has salido de la cola', 'inform')
   end
 end)
 

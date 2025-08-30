@@ -938,14 +938,18 @@ RegisterNetEvent('qb-jobcreator:server:craft', function(zoneId, recipeKey, amoun
     end
   end
 
-  if recipe.blueprint and not Inventory.CheckItem(src, recipe.blueprint, 1) then
-    TriggerClientEvent('QBCore:Notify', src, 'Falta el plano requerido', 'error')
-    return
+  if recipe.blueprint then
+    local ok = Inventory.HasItem(src, recipe.blueprint, 1)
+    if not ok then
+      TriggerClientEvent('QBCore:Notify', src, 'Falta el plano requerido', 'error')
+      return
+    end
   end
 
   for _, inp in ipairs(recipe.inputs or {}) do
     local need = (inp.amount or 1) * amount
-    if not Inventory.CheckItem(src, inp.item, need) then
+    local ok = Inventory.HasItem(src, inp.item, need)
+    if not ok then
       TriggerClientEvent('QBCore:Notify', src, 'Materiales insuficientes', 'error')
       return
     end
@@ -1066,7 +1070,7 @@ RegisterNetEvent('qb-jobcreator:server:sell', function(zoneId)
   local price  = tonumber(data.price) or 10
   local max    = tonumber(data.max) or 10
   local toSociety = data.toSociety ~= false
-  local count = Inventory.CheckItem(src, item)
+  local _, count = Inventory.HasItem(src, item)
   local qty = math.min(count, max)
   if qty <= 0 then return end
   Inventory.RemoveItem(src, item, qty)
