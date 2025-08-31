@@ -253,14 +253,12 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
   local zone = findZoneById(zoneId)
   local theme = zone and zone.data and zone.data.theme or nil
   local title = (theme and theme.titulo) or (zone and zone.label) or nil
-  local category = zone and zone.data and zone.data.category or nil
   SendNUIMessage({
     action = 'openCraft',
     locale = Locales and (Config and Locales[Config.language or Config.Language] or {}) or {},
     images = imagePath,
     theme = theme,
-    title = title,
-    category = category
+    title = title
   })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingData', function(recipes)
     local function getItemCount(name)

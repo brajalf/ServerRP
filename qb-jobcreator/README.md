@@ -43,6 +43,9 @@ En la tienda del herrero añade `metal_ore` con el precio y stock deseado.  Los 
 recetas permitidas.  Cada receta requiere `inputs`, `time` y `output`, y puede
 incluir opcionalmente `blueprint`, `skill` y `successChance`.
 
+En estas zonas, las recetas mostradas se filtran solo mediante `allowedCategories` o
+`recipes`. El campo `category` dentro de la zona ha sido eliminado.
+
 Se soportan planos opcionales y bonificaciones por habilidad mediante `qb-skillz`;
 el servidor verifica los materiales y entrega el resultado al jugador cuando el
 proceso finaliza.

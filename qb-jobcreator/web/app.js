@@ -734,7 +734,6 @@ const App = (() => {
                             const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
                             const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
                             if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
-                            data.category = document.getElementById('zcateg')?.value || '';
                             const jobStr = document.getElementById('zjob')?.value || '';
                             if (jobStr.includes(',')) data.job = jobStr.split(',').map(s=>s.trim()).filter(s=>s);
                             else if (jobStr !== '') data.job = jobStr;
@@ -807,7 +806,7 @@ const App = (() => {
           const th = d.theme || {};
           box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
                         row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`) +
-                        row(inp('zcateg','Categoría','food', d.category || '') + inp('zjob','Job Lock','', jobVal)) +
+                        row(inp('zjob','Job Lock','', jobVal)) +
                         row(inp('zicon','Icono','fa-solid fa-hammer', d.icon || '')) +
                         row(inp('zcpri','Color Primario','#53a88c', th.colorPrimario || '') + inp('zcsec','Color Secundario','#2f7a62', th.colorSecundario || '') + inp('zctitle','Título','', th.titulo || ''));
         } else if (t === 'cloakroom') {
@@ -872,7 +871,6 @@ const App = (() => {
             const cats = Array.from(document.getElementById('zcats')?.selectedOptions || []).map((o) => o.value);
             const recs = Array.from(document.getElementById('zrecipes')?.selectedOptions || []).map((o) => o.value);
             if (cats.length > 0) data.allowedCategories = cats; else data.recipes = recs;
-            data.category = document.getElementById('zcateg')?.value || '';
             const jobStr = document.getElementById('zjob')?.value || '';
             if (jobStr.includes(',')) data.job = jobStr.split(',').map(s=>s.trim()).filter(s=>s);
             else if (jobStr !== '') data.job = jobStr;
@@ -943,9 +941,9 @@ const App = (() => {
         const catList = Array.from(new Set(Object.values(state.recipes || {}).map(r => r.category || 'General')));
         const catOpts = catList.map((c) => `<option value="${c}">${c}</option>`).join('');
         const recOpts = Object.keys(state.recipes || {}).map((r) => `<option>${r}</option>`).join('');
-        box.innerHTML = row(`<div style="flex:1"><label>Categorías</label><select id="zcats" class="input" multiple>${catOpts}</select></div>`) +
-                        row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`) +
-                        row(inp('zcateg','Categoría','food') + inp('zjob','Job Lock','')) +
+        box.innerHTML = row(`<div style=\"flex:1\"><label>Categorías</label><select id=\"zcats\" class=\"input\" multiple>${catOpts}</select></div>`) +
+                        row(`<div style=\"flex:1\"><label>Recetas</label><select id=\"zrecipes\" class=\"input\" multiple>${recOpts}</select></div>`) +
+                        row(inp('zjob','Job Lock','')) +
                         row(inp('zicon','Icono','fa-solid fa-hammer')) +
                         row(inp('zcpri','Color Primario','#53a88c') + inp('zcsec','Color Secundario','#2f7a62') + inp('zctitle','Título',''));
       } else if (t === 'cloakroom') {

@@ -16,8 +16,7 @@ local testZone = {
   id = 1,
   job = 'testjob',
   data = {
-    category = 'food',
-    allowedCategories = {},
+    allowedCategories = { 'food' },
     recipes = {}
   }
 }
@@ -46,4 +45,4 @@ for _, r in ipairs(result) do
   assert(r.category == 'food', 'Unexpected category '..tostring(r.category))
 end
 
-print('CollectCraftingData category test passed')
+print('CollectCraftingData allowedCategories test passed')
