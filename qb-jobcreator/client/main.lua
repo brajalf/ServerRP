@@ -173,6 +173,8 @@ end)
 RegisterNUICallback('getEmployees', function(data, cb) QBCore.Functions.TriggerCallback('qb-jobcreator:server:getEmployees', function(list) cb(list or {}) end, data.job) end)
 RegisterNUICallback('fire', function(data, cb) TriggerServerEvent('qb-jobcreator:server:fire', data.job, data.citizenid); cb({ ok = true }) end)
 RegisterNUICallback('setGrade', function(data, cb) TriggerServerEvent('qb-jobcreator:server:setGrade', data.job, data.citizenid, data.grade); cb({ ok = true }) end)
+RegisterNUICallback('promote', function(data, cb) TriggerServerEvent('qb-jobcreator:server:promote', data.job, data.citizenid, data.grade); cb({ ok = true }) end)
+RegisterNUICallback('transfer', function(data, cb) TriggerServerEvent('qb-jobcreator:server:transfer', data.job, data.citizenid, data.to, data.grade); cb({ ok = true }) end)
 
 -- ===== Reclutamiento =====
 local function NearbyFallback(jobName, radius)
