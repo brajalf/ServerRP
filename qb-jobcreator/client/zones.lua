@@ -211,6 +211,7 @@ local function addTargetForZone(z)
   local usingTarget = GetResourceState('qb-target') == 'started'
   if not usingTarget then
     print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
+    QBCore.Functions.Notify('qb-target no iniciado, usando fallback', 'error')
   end
 
   if z.ztype == 'boss' then
