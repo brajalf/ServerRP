@@ -394,17 +394,21 @@ const App = (() => {
   function openJobModal() {
     const html = `
       <div class="row">
-        <div><label>Nombre técnico</label><input id="jname" class="input"/></div>
-        <div><label>Etiqueta</label><input id="jlabel" class="input"/></div>
+        <div><label>Nombre técnico</label><input id="jname" class="input" required pattern="[A-Za-z0-9]+"/></div>
+        <div><label>Etiqueta</label><input id="jlabel" class="input" required/></div>
       </div>
       <div class="row">
         <div><label>Tipo</label><input id="jtype" class="input" placeholder="gobierno, médico, mecánico..."/></div>
         <div><label>Whitelist</label><select id="jwl"><option value="0">No</option><option value="1">Sí</option></select></div>
       </div>`;
     modal('Agregar Trabajo', html, () => {
+      const name = $('#jname').value.trim();
+      const label = $('#jlabel').value.trim();
+      if (!/^[A-Za-z0-9]+$/.test(name)) { toast('Nombre técnico inválido', 'error'); return; }
+      if (!label) { toast('Etiqueta requerida', 'error'); return; }
       const payload = {
-        name: $('#jname').value,
-        label: $('#jlabel').value,
+        name,
+        label,
         type: $('#jtype').value,
         whitelisted: $('#jwl').value === '1',
       };
@@ -426,14 +430,17 @@ const App = (() => {
       const existing = { ...grades };
       const seen = {};
       const newGrades = {};
-      rows.forEach((row) => {
+      for (const row of rows) {
         const k = row.dataset.k;
-        const g = {
-          label: row.querySelector('.g-label').value,
-          name: row.querySelector('.g-name').value,
-          payment: Number(row.querySelector('.g-pay').value) || 0,
-          isboss: row.querySelector('.g-boss').checked,
-        };
+        const label = row.querySelector('.g-label').value.trim();
+        const name = row.querySelector('.g-name').value.trim();
+        const payment = Number(row.querySelector('.g-pay').value) || 0;
+        const isboss = row.querySelector('.g-boss').checked;
+        if (!label || !/^[A-Za-z0-9]+$/.test(name) || payment < 0) {
+          toast('Datos de rango inválidos', 'error');
+          return;
+        }
+        const g = { label, name, payment, isboss };
         newGrades[k] = g;
         if (existing[k]) {
           post('updateGrade', { job: job.name, grade: k, data: g });
@@ -441,7 +448,7 @@ const App = (() => {
           post('addGrade', { job: job.name, grade: k, data: g });
         }
         seen[k] = true;
-      });
+      }
       Object.keys(existing).forEach((k) => { if (!seen[k]) post('deleteGrade', { job: job.name, grade: k }); });
       job.grades = newGrades;
       closeModal();
@@ -455,9 +462,9 @@ const App = (() => {
       row.className = 'row grade-row';
       row.dataset.k = k;
       row.innerHTML = `
-        <div><input class="input g-label" placeholder="Etiqueta" value="${g.label || ''}"/></div>
-        <div><input class="input g-name" placeholder="Nombre" value="${g.name || ''}"/></div>
-        <div><input class="input g-pay" type="number" placeholder="Salario" value="${g.payment || 0}"/></div>
+        <div><input class="input g-label" placeholder="Etiqueta" value="${g.label || ''}" required/></div>
+        <div><input class="input g-name" placeholder="Nombre" value="${g.name || ''}" required pattern="[A-Za-z0-9]+"/></div>
+        <div><input class="input g-pay" type="number" placeholder="Salario" value="${g.payment || 0}" min="0"/></div>
         <div><label><input type="checkbox" class="g-boss" ${g.isboss ? 'checked' : ''}/> Jefe</label></div>
         <div><button class="btn danger g-del">X</button></div>`;
       row.querySelector('.g-del').onclick = () => row.remove();
@@ -893,13 +900,13 @@ const App = (() => {
                 .map((t) => `<option>${t}</option>`).join('')}
             </select>
           </div>
-          <div><label>Etiqueta</label><input id="zlabel" class="input"/></div>
+          <div><label>Etiqueta</label><input id="zlabel" class="input" required/></div>
         </div>
         <div class="row">
-          <div><label>Radio</label><input id="zrad" class="input" value="2.0"/></div>
-          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="0"/></div>
-          <div><label>Sprite</label><input id="zsprite" class="input"/></div>
-          <div><label>Color</label><input id="zcolor" class="input"/></div>
+          <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
+          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" type="number" value="0" min="0"/></div>
+          <div><label>Sprite</label><input id="zsprite" class="input" type="number"/></div>
+          <div><label>Color</label><input id="zcolor" class="input" type="number"/></div>
         </div>
         <div class="row">
           <div><label>YTD Dict</label><input id="zytddict" class="input"/></div>
@@ -911,6 +918,12 @@ const App = (() => {
         postJ('getCoords', {}).then((c) => {
           if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
           const t = document.getElementById('ztype').value;
+          const label = document.getElementById('zlabel').value.trim();
+          const radius = Number(document.getElementById('zrad').value);
+          const validTypes = window.Config?.ZoneTypes || ['blip','boss','stash','garage','crafting','cloakroom','shop','collect','spawner','sell','alarm','register','anim','music','teleport'];
+          if (!label) { toast('Etiqueta requerida', 'error'); return; }
+          if (!radius || radius <= 0) { toast('Radio inválido', 'error'); return; }
+          if (!validTypes.includes(t)) { toast('Tipo de zona inválido', 'error'); return; }
           const data = {};
           if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
           if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
