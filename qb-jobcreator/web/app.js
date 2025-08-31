@@ -752,12 +752,20 @@ const App = (() => {
       const zone = zonesCache.find((z) => z.id === id);
       if (!zone) return;
       let coords = zone.coords;
+      const inter = (zone.data && zone.data.interaction) || (window.Config?.InteractionMode || 'target');
       const base = `
         <div class="row">
           <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
           <div><label>Radio</label><input id="zrad" class="input" value="${zone.radius || 2.0}"/></div>
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="${(zone.data && zone.data.clearRadius) || 0}"/></div>
           <div><button id="zcoords" class="btn">Usar mis coords</button></div>
+        </div>
+        <div class="row">
+          <div><label>Interacción</label><select id="zinteraction" class="input">
+            <option value="target" ${inter === 'target' ? 'selected' : ''}>qb-target</option>
+            <option value="textui" ${inter === 'textui' ? 'selected' : ''}>TextUI</option>
+            <option value="3dtext" ${inter === '3dtext' ? 'selected' : ''}>3D Text</option>
+          </select></div>
         </div>
         <div class="row">
           <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
@@ -768,7 +776,7 @@ const App = (() => {
         <div id="zextra"></div>`;
       modal('Editar ' + zone.ztype, base, () => {
         const t = zone.ztype;
-        const data = {};
+        const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
         if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
         if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                             data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -891,6 +899,7 @@ const App = (() => {
     }
 
     document.getElementById('addz').onclick = () => {
+      const interDef = window.Config?.InteractionMode || 'target';
       const base = `
         <div class="row">
           <div>
@@ -901,6 +910,13 @@ const App = (() => {
             </select>
           </div>
           <div><label>Etiqueta</label><input id="zlabel" class="input" required/></div>
+        </div>
+        <div class="row">
+          <div><label>Interacción</label><select id="zinteraction" class="input">
+            <option value="target" ${interDef === 'target' ? 'selected' : ''}>qb-target</option>
+            <option value="textui" ${interDef === 'textui' ? 'selected' : ''}>TextUI</option>
+            <option value="3dtext" ${interDef === '3dtext' ? 'selected' : ''}>3D Text</option>
+          </select></div>
         </div>
         <div class="row">
           <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
@@ -924,7 +940,7 @@ const App = (() => {
           if (!label) { toast('Etiqueta requerida', 'error'); return; }
           if (!radius || radius <= 0) { toast('Radio inválido', 'error'); return; }
           if (!validTypes.includes(t)) { toast('Tipo de zona inválido', 'error'); return; }
-          const data = {};
+          const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
           if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
           if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                               data.weight = Number(document.getElementById('zweight')?.value || 400000); }
