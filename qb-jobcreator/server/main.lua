@@ -311,6 +311,12 @@ QBCore.Commands.Add('jobcreator', _L('open_creator'), {}, false, function(src)
   TriggerClientEvent('qb-jobcreator:client:openUI', src)
 end)
 
+-- ===== Exportar trabajos =====
+QBCore.Functions.CreateCallback('qb-jobcreator:server:exportJobs', function(src, cb)
+  if not ensurePerm(src) then return cb(false) end
+  cb(JobsFile.Export())
+end)
+
 -- ===== Dashboard =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(src, cb)
   local ok, result = pcall(function()

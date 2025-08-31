@@ -354,27 +354,12 @@ const App = (() => {
   }
 
   $('#btn-addjob').addEventListener('click', () => openJobModal());
-  $('#btn-export').addEventListener('click', () => {
-    try {
-      const arr = Object.values(state.jobs);
-      const text = JSON.stringify(arr);
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(text)
-          .then(() => toast('Exportado al portapapeles', 'success'))
-          .catch(() => { fallbackCopy(text); toast('Copiado con método alterno', 'success'); });
-      } else { fallbackCopy(text); toast('Copiado con método alterno', 'success'); }
-    } catch { toast('No se pudo exportar', 'error'); }
+  $('#btn-export').addEventListener('click', async () => {
+    const res = await postJ('exportJobs');
+    if (res && res.ok) toast('Exportado correctamente', 'success');
+    else toast('No se pudo exportar', 'error');
   });
   $('#btn-import').addEventListener('click', () => openImportModal());
-
-  function fallbackCopy(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  }
 
   function renderJobs() {
     const tb = $('#jobsTable tbody');

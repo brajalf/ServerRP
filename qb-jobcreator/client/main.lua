@@ -163,6 +163,12 @@ RegisterNUICallback('deleteGrade', function(data, cb)
   cb({ ok = true })
 end)
 
+RegisterNUICallback('exportJobs', function(_, cb)
+  QBCore.Functions.TriggerCallback('qb-jobcreator:server:exportJobs', function(ok)
+    cb({ ok = ok })
+  end)
+end)
+
 -- ===== Empleados =====
 RegisterNUICallback('getEmployees', function(data, cb) QBCore.Functions.TriggerCallback('qb-jobcreator:server:getEmployees', function(list) cb(list or {}) end, data.job) end)
 RegisterNUICallback('fire', function(data, cb) TriggerServerEvent('qb-jobcreator:server:fire', data.job, data.citizenid); cb({ ok = true }) end)
