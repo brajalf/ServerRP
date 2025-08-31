@@ -204,16 +204,16 @@ end
 -- Targets por zona
 -- =====================================
 local function addTargetForZone(z)
-  if not Config.Integrations.UseQbTarget then return end
+  local interaction = (z.data and z.data.interaction) or Config.InteractionMode or 'target'
+  local useTarget = Config.Integrations.UseQbTarget and interaction == 'target'
+  local usingTarget = useTarget and (GetResourceState('qb-target') == 'started')
   local name = uniqueZoneName(('jc_%s_%s_%s'):format(z.ztype, z.job, z.id))
   local radius = tonumber(z.radius) or Config.Zone.DefaultRadius or 2.0
   local size = (radius + 0.5) * 2.0
   local distance = radius + 1.0
   local opts = {}
-  local usingTarget = GetResourceState('qb-target') == 'started'
-  -- Debug: log zone type and qb-target state
-  print(('[qb-jobcreator] addTargetForZone ztype=%s usingTarget=%s'):format(tostring(z.ztype), tostring(usingTarget)))
-  if not usingTarget then
+  print(('[qb-jobcreator] addTargetForZone ztype=%s mode=%s usingTarget=%s'):format(tostring(z.ztype), tostring(interaction), tostring(usingTarget)))
+  if interaction == 'target' and not usingTarget then
     print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
   end
 
@@ -478,49 +478,84 @@ local function addTargetForZone(z)
   if not usingTarget then
     if #opts > 0 then
       local zoneVec = vector3(z.coords.x, z.coords.y, z.coords.z)
-      local function spawnZoneProp()
-        local model = `prop_mp_arrow_barrier`
-        RequestModel(model)
-        while not HasModelLoaded(model) do Wait(0) end
-        local obj = CreateObject(model, zoneVec.x, zoneVec.y, zoneVec.z, false, false, false)
-        SetEntityHeading(obj, z.coords.w or 0.0)
-        SetEntityInvincible(obj, true)
-        FreezeEntityPosition(obj, true)
-        SetModelAsNoLongerNeeded(model)
-        return obj
-      end
-      local arrow = spawnZoneProp()
-      z._prop = arrow
-      z._stop = false
-      CreateThread(function()
-        while not z._stop do
-          local ped = PlayerPedId()
-          local pos = GetEntityCoords(ped)
-          local dist = #(pos - zoneVec)
-          if dist <= radius then
-            local opt = opts[1]
-            if opt then
-              local label = opt.label or (z.label or 'Interactuar')
-              if not opt.canInteract or opt.canInteract() then
-                QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, '[E] '..label)
-                if IsControlJustReleased(0, 38) then
-                  opt.action()
-                  Wait(1000)
+      if interaction == 'textui' then
+        z._stop = false
+        CreateThread(function()
+          local shown = false
+          while not z._stop do
+            local ped = PlayerPedId()
+            local pos = GetEntityCoords(ped)
+            local dist = #(pos - zoneVec)
+            if dist <= radius then
+              local opt = opts[1]
+              if opt then
+                local label = opt.label or (z.label or 'Interactuar')
+                if not opt.canInteract or opt.canInteract() then
+                  if not shown and lib and lib.showTextUI then
+                    lib.showTextUI((Config.Zone.TextUIKey or '[E]') .. ' ' .. label)
+                    shown = true
+                  end
+                  if IsControlJustReleased(0, 38) then
+                    opt.action()
+                    Wait(1000)
+                  end
+                else
+                  if shown and lib and lib.hideTextUI then lib.hideTextUI() shown = false end
                 end
-              else
-                QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, label)
               end
+              Wait(0)
+            else
+              if shown and lib and lib.hideTextUI then lib.hideTextUI() shown = false end
+              Wait(500)
             end
-            Wait(0)
-          else
-            Wait(500)
           end
+          if shown and lib and lib.hideTextUI then lib.hideTextUI() end
+        end)
+      else
+        local function spawnZoneProp()
+          local model = `prop_mp_arrow_barrier`
+          RequestModel(model)
+          while not HasModelLoaded(model) do Wait(0) end
+          local obj = CreateObject(model, zoneVec.x, zoneVec.y, zoneVec.z, false, false, false)
+          SetEntityHeading(obj, z.coords.w or 0.0)
+          SetEntityInvincible(obj, true)
+          FreezeEntityPosition(obj, true)
+          SetModelAsNoLongerNeeded(model)
+          return obj
         end
-        if arrow and DoesEntityExist(arrow) then
-          DeleteObject(arrow)
-        end
-        z._prop = nil
-      end)
+        local arrow = spawnZoneProp()
+        z._prop = arrow
+        z._stop = false
+        CreateThread(function()
+          while not z._stop do
+            local ped = PlayerPedId()
+            local pos = GetEntityCoords(ped)
+            local dist = #(pos - zoneVec)
+            if dist <= radius then
+              local opt = opts[1]
+              if opt then
+                local label = opt.label or (z.label or 'Interactuar')
+                if not opt.canInteract or opt.canInteract() then
+                  QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, '[E] '..label)
+                  if IsControlJustReleased(0, 38) then
+                    opt.action()
+                    Wait(1000)
+                  end
+                else
+                  QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, label)
+                end
+              end
+              Wait(0)
+            else
+              Wait(500)
+            end
+          end
+          if arrow and DoesEntityExist(arrow) then
+            DeleteObject(arrow)
+          end
+          z._prop = nil
+        end)
+      end
     end
     return
   end

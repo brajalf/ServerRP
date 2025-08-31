@@ -115,6 +115,11 @@ local function ValidateZoneData(zone)
   end
   local r = tonumber(zone.radius)
   if not r or r <= 0 then return false, 'Radio debe ser mayor a 0' end
+  local i = zone.data and zone.data.interaction
+  if i ~= nil then
+    if type(i) ~= 'string' then return false, 'Interacción inválida' end
+    if i ~= 'target' and i ~= 'textui' and i ~= '3dtext' then return false, 'Interacción inválida' end
+  end
   return true
 end
 
@@ -618,6 +623,12 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     if zone.data.clearRadius ~= nil then
       zone.data.clearRadius = tonumber(zone.data.clearRadius) or Config.Zone.ClearRadius
     end
+    local inter = zone.data.interaction
+    if inter == 'target' or inter == 'textui' or inter == '3dtext' then
+      zone.data.interaction = inter
+    else
+      zone.data.interaction = 'target'
+    end
   end
   if zone.ztype == 'shop' then
     zone.data.items = SanitizeShopItems(zone.data.items)
@@ -659,6 +670,10 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
+  local nzInter = nz.data.interaction
+  if nzInter ~= 'target' and nzInter ~= 'textui' and nzInter ~= '3dtext' then
+    nz.data.interaction = 'target'
+  end
   ExtractBlipInfo(nz.data, nz)
   if nz.ztype == 'shop' then
     nz.data.items = SanitizeShopItems(nz.data.items)
@@ -952,6 +967,12 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         data.theme = nil
       end
     end
+    local inter = data.interaction
+    if inter == 'target' or inter == 'textui' or inter == '3dtext' then
+      data.interaction = inter
+    else
+      data.interaction = 'target'
+    end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
   end
@@ -963,6 +984,10 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     for idx, z in ipairs(Runtime.Zones) do
       if z.id == id then
         local nd = json.decode(r.data or '{}') or {}
+        local inter = nd.interaction
+        if inter ~= 'target' and inter ~= 'textui' and inter ~= '3dtext' then
+          nd.interaction = 'target'
+        end
         if ztype == 'shop' then
           nd.items = SanitizeShopItems(nd.items)
         elseif ztype == 'crafting' then
