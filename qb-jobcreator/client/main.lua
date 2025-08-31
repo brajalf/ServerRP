@@ -212,7 +212,12 @@ RegisterNUICallback('wash', function(data, cb) TriggerServerEvent('qb-jobcreator
 RegisterNUICallback('getZones', function(data, cb) QBCore.Functions.TriggerCallback('qb-jobcreator:server:getZones', function(list) cb(list or {}) end, data.job) end)
 RegisterNUICallback('createZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:createZone', data); cb({ ok = true }) end)
 RegisterNUICallback('deleteZone', function(data, cb) TriggerServerEvent('qb-jobcreator:server:deleteZone', data.id); cb({ ok = true }) end)
-RegisterNUICallback('getCoords', function(_, cb) local p = GetEntityCoords(PlayerPedId()); cb({ x = p.x, y = p.y, z = p.z }) end)
+RegisterNUICallback('getCoords', function(_, cb)
+  local ped = PlayerPedId()
+  local p = GetEntityCoords(ped)
+  local heading = GetEntityHeading(ped)
+  cb({ x = p.x, y = p.y, z = p.z, w = heading })
+end)
 
 RegisterNUICallback('getCraftingTable', function(data, cb)
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getCraftingTable', function(list)
