@@ -22,9 +22,6 @@ function UseTarget()
   if Config.Integrations.UseQbTarget and GetResourceState('qb-target') == 'started' then
     return 'qb-target'
   end
-  if Config.Integrations.UseOxTarget and GetResourceState('ox_target') == 'started' then
-    return 'ox_target'
-  end
   return false
 end
 Utils.UseTarget = UseTarget
