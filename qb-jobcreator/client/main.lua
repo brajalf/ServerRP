@@ -3,6 +3,8 @@ QBCore = exports['qb-core']:GetCoreObject()
 local Jobs, Zones = {}, {}
 local uiOpen = false
 local craftZone = nil
+local imagePath = GetConvar('inventory:imagepath', Config and Config.InventoryImagePath or 'nui://ox_inventory/web/images/')
+if imagePath:sub(-1) ~= '/' then imagePath = imagePath .. '/' end
 
 -- Notification wrapper
 local function Notify(msg, typ)
@@ -46,7 +48,7 @@ AddEventHandler('QBCore:Client:OnPlayerLoaded', function() ForceClose() end)
 RegisterNetEvent('qb-jobcreator:client:openUI', function()
   if uiOpen then ForceClose(); return end
   SetNuiFocus(true, true); SetNuiFocusKeepInput(false); uiOpen = true
-  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, branding = Config and Config.Branding or nil, scope = { mode = 'admin' }, inventory = Config and Config.InventoryType, imagePath = Config and Config.InventoryImagePath } })
+  SendNUIMessage({ action = 'open', payload = { ok = true, jobs = Jobs or {}, zones = Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, branding = Config and Config.Branding or nil, scope = { mode = 'admin' }, inventory = Config and Config.InventoryType, imagePath = imagePath } })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
     if type(data) == 'table' and data.ok then
       data.scope = { mode = 'admin' }
@@ -76,7 +78,7 @@ RegisterNetEvent('qb-jobcreator:client:openBossUI', function(job)
       branding = Config and Config.Branding or nil,
       scope = { mode = 'boss', job = job },
       inventory = Config and Config.InventoryType,
-      imagePath = Config and Config.InventoryImagePath
+      imagePath = imagePath
     }
   })
   QBCore.Functions.TriggerCallback('qb-jobcreator:server:getDashboard', function(data)
@@ -248,8 +250,6 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
   craftZone = zoneId
   uiOpen = true
   SetNuiFocus(true, true)
-  local imagePath = GetConvar('inventory:imagepath', Config and Config.InventoryImagePath or 'nui://ox_inventory/web/images/')
-  if imagePath:sub(-1) ~= '/' then imagePath = imagePath .. '/' end
   local zone = findZoneById(zoneId)
   local theme = zone and zone.data and zone.data.theme or nil
   local title = (theme and theme.titulo) or (zone and zone.label) or nil
@@ -299,14 +299,17 @@ RegisterNetEvent('qb-jobcreator:client:openCrafting', function(zoneId)
         end
         local status = 'none'
         if haveAll and #mats > 0 then status = 'all' elseif haveAny then status = 'some' end
-        local info = oxItems[recipe.output and recipe.output.item or recipe.name] or {}
+        local itemName = recipe.output and recipe.output.item or recipe.name
+        local image = (oxItems[itemName] and oxItems[itemName].image)
+          or (QBCore.Shared.Items[itemName] and QBCore.Shared.Items[itemName].image)
+          or 'placeholder.png'
         transformed[#transformed+1] = {
-          item = recipe.output and recipe.output.item or recipe.name,
+          item = itemName,
           label = (recipe.output and recipe.output.label) or recipe.name,
           materials = mats,
           outputs = { { item = recipe.output.item, amount = recipe.output.amount } },
           status = status,
-          image = info.image or (recipe.output.item .. '.png'),
+          image = image,
           lockedByJob = recipe.lockedByJob
         }
       end
