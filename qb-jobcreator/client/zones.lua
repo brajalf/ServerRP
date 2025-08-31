@@ -205,8 +205,8 @@ local function addTargetForZone(z)
   if not Config.Integrations.UseQbTarget then return end
   local name = uniqueZoneName(('jc_%s_%s_%s'):format(z.ztype, z.job, z.id))
   local radius = tonumber(z.radius) or Config.Zone.DefaultRadius or 2.0
-  local size = (radius + 0.5) * 2.0
-  local distance = radius + 1.0
+  local size = radius * 2.0
+  local distance = radius
   local opts = {}
   local usingTarget = GetResourceState('qb-target') == 'started'
   if not usingTarget then
