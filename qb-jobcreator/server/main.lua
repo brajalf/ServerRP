@@ -461,6 +461,10 @@ local function CollectCraftingData(src, zoneId)
     local list = {}
     local data = zone.data or {}
     local cats = data.allowedCategories
+    local recs = data.recipes
+    if (not cats or #cats == 0) and (not recs or #recs == 0) and data.category then
+      cats = { data.category }
+    end
     if cats and #cats > 0 then
       local set = {}
       for _, c in ipairs(cats) do set[c] = true end
@@ -475,7 +479,7 @@ local function CollectCraftingData(src, zoneId)
         end
       end
     else
-      for _, name in ipairs(data.recipes or {}) do
+      for _, name in ipairs(recs or {}) do
         local r = Config.CraftingRecipes[name]
         if r then
           local allow, locked = checkRecipeJob(r.job, zone.job, jobName)
