@@ -212,6 +212,9 @@ local function addTargetForZone(z)
   local size = (radius + 0.5) * 2.0
   local distance = radius + 1.0
   local opts = {}
+  local d = z.data or {}
+  local dLabel = d.label
+  local dIcon = d.icon
   print(('[qb-jobcreator] addTargetForZone ztype=%s mode=%s usingTarget=%s'):format(tostring(z.ztype), tostring(interaction), tostring(usingTarget)))
   if interaction == 'target' and not usingTarget then
     print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
@@ -219,14 +222,14 @@ local function addTargetForZone(z)
 
   if z.ztype == 'boss' then
     table.insert(opts, {
-      label = 'Abrir gestión del trabajo', icon = 'fa-solid fa-briefcase',
+      label = dLabel or 'Abrir gestión del trabajo', icon = dIcon or 'fa-solid fa-briefcase',
       canInteract = function() return canUseZone(z, true) end,
       action = function() TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job) end
     })
 
   elseif z.ztype == 'stash' then
     table.insert(opts, {
-      label = 'Abrir Almacén', icon = 'fa-solid fa-box',
+      label = dLabel or 'Abrir Almacén', icon = dIcon or 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:openStash', z.id)
@@ -235,7 +238,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'garage' then
     table.insert(opts, {
-      label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
+      label = dLabel or 'Sacar vehículo de trabajo', icon = dIcon or 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local _, myGrade = playerJobData()
@@ -251,7 +254,7 @@ local function addTargetForZone(z)
     })
 
     table.insert(opts, {
-      label = 'Guardar vehículo', icon = 'fa-solid fa-warehouse',
+      label = dLabel or 'Guardar vehículo', icon = dIcon or 'fa-solid fa-warehouse',
       canInteract = function()
         local ped = PlayerPedId()
         local veh = GetVehiclePedIsIn(ped, false)
@@ -262,7 +265,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'cloakroom' then
     table.insert(opts, {
-      label = 'Vestuario', icon = 'fa-solid fa-shirt',
+      label = dLabel or 'Vestuario', icon = dIcon or 'fa-solid fa-shirt',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local data = z.data or {}
@@ -284,7 +287,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'shop' then
     table.insert(opts, {
-      label = 'Abrir tienda', icon = 'fa-solid fa-store',
+      label = dLabel or 'Abrir tienda', icon = dIcon or 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:getShopItems', z.id)
@@ -293,7 +296,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'collect' then
     table.insert(opts, {
-      label = 'Recolectar', icon = 'fa-solid fa-box-open',
+      label = dLabel or 'Recolectar', icon = dIcon or 'fa-solid fa-box-open',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local data = z.data or {}
@@ -307,7 +310,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'spawner' then
     table.insert(opts, {
-      label = 'Usar', icon = 'fa-solid fa-cubes',
+      label = dLabel or 'Usar', icon = dIcon or 'fa-solid fa-cubes',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local model = (z.data and z.data.prop) or 'prop_toolchest_05'
@@ -322,7 +325,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'sell' then
     table.insert(opts, {
-      label = 'Vender material', icon = 'fa-solid fa-sack-dollar',
+      label = dLabel or 'Vender material', icon = dIcon or 'fa-solid fa-sack-dollar',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:sell', z.id)
@@ -331,7 +334,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'register' then
     table.insert(opts, {
-      label = 'Cobrar a cercano', icon = 'fa-solid fa-cash-register',
+      label = dLabel or 'Cobrar a cercano', icon = dIcon or 'fa-solid fa-cash-register',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local sid = GetClosestPlayerToMe(3.0)
@@ -342,7 +345,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'alarm' then
     table.insert(opts, {
-      label = 'Activar alarma', icon = 'fa-solid fa-bell',
+      label = dLabel or 'Activar alarma', icon = dIcon or 'fa-solid fa-bell',
       canInteract = function() return canUseZone(z, true) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:alarm', z.job, (z.data and z.data.code) or 'panic')
@@ -351,7 +354,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'anim' then
     table.insert(opts, {
-      label = z.label or 'Usar animación', icon = 'fa-solid fa-person',
+      label = dLabel or z.label or 'Usar animación', icon = dIcon or 'fa-solid fa-person',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local d = z.data or {}
@@ -367,7 +370,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'music' then
     table.insert(opts, {
-      label = 'Reproducir música', icon = 'fa-solid fa-music',
+      label = dLabel or 'Reproducir música', icon = dIcon or 'fa-solid fa-music',
       canInteract = function() return canUseZone(z, false) and GetResourceState('myDj')=='started' end,
       action = function()
         local d = z.data or {}
@@ -391,7 +394,7 @@ local function addTargetForZone(z)
         local options = {}
         if from ~= 0 then
           table.insert(options, {
-            label = z.label or 'Origen', icon = 'fa-solid fa-person-arrow-up-from-line',
+            label = dLabel or z.label or 'Origen', icon = dIcon or 'fa-solid fa-person-arrow-up-from-line',
             canInteract = function() return canUseZone(z, false) end,
             action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, 0) end
           })
@@ -399,7 +402,7 @@ local function addTargetForZone(z)
         for i, dest in ipairs(dests) do
           if i ~= from then
             table.insert(options, {
-              label = dest.label or ('Destino '..i), icon = 'fa-solid fa-person-arrow-up-from-line',
+              label = dLabel or dest.label or ('Destino '..i), icon = dIcon or 'fa-solid fa-person-arrow-up-from-line',
               canInteract = function() return canUseZone(z, false) end,
               action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, i) end
             })
@@ -411,7 +414,7 @@ local function addTargetForZone(z)
       if #dests == 0 then
         opts = {
           {
-            label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
+            label = dLabel or 'Teletransportar', icon = dIcon or 'fa-solid fa-person-arrow-up-from-line',
             canInteract = function() return false end,
             action = function() QBCore.Functions.Notify('Destino no configurado.', 'error') end
           }
@@ -432,7 +435,7 @@ local function addTargetForZone(z)
     else
       opts = {
         {
-          label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
+          label = dLabel or 'Teletransportar', icon = dIcon or 'fa-solid fa-person-arrow-up-from-line',
           canInteract = function() return canUseZone(z, false) end,
           action = function()
             if #dests == 0 then
@@ -443,7 +446,7 @@ local function addTargetForZone(z)
               local menu = { { header = 'Selecciona destino', isMenuHeader = true } }
               for i, dest in ipairs(dests) do
                 menu[#menu+1] = {
-                  header = dest.label or ('Destino '..i),
+                  header = dLabel or dest.label or ('Destino '..i),
                   params = { event = 'qb-jobcreator:client:teleportSelect', args = { zone = z.id, index = i } }
                 }
               end
@@ -458,7 +461,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'crafting' then
     table.insert(opts, {
-      label = 'Craftear', icon = 'fa-solid fa-hammer',
+      label = dLabel or 'Craftear', icon = dIcon or 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
       action = function() openCraftMenu(z) end
     })

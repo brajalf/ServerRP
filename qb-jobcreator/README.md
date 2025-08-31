@@ -70,3 +70,11 @@ Puedes utilizar iconos propios en los blips del mapa.
 3. El cliente cargará ese diccionario mediante `RequestStreamedTextureDict` y aplicará el sprite seleccionado con `SetBlipSprite`.
 
 De esta manera puedes mostrar iconos personalizados en el mapa para cada zona.
+
+## Icono y etiqueta de acción personalizados
+
+Al crear o editar una zona desde la interfaz web ahora puedes definir los campos
+**Icono acción** y **Etiqueta acción**. Estos valores se almacenan en
+`zone.data.icon` y `zone.data.label` y se utilizan para construir la opción de
+interacción que ve el jugador (qb-target, TextUI o 3D Text). El icono acepta
+clases de [Font Awesome](https://fontawesome.com/) como `fa-solid fa-car`.
