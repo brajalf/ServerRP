@@ -55,74 +55,6 @@ local function SanitizeCategoryList(categories)
   return list
 end
 
-local function ApplyBlipInfo(data, zone)
-  data = data or {}
-  if zone then
-    local s = tonumber(zone.sprite); if s then data.sprite = s end
-    local c = tonumber(zone.color);  if c then data.color  = c end
-    if type(zone.ytdDict) == 'string' and zone.ytdDict ~= '' then data.ytdDict = zone.ytdDict end
-    if type(zone.ytdName) == 'string' and zone.ytdName ~= '' then data.ytdName = zone.ytdName end
-  end
-  return data
-end
-
-local function ExtractBlipInfo(data, zone)
-  if type(data) ~= 'table' or type(zone) ~= 'table' then return end
-  zone.sprite  = tonumber(data.sprite)
-  zone.color   = tonumber(data.color)
-  zone.ytdDict = (type(data.ytdDict) == 'string' and data.ytdDict ~= '') and data.ytdDict or nil
-  zone.ytdName = (type(data.ytdName) == 'string' and data.ytdName ~= '') and data.ytdName or nil
-  data.sprite, data.color, data.ytdDict, data.ytdName = nil, nil, nil, nil
-end
-
--- ===== Validations =====
-local function IsAlphaNum(str)
-  return type(str) == 'string' and str:match('^%w+$') ~= nil
-end
-
-local function ValidateJobData(data)
-  if type(data) ~= 'table' then return false, 'Datos inválidos' end
-  local name = data.name or ''
-  if not IsAlphaNum(name) then return false, 'Nombre de trabajo inválido' end
-  return true
-end
-
-local function ValidateGradeData(gradeKey, data)
-  if not tostring(gradeKey):match('^%w+$') then return false, 'Clave de rango inválida' end
-  if type(data) == 'table' then
-    if data.name and not IsAlphaNum(data.name) then return false, 'Nombre de rango inválido' end
-    local pay = tonumber(data.payment) or 0
-    if pay < 0 then return false, 'Pago inválido' end
-  end
-  return true
-end
-
-local function IsValidZoneType(ztype)
-  if type(ztype) ~= 'string' then return false end
-  for _, t in ipairs(Config.ZoneTypes or {}) do
-    if t == ztype then return true end
-  end
-  return false
-end
-
-local function ValidateZoneData(zone)
-  if type(zone) ~= 'table' then return false, 'Datos de zona inválidos' end
-  if not IsAlphaNum(zone.job or '') then return false, 'Trabajo inválido' end
-  if not IsValidZoneType(zone.ztype) then return false, 'Tipo de zona inválido' end
-  local c = zone.coords or {}
-  if tonumber(c.x) == nil or tonumber(c.y) == nil or tonumber(c.z) == nil then
-    return false, 'Coordenadas inválidas'
-  end
-  local r = tonumber(zone.radius)
-  if not r or r <= 0 then return false, 'Radio debe ser mayor a 0' end
-  local i = zone.data and zone.data.interaction
-  if i ~= nil then
-    if type(i) ~= 'string' then return false, 'Interacción inválida' end
-    if i ~= 'target' and i ~= 'textui' and i ~= '3dtext' then return false, 'Interacción inválida' end
-  end
-  return true
-end
-
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = {
@@ -249,6 +181,7 @@ local function LoadAll()
       data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
       if type(data.job) ~= 'string' and type(data.job) ~= 'table' then data.job = nil end
+      data.icon = type(data.icon) == 'string' and data.icon or nil
       if type(data.theme) == 'table' then
         data.theme = {
           colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
@@ -261,18 +194,12 @@ local function LoadAll()
         data.theme = nil
       end
     end
-    data.icon = type(data.icon) == 'string' and data.icon or nil
-    data.label = type(data.label) == 'string' and data.label or nil
     local coords = json.decode(z.coords or '{}') or {}
-    local zone = {
+    Runtime.Zones[#Runtime.Zones+1] = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
       coords = coords, radius = z.radius or 2.0,
       data = data
     }
-    ExtractBlipInfo(data, zone)
-    Runtime.Zones[#Runtime.Zones+1] = zone
-    print(('[qb-jobcreator] Loaded zone id=%s type=%s job=%s radius=%s'):format(
-      tostring(zone.id), tostring(zone.ztype), tostring(zone.job), tostring(zone.radius)))
     if z.ztype == 'music' then
       local name = (data and (data.name or data.djName)) or ('jc_ms_'..z.job..'_'..z.id)
       local range = tonumber(data and (data.range or data.distance)) or 20.0
@@ -285,7 +212,6 @@ local function LoadAll()
     end
   end
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
-  print(('[qb-jobcreator] Enviando %d zonas al cliente'):format(#Runtime.Zones))
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end
 
@@ -385,17 +311,11 @@ QBCore.Commands.Add('jobcreator', _L('open_creator'), {}, false, function(src)
   TriggerClientEvent('qb-jobcreator:client:openUI', src)
 end)
 
--- ===== Exportar trabajos =====
-QBCore.Functions.CreateCallback('qb-jobcreator:server:exportJobs', function(src, cb)
-  if not ensurePerm(src) then return cb(false) end
-  cb(JobsFile.Export())
-end)
-
 -- ===== Dashboard =====
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(src, cb)
   local ok, result = pcall(function()
     local totals = { jobs = 0, employees = 0, money = 0 }
-    local popular, types = {}, {}
+    local popular = {}
     for jobName, job in pairs(Runtime.Jobs or {}) do
       totals.jobs = totals.jobs + 1
       local count = 0
@@ -404,8 +324,6 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(sr
         if jd and jd.name == jobName then count = count + 1 end
       end
       popular[#popular+1] = { name = job.label or jobName, count = count }
-      local jt = job.type or 'generic'
-      types[jt] = (types[jt] or 0) + count
 
       local bal = 0
       if Config.Integrations.UseQbManagement and GetResourceState('qb-management') == 'started' then
@@ -418,22 +336,17 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(sr
       totals.money = totals.money + (bal or 0)
     end
     table.sort(popular, function(a,b) return (a.count or 0) > (b.count or 0) end)
-    local top = {}
-    for i=1, math.min(5, #popular) do top[#top+1] = popular[i] end
-    local activity = DB.GetActivityCounts and DB.GetActivityCounts() or { day = 0, week = 0 }
-    return { ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = totals, popular = top, types = types, activity = activity }
+    return { ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = totals, popular = popular }
   end)
   if not ok then
     print('[qb-jobcreator] getDashboard error: '..tostring(result))
-    cb({ ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, types = {}, activity = { day = 0, week = 0 } })
+    cb({ ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {} })
   else cb(result) end
 end)
 
 -- ===== CRUD de trabajos =====
 RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
   local src = source; if not ensurePerm(src) then return end
-  local ok, err = ValidateJobData(data)
-  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   local name = string.lower((data.name or ''):gsub('%s+',''))
   local job = {
     name = name,
@@ -483,8 +396,6 @@ end)
 RegisterNetEvent('qb-jobcreator:server:addGrade', function(jobName, gradeKey, data)
   local src = source; if not ensurePerm(src) then return end
   local j = Runtime.Jobs[jobName]; if not j then return end
-  local ok, err = ValidateGradeData(gradeKey, data)
-  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   j.grades = j.grades or {}
   local k = tostring(gradeKey)
   j.grades[k] = {
@@ -616,22 +527,12 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     return
   end
   _lastCreate[src] = { sig = sig, t = now }
-  local ok, err = ValidateZoneData(zone)
-  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   zone.data = zone.data or {}
   if zone.data then
     zone.data.clearArea = zone.data.clearArea and true or false
     if zone.data.clearRadius ~= nil then
       zone.data.clearRadius = tonumber(zone.data.clearRadius) or Config.Zone.ClearRadius
     end
-    local inter = zone.data.interaction
-    if inter == 'target' or inter == 'textui' or inter == '3dtext' then
-      zone.data.interaction = inter
-    else
-      zone.data.interaction = 'target'
-    end
-    zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
-    zone.data.label = type(zone.data.label) == 'string' and zone.data.label or nil
   end
   if zone.ztype == 'shop' then
     zone.data.items = SanitizeShopItems(zone.data.items)
@@ -647,6 +548,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     else
       zone.data.job = nil
     end
+    zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
     if type(zone.data.theme) == 'table' then
       local th = zone.data.theme
       zone.data.theme = {
@@ -660,7 +562,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       zone.data.theme = nil
     end
   end
-  zone.data = ApplyBlipInfo(zone.data, zone)
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
   if not id then return end
@@ -672,13 +573,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
-  local nzInter = nz.data.interaction
-  if nzInter ~= 'target' and nzInter ~= 'textui' and nzInter ~= '3dtext' then
-    nz.data.interaction = 'target'
-  end
-  nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
-  nz.data.label = type(nz.data.label) == 'string' and nz.data.label or nil
-  ExtractBlipInfo(nz.data, nz)
   if nz.ztype == 'shop' then
     nz.data.items = SanitizeShopItems(nz.data.items)
   elseif nz.ztype == 'crafting' then
@@ -687,6 +581,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     if type(nz.data.job) ~= 'string' and type(nz.data.job) ~= 'table' then
       nz.data.job = nil
     end
+    nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
     if type(nz.data.theme) == 'table' then
       nz.data.theme = {
         colorPrimario = type(nz.data.theme.colorPrimario) == 'string' and nz.data.theme.colorPrimario or nil,
@@ -813,22 +708,6 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getNearbyPlayers', functio
 end)
 
 -- Reclutar / Despedir / Cambiar rango
-local function DoSetGrade(jobName, citizenid, newGrade)
-  newGrade = tonumber(newGrade) or 0
-  for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
-    if Player.PlayerData.citizenid == citizenid then
-      if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
-        Player.Functions.SetJob(jobName, newGrade)
-      end
-      Multi_SetGrade(citizenid, jobName, newGrade)
-      return
-    end
-  end
-  Multi_SetGrade(citizenid, jobName, newGrade)
-  local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(newGrade), level = newGrade } })
-  MySQL.update.await('UPDATE players SET job=? WHERE citizenid=? AND JSON_EXTRACT(job, "$..name") = ?', { jobJson, citizenid, jobName })
-end
-
 RegisterNetEvent('qb-jobcreator:server:recruit', function(jobName, grade, targetId)
   local src = source; if not allowAdminOrBoss(src, jobName) then return end
   local Target = QBCore.Functions.GetPlayer(tonumber(targetId) or -1)
@@ -859,28 +738,19 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:setGrade', function(jobName, citizenid, newGrade)
   local src = source; if not allowAdminOrBoss(src, jobName) then return end
-  DoSetGrade(jobName, citizenid, newGrade)
-end)
-
-RegisterNetEvent('qb-jobcreator:server:promote', function(jobName, citizenid, newGrade)
-  local src = source; if not allowAdminOrBoss(src, jobName) then return end
-  DoSetGrade(jobName, citizenid, newGrade)
-end)
-
-RegisterNetEvent('qb-jobcreator:server:transfer', function(fromJob, citizenid, toJob, grade)
-  local src = source; if not allowAdminOrBoss(src, fromJob) then return end
-  grade = tonumber(grade) or 0
+  newGrade = tonumber(newGrade) or 0
   for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
     if Player.PlayerData.citizenid == citizenid then
-      Player.Functions.SetJob(toJob, grade)
-      Multi_Remove(citizenid, fromJob)
-      Multi_Add(citizenid, toJob, grade)
+      if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
+        Player.Functions.SetJob(jobName, newGrade)
+      end
+      Multi_SetGrade(citizenid, jobName, newGrade)
       return
     end
   end
-  DB.UpdateOfflineJob(citizenid, toJob, grade, fromJob)
-  Multi_Remove(citizenid, fromJob)
-  Multi_Add(citizenid, toJob, grade)
+  Multi_SetGrade(citizenid, jobName, newGrade)
+  local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(newGrade), level = newGrade } })
+  MySQL.update.await('UPDATE players SET job=? WHERE citizenid=? AND JSON_EXTRACT(job, "$..name") = ?', { jobJson, citizenid, jobName })
 end)
 
 -- ===== Cuentas =====
@@ -938,7 +808,7 @@ RegisterNetEvent('qb-jobcreator:server:wash', function(job, amount)
 end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
-RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords, sprite, color, ytdDict, ytdName)
+RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
   local src = source; local job; local ztype; local old
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype old = z break end end
   if not allowAdminOrBoss(src, job or '') then return end
@@ -970,18 +840,9 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         data.theme = nil
       end
     end
-    local inter = data.interaction
-    if inter == 'target' or inter == 'textui' or inter == '3dtext' then
-      data.interaction = inter
-    else
-      data.interaction = 'target'
-    end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
-    data.icon = type(data.icon) == 'string' and data.icon or nil
-    data.label = type(data.label) == 'string' and data.label or nil
   end
-  data = ApplyBlipInfo(data, { sprite = sprite, color = color, ytdDict = ytdDict, ytdName = ytdName })
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
@@ -989,18 +850,13 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     for idx, z in ipairs(Runtime.Zones) do
       if z.id == id then
         local nd = json.decode(r.data or '{}') or {}
-        local inter = nd.interaction
-        if inter ~= 'target' and inter ~= 'textui' and inter ~= '3dtext' then
-          nd.interaction = 'target'
-        end
-        nd.icon = type(nd.icon) == 'string' and nd.icon or nil
-        nd.label = type(nd.label) == 'string' and nd.label or nil
         if ztype == 'shop' then
           nd.items = SanitizeShopItems(nd.items)
         elseif ztype == 'crafting' then
           nd.allowedCategories = SanitizeCategoryList(nd.allowedCategories)
           nd.recipes = SanitizeRecipeList(nd.recipes)
           if type(nd.job) ~= 'string' and type(nd.job) ~= 'table' then nd.job = nil end
+          nd.icon = type(nd.icon) == 'string' and nd.icon or nil
           if type(nd.theme) == 'table' then
             nd.theme = {
               colorPrimario = type(nd.theme.colorPrimario) == 'string' and nd.theme.colorPrimario or nil,
@@ -1013,13 +869,11 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
             nd.theme = nil
           end
         end
-        local newZone = {
+        Runtime.Zones[idx] = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,
           coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
           data = nd
         }
-        ExtractBlipInfo(nd, newZone)
-        Runtime.Zones[idx] = newZone
         break
       end
     end

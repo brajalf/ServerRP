@@ -5,8 +5,7 @@ const App = (() => {
     employees: [],
     view: 'home',
     empJob: null,
-    empFilter: 'all',
-    charts: {},
+    chart: null,
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
     recipes: {},
@@ -214,8 +213,6 @@ const App = (() => {
             zones: [],
             totals: { jobs: 0, employees: 0, money: 0 },
             popular: [],
-            types: {},
-            activity: { day: 0, week: 0 },
             branding: { Title: 'LatinLife RP', Logo: 'logo.png' },
             scope: { mode: 'admin' },
           };
@@ -309,41 +306,14 @@ const App = (() => {
     $('#metric-employees').textContent = t.employees;
     $('#metric-money').textContent     = money(t.money);
     $('#metric-top').textContent       = ((state.payload.popular || [])[0] && (state.payload.popular || [])[0].name) || '-';
-    $('#metric-active-day').textContent  = (state.payload.activity && state.payload.activity.day) || 0;
-    $('#metric-active-week').textContent = (state.payload.activity && state.payload.activity.week) || 0;
 
-    const labels = (state.payload.popular || []).map((x) => x.name);
-    const data   = (state.payload.popular || []).map((x) => x.count);
+    const labels = (state.payload.popular || []).slice(0, 10).map((x) => x.name);
+    const data   = (state.payload.popular || []).slice(0, 10).map((x) => x.count);
     const ctx = document.getElementById('employeesChart');
-    if (state.charts.employees) state.charts.employees.destroy();
-    state.charts.employees = new Chart(ctx, {
+    if (state.chart) state.chart.destroy();
+    state.chart = new Chart(ctx, {
       type: 'bar',
       data: { labels, datasets: [{ label: 'Empleados', data }] },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: '#9aa3b2' } },
-          y: { ticks: { color: '#9aa3b2' } },
-        },
-      },
-    });
-
-    const typeLabels = Object.keys(state.payload.types || {});
-    const typeData   = Object.values(state.payload.types || {});
-    const ctx2 = document.getElementById('typesChart');
-    if (state.charts.types) state.charts.types.destroy();
-    state.charts.types = new Chart(ctx2, {
-      type: 'pie',
-      data: { labels: typeLabels, datasets: [{ data: typeData }] },
-      options: { plugins: { legend: { labels: { color: '#9aa3b2' } } } },
-    });
-
-    const act = state.payload.activity || { day: 0, week: 0 };
-    const ctx3 = document.getElementById('activityChart');
-    if (state.charts.activity) state.charts.activity.destroy();
-    state.charts.activity = new Chart(ctx3, {
-      type: 'bar',
-      data: { labels: ['Hoy', 'Semana'], datasets: [{ label: 'Activos', data: [act.day || 0, act.week || 0] }] },
       options: {
         plugins: { legend: { display: false } },
         scales: {
@@ -355,12 +325,27 @@ const App = (() => {
   }
 
   $('#btn-addjob').addEventListener('click', () => openJobModal());
-  $('#btn-export').addEventListener('click', async () => {
-    const res = await postJ('exportJobs');
-    if (res && res.ok) toast('Exportado correctamente', 'success');
-    else toast('No se pudo exportar', 'error');
+  $('#btn-export').addEventListener('click', () => {
+    try {
+      const arr = Object.values(state.jobs);
+      const text = JSON.stringify(arr);
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => toast('Exportado al portapapeles', 'success'))
+          .catch(() => { fallbackCopy(text); toast('Copiado con método alterno', 'success'); });
+      } else { fallbackCopy(text); toast('Copiado con método alterno', 'success'); }
+    } catch { toast('No se pudo exportar', 'error'); }
   });
   $('#btn-import').addEventListener('click', () => openImportModal());
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
 
   function renderJobs() {
     const tb = $('#jobsTable tbody');
@@ -394,21 +379,17 @@ const App = (() => {
   function openJobModal() {
     const html = `
       <div class="row">
-        <div><label>Nombre técnico</label><input id="jname" class="input" required pattern="[A-Za-z0-9]+"/></div>
-        <div><label>Etiqueta</label><input id="jlabel" class="input" required/></div>
+        <div><label>Nombre técnico</label><input id="jname" class="input"/></div>
+        <div><label>Etiqueta</label><input id="jlabel" class="input"/></div>
       </div>
       <div class="row">
         <div><label>Tipo</label><input id="jtype" class="input" placeholder="gobierno, médico, mecánico..."/></div>
         <div><label>Whitelist</label><select id="jwl"><option value="0">No</option><option value="1">Sí</option></select></div>
       </div>`;
     modal('Agregar Trabajo', html, () => {
-      const name = $('#jname').value.trim();
-      const label = $('#jlabel').value.trim();
-      if (!/^[A-Za-z0-9]+$/.test(name)) { toast('Nombre técnico inválido', 'error'); return; }
-      if (!label) { toast('Etiqueta requerida', 'error'); return; }
       const payload = {
-        name,
-        label,
+        name: $('#jname').value,
+        label: $('#jlabel').value,
         type: $('#jtype').value,
         whitelisted: $('#jwl').value === '1',
       };
@@ -430,17 +411,14 @@ const App = (() => {
       const existing = { ...grades };
       const seen = {};
       const newGrades = {};
-      for (const row of rows) {
+      rows.forEach((row) => {
         const k = row.dataset.k;
-        const label = row.querySelector('.g-label').value.trim();
-        const name = row.querySelector('.g-name').value.trim();
-        const payment = Number(row.querySelector('.g-pay').value) || 0;
-        const isboss = row.querySelector('.g-boss').checked;
-        if (!label || !/^[A-Za-z0-9]+$/.test(name) || payment < 0) {
-          toast('Datos de rango inválidos', 'error');
-          return;
-        }
-        const g = { label, name, payment, isboss };
+        const g = {
+          label: row.querySelector('.g-label').value,
+          name: row.querySelector('.g-name').value,
+          payment: Number(row.querySelector('.g-pay').value) || 0,
+          isboss: row.querySelector('.g-boss').checked,
+        };
         newGrades[k] = g;
         if (existing[k]) {
           post('updateGrade', { job: job.name, grade: k, data: g });
@@ -448,7 +426,7 @@ const App = (() => {
           post('addGrade', { job: job.name, grade: k, data: g });
         }
         seen[k] = true;
-      }
+      });
       Object.keys(existing).forEach((k) => { if (!seen[k]) post('deleteGrade', { job: job.name, grade: k }); });
       job.grades = newGrades;
       closeModal();
@@ -462,9 +440,9 @@ const App = (() => {
       row.className = 'row grade-row';
       row.dataset.k = k;
       row.innerHTML = `
-        <div><input class="input g-label" placeholder="Etiqueta" value="${g.label || ''}" required/></div>
-        <div><input class="input g-name" placeholder="Nombre" value="${g.name || ''}" required pattern="[A-Za-z0-9]+"/></div>
-        <div><input class="input g-pay" type="number" placeholder="Salario" value="${g.payment || 0}" min="0"/></div>
+        <div><input class="input g-label" placeholder="Etiqueta" value="${g.label || ''}"/></div>
+        <div><input class="input g-name" placeholder="Nombre" value="${g.name || ''}"/></div>
+        <div><input class="input g-pay" type="number" placeholder="Salario" value="${g.payment || 0}"/></div>
         <div><label><input type="checkbox" class="g-boss" ${g.isboss ? 'checked' : ''}/> Jefe</label></div>
         <div><button class="btn danger g-del">X</button></div>`;
       row.querySelector('.g-del').onclick = () => row.remove();
@@ -503,8 +481,6 @@ const App = (() => {
     sel.onchange = loadEmp;
     if (!state.empJob && sel.options[0]) { state.empJob = sel.options[0].value; }
     sel.value = state.empJob;
-    $('#filterEmp').value = state.empFilter;
-    $('#filterEmp').onchange = () => { state.empFilter = $('#filterEmp').value; paintEmp(); };
     loadEmp();
   }
   function loadEmp() {
@@ -518,37 +494,23 @@ const App = (() => {
     const tb = $('#empTable tbody');
     tb.innerHTML = '';
     const query = ($('#searchEmp').value || '').toLowerCase();
-    const jobOpts = Object.values(state.jobs).map((j) => `<option value="${j.name}">${j.label}</option>`).join('');
     let online = 0;
     state.employees
       .filter((e) => e.name.toLowerCase().includes(query))
-      .filter((e) => state.empFilter === 'all' ? true : state.empFilter === 'online' ? e.online : !e.online)
       .forEach((e) => {
         if (e.online) online++;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.name}</td>
-          <td class="grade-inline"><button class="btn dem" data-cid="${e.citizenid}" data-g="${e.grade-1}">-</button><span>${e.grade}</span><button class="btn pro" data-cid="${e.citizenid}" data-g="${e.grade+1}">+</button></td>
+          <td>${e.grade}</td>
           <td>${e.online ? '<span class="badge ok">Online</span>' : '<span class="badge off">Offline</span>'}</td>
           <td class="actions-inline">
-            <select class="tfsel">${jobOpts}</select>
-            <button class="btn tf" data-cid="${e.citizenid}">Transferir</button>
-            <button class="btn danger fire" data-cid="${e.citizenid}">Despedir</button>
+            <button class="btn" data-r="${e.citizenid}">Rango</button>
+            <button class="btn danger" data-cid="${e.citizenid}">Despedir</button>
           </td>`;
-        const tfSel = tr.querySelector('.tfsel');
-        const btnFire = tr.querySelector('button.fire');
-        const btnPro  = tr.querySelector('button.pro');
-        const btnDem  = tr.querySelector('button.dem');
-        const btnTf   = tr.querySelector('button.tf');
-        tfSel.value = state.empJob;
-        btnFire.onclick = () =>
+        tr.querySelector('button[data-cid]').onclick = () =>
           confirm(`¿Despedir a ${e.name}?`, () => { post('fire', { job: state.empJob, citizenid: e.citizenid }); loadEmp(); toast('Empleado despedido', 'success'); });
-        btnPro.onclick = () => { post('promote', { job: state.empJob, citizenid: e.citizenid, grade: Number(btnPro.dataset.g) }); setTimeout(loadEmp, 250); };
-        btnDem.onclick = () => { post('promote', { job: state.empJob, citizenid: e.citizenid, grade: Number(btnDem.dataset.g) }); setTimeout(loadEmp, 250); };
-        btnTf.onclick = () => {
-          const to = tfSel.value;
-          post('transfer', { job: state.empJob, citizenid: e.citizenid, to, grade: 0 }).then(() => { setTimeout(loadEmp, 250); toast('Transferido', 'success'); });
-        };
+        tr.querySelector('button[data-r]').onclick = () => openSetGradeModal(state.empJob, e);
         tb.appendChild(tr);
       });
     $('#emp-summary').innerHTML = `
@@ -752,16 +714,6 @@ const App = (() => {
       const zone = zonesCache.find((z) => z.id === id);
       if (!zone) return;
       let coords = zone.coords;
-      const inter = (zone.data && zone.data.interaction) || (window.Config?.InteractionMode || 'target');
-      const blipRow = zone.ztype === 'blip'
-        ? `<div class="row" id="zbliprow">
-            <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
-            <div><label>Color</label><input id="zcolor" class="input" value="${zone.color ?? ''}"/></div>
-            <div><label>YTD Dict</label><input id="zytddict" class="input" value="${zone.ytdDict || ''}"/></div>
-            <div><label>YTD Name</label><input id="zytdname" class="input" value="${zone.ytdName || ''}"/></div>
-          </div>`
-        : '';
-
       const base = `
         <div class="row">
           <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
@@ -769,29 +721,10 @@ const App = (() => {
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="${(zone.data && zone.data.clearRadius) || 0}"/></div>
           <div><button id="zcoords" class="btn">Usar mis coords</button></div>
         </div>
-        <div class="row">
-          <div><label>Interacción</label><select id="zinteraction" class="input">
-            <option value="target" ${inter === 'target' ? 'selected' : ''}>qb-target</option>
-            <option value="textui" ${inter === 'textui' ? 'selected' : ''}>TextUI</option>
-            <option value="3dtext" ${inter === '3dtext' ? 'selected' : ''}>3D Text</option>
-          </select></div>
-        </div>
-        <div class="row" id="zactrow">
-          <div><label>Icono acción</label><input id="zacticon" class="input" placeholder="fa-solid fa-briefcase" value="${(zone.data && zone.data.icon) || ''}"/></div>
-          <div><label>Etiqueta acción</label><input id="zactlabel" class="input" placeholder="Abrir gestión" value="${(zone.data && zone.data.label) || ''}"/></div>
-        </div>
-        ${blipRow}
         <div id="zextra"></div>`;
       modal('Editar ' + zone.ztype, base, () => {
         const t = zone.ztype;
-        const interVal = document.getElementById('zinteraction')?.value || 'target';
-        const data = { interaction: interVal };
-        if (interVal === 'target') {
-          const actIcon = document.getElementById('zacticon')?.value.trim();
-          const actLabel = document.getElementById('zactlabel')?.value.trim();
-          if (actIcon) data.icon = actIcon;
-          if (actLabel) data.label = actLabel;
-        }
+        const data = {};
         if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
         if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                             data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -818,10 +751,8 @@ const App = (() => {
         if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
                               data.amount = Number(document.getElementById('zamt')?.value||1);
                               data.time = Number(document.getElementById('ztime')?.value||3000);
-                              const dict = document.getElementById('zdict')?.value || '';
-                              const anim = document.getElementById('zanm')?.value || '';
-                              if (dict) data.dict = dict;
-                              if (anim) data.anim = anim; }
+                              data.dict = document.getElementById('zdict')?.value||'';
+                              data.anim = document.getElementById('zanm')?.value||''; }
         if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
         if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
                             data.price = Number(document.getElementById('zsprice')?.value||10);
@@ -831,37 +762,17 @@ const App = (() => {
                                 data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
                                 data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
         if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
-        if (t === 'anim') { const sc = document.getElementById('zsc')?.value || '';
-                            if (sc) data.scenario = sc;
-                            const dict = document.getElementById('zdict')?.value || '';
-                            const anim = document.getElementById('zanm')?.value || '';
-                            if (dict) data.dict = dict;
-                            if (anim) data.anim = anim;
+        if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
+                            data.dict = document.getElementById('zdict')?.value||'';
+                            data.anim = document.getElementById('zanm')?.value||'';
                             data.time = Number(document.getElementById('ztime')?.value||5000); }
         if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
         if (t === 'teleport') { data.to = collectTeleports(); }
         const cr = Number(document.getElementById('zclearrad')?.value || 0);
         data.clearArea = cr > 0;
         data.clearRadius = cr;
-        const payload = { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords };
-        if (t === 'blip') {
-          const spVal = document.getElementById('zsprite')?.value;
-          const colVal = document.getElementById('zcolor')?.value;
-          const dict = document.getElementById('zytddict')?.value.trim();
-          const name = document.getElementById('zytdname')?.value.trim();
-          if (spVal !== '' && !isNaN(Number(spVal))) payload.sprite = Number(spVal);
-          if (colVal !== '' && !isNaN(Number(colVal))) payload.color = Number(colVal);
-          if (dict) payload.ytdDict = dict;
-          if (name) payload.ytdName = name;
-        }
-        post('updateZone', payload).then(() => { closeModal(); load(); });
+        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords }).then(() => { closeModal(); load(); });
       });
-
-      const actRow = document.getElementById('zactrow');
-      const interSel = document.getElementById('zinteraction');
-      const toggleAct = () => { if (actRow) actRow.style.display = interSel.value === 'target' ? '' : 'none'; };
-      interSel.addEventListener('change', toggleAct);
-      toggleAct();
 
       document.getElementById('zcoords').onclick = () => {
         postJ('getCoords', {}).then((c) => {
@@ -932,38 +843,20 @@ const App = (() => {
     }
 
     document.getElementById('addz').onclick = () => {
-      const interDef = window.Config?.InteractionMode || 'target';
-        const base = `
-          <div class="row">
-            <div>
-              <label>Tipo</label>
-              <select id="ztype" class="input">
+      const base = `
+        <div class="row">
+          <div>
+            <label>Tipo</label>
+            <select id="ztype" class="input">
               ${(window.Config?.ZoneTypes || ['blip', 'boss', 'stash', 'garage', 'crafting', 'cloakroom', 'shop', 'collect', 'spawner', 'sell', 'alarm', 'register', 'anim', 'music', 'teleport'])
                 .map((t) => `<option>${t}</option>`).join('')}
             </select>
           </div>
-          <div><label>Etiqueta</label><input id="zlabel" class="input" required/></div>
-          </div>
-          <div class="row">
-            <div><label>Interacción</label><select id="zinteraction" class="input">
-              <option value="target" ${interDef === 'target' ? 'selected' : ''}>qb-target</option>
-              <option value="textui" ${interDef === 'textui' ? 'selected' : ''}>TextUI</option>
-              <option value="3dtext" ${interDef === '3dtext' ? 'selected' : ''}>3D Text</option>
-            </select></div>
-          </div>
-          <div class="row" id="zactrow">
-            <div><label>Icono acción</label><input id="zacticon" class="input" placeholder="fa-solid fa-briefcase"/></div>
-            <div><label>Etiqueta acción</label><input id="zactlabel" class="input" placeholder="Abrir gestión"/></div>
-          </div>
-          <div class="row">
-            <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
-            <div><label>Limpieza (m)</label><input id="zclearrad" class="input" type="number" value="0" min="0"/></div>
-            <div><label>Sprite</label><input id="zsprite" class="input" type="number"/></div>
-            <div><label>Color</label><input id="zcolor" class="input" type="number"/></div>
+          <div><label>Etiqueta</label><input id="zlabel" class="input"/></div>
         </div>
         <div class="row">
-          <div><label>YTD Dict</label><input id="zytddict" class="input"/></div>
-          <div><label>YTD Name</label><input id="zytdname" class="input"/></div>
+          <div><label>Radio</label><input id="zrad" class="input" value="2.0"/></div>
+          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="0"/></div>
           <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
         </div>
         <div id="zextra"></div>`;
@@ -971,20 +864,7 @@ const App = (() => {
         postJ('getCoords', {}).then((c) => {
           if (!c) { toast('No se pudieron leer tus coords', 'error'); return; }
           const t = document.getElementById('ztype').value;
-          const label = document.getElementById('zlabel').value.trim();
-          const radius = Number(document.getElementById('zrad').value);
-          const validTypes = window.Config?.ZoneTypes || ['blip','boss','stash','garage','crafting','cloakroom','shop','collect','spawner','sell','alarm','register','anim','music','teleport'];
-          if (!label) { toast('Etiqueta requerida', 'error'); return; }
-          if (!radius || radius <= 0) { toast('Radio inválido', 'error'); return; }
-          if (!validTypes.includes(t)) { toast('Tipo de zona inválido', 'error'); return; }
-            const interVal = document.getElementById('zinteraction')?.value || 'target';
-            const data = { interaction: interVal };
-            if (interVal === 'target') {
-              const actIcon = document.getElementById('zacticon')?.value.trim();
-              const actLabel = document.getElementById('zactlabel')?.value.trim();
-              if (actIcon) data.icon = actIcon;
-              if (actLabel) data.label = actLabel;
-            }
+          const data = {};
           if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
           if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                               data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -1008,13 +888,11 @@ const App = (() => {
             }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
-            if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
-                                  data.amount = Number(document.getElementById('zamt')?.value||1);
-                                  data.time = Number(document.getElementById('ztime')?.value||3000);
-                                  const dict = document.getElementById('zdict')?.value || '';
-                                  const anim = document.getElementById('zanm')?.value || '';
-                                  if (dict) data.dict = dict;
-                                  if (anim) data.anim = anim; }
+          if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
+                                data.amount = Number(document.getElementById('zamt')?.value||1);
+                                data.time = Number(document.getElementById('ztime')?.value||3000);
+                                data.dict = document.getElementById('zdict')?.value||'';
+                                data.anim = document.getElementById('zanm')?.value||''; }
           if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
           if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
                               data.price = Number(document.getElementById('zsprice')?.value||10);
@@ -1024,47 +902,29 @@ const App = (() => {
                                   data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
                                   data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
           if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
-            if (t === 'anim') { const sc = document.getElementById('zsc')?.value || '';
-                                if (sc) data.scenario = sc;
-                                const dict = document.getElementById('zdict')?.value || '';
-                                const anim = document.getElementById('zanm')?.value || '';
-                                if (dict) data.dict = dict;
-                                if (anim) data.anim = anim;
-                                data.time = Number(document.getElementById('ztime')?.value||5000); }
+          if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
+                              data.dict = document.getElementById('zdict')?.value||'';
+                              data.anim = document.getElementById('zanm')?.value||'';
+                              data.time = Number(document.getElementById('ztime')?.value||5000); }
           if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
           if (t === 'teleport') { data.to = collectTeleports(); }
           const cr = Number(document.getElementById('zclearrad')?.value || 0);
           data.clearArea = cr > 0;
           data.clearRadius = cr;
-            const z = {
-              job: state.jd.job,
-              ztype: t,
-              label: document.getElementById('zlabel').value,
-              radius: Number(document.getElementById('zrad').value) || 2.0,
-              coords: c,
-              data,
-            };
-            if (t === 'blip') {
-              const spVal = document.getElementById('zsprite')?.value;
-              const colVal = document.getElementById('zcolor')?.value;
-              const dict = document.getElementById('zytddict')?.value.trim();
-              const name = document.getElementById('zytdname')?.value.trim();
-              if (spVal !== '' && !isNaN(Number(spVal))) z.sprite = Number(spVal);
-              if (colVal !== '' && !isNaN(Number(colVal))) z.color = Number(colVal);
-              if (dict) z.ytdDict = dict;
-              if (name) z.ytdName = name;
-            }
-            post('createZone', z).then(() => { closeModal(); load(); });
-          });
+          const z = {
+            job: state.jd.job,
+            ztype: t,
+            label: document.getElementById('zlabel').value,
+            radius: Number(document.getElementById('zrad').value) || 2.0,
+            coords: c,
+            data,
+          };
+          post('createZone', z).then(() => { closeModal(); load(); });
         });
+      });
 
-        // campos dinámicos según tipo
-        const actRow = document.getElementById('zactrow');
-        const interSel = document.getElementById('zinteraction');
-        const toggleAct = () => { if (actRow) actRow.style.display = interSel.value === 'target' ? '' : 'none'; };
-        interSel.addEventListener('change', toggleAct);
-        toggleAct();
-        const extraBox = document.getElementById('zextra');
+      // campos dinámicos según tipo
+      const extraBox = document.getElementById('zextra');
       function renderExtra() {
       const t = document.getElementById('ztype').value;
       const box = document.getElementById('zextra');
@@ -1151,24 +1011,16 @@ const App = (() => {
     const skeleton = `
       <div class="row">
         <div><label>Jugador</label><select id="nearbySel" class="input"><option>Cargando...</option></select></div>
-        <div><label>Trabajo</label><select id="nearbyJob" class="input"></select></div>
-        <div><label>Grado</label><div class="grade-inline"><button class="btn" id="gradeMinus">-</button><input id="nearbyGrade" class="input" style="width:60px" placeholder="0" value="0"/><button class="btn" id="gradePlus">+</button></div></div>
+        <div><label>Grado</label><input id="nearbyGrade" class="input" placeholder="0" value="0"/></div>
       </div>`;
     modal('Reclutar', skeleton, () => {
       const sid   = Number($('#nearbySel').value);         // clave esperada por servidor (sid)
       const grade = Number($('#nearbyGrade').value) || 0;
-      const job   = $('#nearbyJob').value || jobName;
       if (!sid || Number.isNaN(sid)) { closeModal(); return; }
-      post('recruit', { job, sid, grade }).then(() => {
+      post('recruit', { job: jobName, sid, grade }).then(() => {
         closeModal(); toast('Reclutado', 'success'); if (onDone) onDone();
       });
     });
-
-    const jobSel = $('#nearbyJob');
-    jobSel.innerHTML = Object.values(state.jobs).map((j) => `<option value="${j.name}">${j.label}</option>`).join('');
-    jobSel.value = jobName;
-    $('#gradePlus').onclick = () => { const g = Number($('#nearbyGrade').value) || 0; $('#nearbyGrade').value = g + 1; };
-    $('#gradeMinus').onclick = () => { const g = Number($('#nearbyGrade').value) || 0; $('#nearbyGrade').value = g - 1; };
 
     postJ('getNearby', { job: jobName, radius: 3.0 }).then((list) => {
       if (!Array.isArray(list) || list.length === 0) {

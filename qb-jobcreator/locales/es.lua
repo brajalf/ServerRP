@@ -45,10 +45,4 @@ Locales['es'] = {
   import_jobs = 'Importar (JSON)',
   export_jobs = 'Exportar',
   duplicate = 'Duplicar',
-  promote = 'Promocionar',
-  demote = 'Degradar',
-  transfer = 'Transferir',
-  filter_all = 'Todos',
-  filter_online = 'Online',
-  filter_offline = 'Offline',
 }

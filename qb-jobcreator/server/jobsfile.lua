@@ -55,14 +55,4 @@ function JobsFile.Save(jobs)
   SaveResourceFile(RESOURCE, FILE, table.concat(lines, '\n') .. '\n', -1)
 end
 
--- Export current QBCore shared jobs table to the shared/jobs.lua file
-function JobsFile.Export()
-  local ok, err = pcall(JobsFile.Save)
-  if not ok then
-    print('JobsFile.Export error:', err)
-    return false
-  end
-  return true
-end
-
 return JobsFile

@@ -16,12 +16,10 @@ end
 local function removeAll()
   if next(Active) then
     for _, z in pairs(Active) do
-      if z._zoneName then
-        exports['qb-target']:RemoveZone(z._zoneName)
-      end
-      if z._subZones then
-        for _, name in ipairs(z._subZones) do
-          exports['qb-target']:RemoveZone(name)
+      if Config.Integrations.UseQbTarget then
+        if z._zoneName then exports['qb-target']:RemoveZone(z._zoneName) end
+        if z._subZones then
+          for _, name in ipairs(z._subZones) do exports['qb-target']:RemoveZone(name) end
         end
       end
       if z._popArea then RemovePopMultiplierArea(z._popArea) end
@@ -64,8 +62,6 @@ end
 local function canUseZone(z, requireBoss)
   local name, grade, isboss = playerJobData()
   local inJob = (name == z.job) or hasMultiJob(z.job)
-  print(('[qb-jobcreator] canUseZone ztype=%s job=%s playerJob=%s grade=%s isboss=%s requireBoss=%s inJob=%s'):format(
-    tostring(z and z.ztype), tostring(z and z.job), tostring(name), tostring(grade), tostring(isboss), tostring(requireBoss), tostring(inJob)))
   if not inJob then return false end
   if requireBoss and not isboss then return false end
   local minG = 0
@@ -212,8 +208,6 @@ local function addTargetForZone(z)
   local size = (radius + 0.5) * 2.0
   local distance = radius + 1.0
   local opts = {}
-  local d = z.data or {}
-  local dLabel = d.label
   local usingTarget = GetResourceState('qb-target') == 'started'
   if not usingTarget then
     print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
@@ -221,14 +215,14 @@ local function addTargetForZone(z)
 
   if z.ztype == 'boss' then
     table.insert(opts, {
-      label = dLabel or 'Abrir gestión del trabajo',
+      label = 'Abrir gestión del trabajo', icon = 'fa-solid fa-briefcase',
       canInteract = function() return canUseZone(z, true) end,
       action = function() TriggerServerEvent('qb-jobcreator:server:openBossPanel', z.job) end
     })
 
   elseif z.ztype == 'stash' then
     table.insert(opts, {
-      label = dLabel or 'Abrir Almacén',
+      label = 'Abrir Almacén', icon = 'fa-solid fa-box',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:openStash', z.id)
@@ -237,7 +231,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'garage' then
     table.insert(opts, {
-      label = dLabel or 'Sacar vehículo de trabajo',
+      label = 'Sacar vehículo de trabajo', icon = 'fa-solid fa-car',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local _, myGrade = playerJobData()
@@ -253,7 +247,7 @@ local function addTargetForZone(z)
     })
 
     table.insert(opts, {
-      label = dLabel or 'Guardar vehículo',
+      label = 'Guardar vehículo', icon = 'fa-solid fa-warehouse',
       canInteract = function()
         local ped = PlayerPedId()
         local veh = GetVehiclePedIsIn(ped, false)
@@ -264,7 +258,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'cloakroom' then
     table.insert(opts, {
-      label = dLabel or 'Vestuario',
+      label = 'Vestuario', icon = 'fa-solid fa-shirt',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local data = z.data or {}
@@ -272,11 +266,12 @@ local function addTargetForZone(z)
         if mode == 'illenium' then
           TriggerEvent('illenium-appearance:client:openClothingShopMenu')
         elseif mode == 'qb-clothing' then
-          TriggerEvent('qb-clothing:client:openMenu', true)
+          TriggerEvent('qb-clothing:client:openMenu', true) -- true = shop mode
         elseif GetResourceState('illenium-appearance')=='started' then
+          -- tienda de ropa / vestuario
           TriggerEvent('illenium-appearance:client:openClothingShopMenu')
         elseif GetResourceState('qb-clothing')=='started' then
-          TriggerEvent('qb-clothing:client:openMenu', true)
+          TriggerEvent('qb-clothing:client:openMenu', true) -- true = shop mode
         else
           QBCore.Functions.Notify('No hay sistema de vestuario disponible.', 'error')
         end
@@ -285,7 +280,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'shop' then
     table.insert(opts, {
-      label = dLabel or 'Abrir tienda',
+      label = 'Abrir tienda', icon = 'fa-solid fa-store',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:getShopItems', z.id)
@@ -294,7 +289,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'collect' then
     table.insert(opts, {
-      label = dLabel or 'Recolectar',
+      label = 'Recolectar', icon = 'fa-solid fa-box-open',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local data = z.data or {}
@@ -308,7 +303,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'spawner' then
     table.insert(opts, {
-      label = dLabel or 'Usar',
+      label = 'Usar', icon = 'fa-solid fa-cubes',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local model = (z.data and z.data.prop) or 'prop_toolchest_05'
@@ -323,7 +318,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'sell' then
     table.insert(opts, {
-      label = dLabel or 'Vender material',
+      label = 'Vender material', icon = 'fa-solid fa-sack-dollar',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:sell', z.id)
@@ -332,7 +327,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'register' then
     table.insert(opts, {
-      label = dLabel or 'Cobrar a cercano',
+      label = 'Cobrar a cercano', icon = 'fa-solid fa-cash-register',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local sid = GetClosestPlayerToMe(3.0)
@@ -343,7 +338,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'alarm' then
     table.insert(opts, {
-      label = dLabel or 'Activar alarma',
+      label = 'Activar alarma', icon = 'fa-solid fa-bell',
       canInteract = function() return canUseZone(z, true) end,
       action = function()
         TriggerServerEvent('qb-jobcreator:server:alarm', z.job, (z.data and z.data.code) or 'panic')
@@ -352,7 +347,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'anim' then
     table.insert(opts, {
-      label = dLabel or z.label or 'Usar animación',
+      label = z.label or 'Usar animación', icon = 'fa-solid fa-person',
       canInteract = function() return canUseZone(z, false) end,
       action = function()
         local d = z.data or {}
@@ -368,7 +363,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'music' then
     table.insert(opts, {
-      label = dLabel or 'Reproducir música',
+      label = 'Reproducir música', icon = 'fa-solid fa-music',
       canInteract = function() return canUseZone(z, false) and GetResourceState('myDj')=='started' end,
       action = function()
         local d = z.data or {}
@@ -392,7 +387,7 @@ local function addTargetForZone(z)
         local options = {}
         if from ~= 0 then
           table.insert(options, {
-            label = dLabel or z.label or 'Origen',
+            label = z.label or 'Origen', icon = 'fa-solid fa-person-arrow-up-from-line',
             canInteract = function() return canUseZone(z, false) end,
             action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, 0) end
           })
@@ -400,7 +395,7 @@ local function addTargetForZone(z)
         for i, dest in ipairs(dests) do
           if i ~= from then
             table.insert(options, {
-              label = dLabel or dest.label or ('Destino '..i),
+              label = dest.label or ('Destino '..i), icon = 'fa-solid fa-person-arrow-up-from-line',
               canInteract = function() return canUseZone(z, false) end,
               action = function() TriggerServerEvent('qb-jobcreator:server:teleport', z.id, from, i) end
             })
@@ -412,7 +407,7 @@ local function addTargetForZone(z)
       if #dests == 0 then
         opts = {
           {
-            label = dLabel or 'Teletransportar',
+            label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
             canInteract = function() return false end,
             action = function() QBCore.Functions.Notify('Destino no configurado.', 'error') end
           }
@@ -433,7 +428,7 @@ local function addTargetForZone(z)
     else
       opts = {
         {
-          label = dLabel or 'Teletransportar',
+          label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
           canInteract = function() return canUseZone(z, false) end,
           action = function()
             if #dests == 0 then
@@ -444,7 +439,7 @@ local function addTargetForZone(z)
               local menu = { { header = 'Selecciona destino', isMenuHeader = true } }
               for i, dest in ipairs(dests) do
                 menu[#menu+1] = {
-                  header = dLabel or dest.label or ('Destino '..i),
+                  header = dest.label or ('Destino '..i),
                   params = { event = 'qb-jobcreator:client:teleportSelect', args = { zone = z.id, index = i } }
                 }
               end
@@ -459,7 +454,7 @@ local function addTargetForZone(z)
 
   elseif z.ztype == 'crafting' then
     table.insert(opts, {
-      label = dLabel or 'Craftear',
+      label = 'Craftear', icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
       action = function() openCraftMenu(z) end
     })
@@ -554,15 +549,8 @@ RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
   for _, z in ipairs(zones or {}) do
     Active[#Active+1] = z
     if z.ztype == 'blip' then
-      if z.ytdDict then
-        RequestStreamedTextureDict(z.ytdDict, false)
-        while not HasStreamedTextureDictLoaded(z.ytdDict) do Wait(0) end
-      end
       local blip = AddBlipForCoord(z.coords.x, z.coords.y, z.coords.z)
-      local sprite = z.sprite or Config.Zone.BlipSprite
-      if z.ytdName then sprite = GetHashKey(z.ytdName) end
-      SetBlipSprite(blip, sprite)
-      SetBlipColour(blip, z.color or Config.Zone.BlipColor)
+      SetBlipSprite(blip, Config.Zone.BlipSprite); SetBlipColour(blip, Config.Zone.BlipColor)
       SetBlipScale(blip, 0.8); SetBlipAsShortRange(blip, true)
       BeginTextCommandSetBlipName('STRING'); AddTextComponentString(z.label or ('Punto '..z.job)); EndTextCommandSetBlipName(blip)
     else
@@ -590,6 +578,7 @@ local function addGlobalTargetsOnce()
     options = {
       {
         label = 'Reanimar',
+        icon  = 'fa-solid fa-kit-medical',
         canInteract = function(entity, distance)
           return isJob('ambulance') and distance <= 2.2 and IsPedDeadOrDying(entity, true)
         end,
@@ -599,6 +588,7 @@ local function addGlobalTargetsOnce()
           elseif GetResourceState('hospital')=='started' then
             TriggerEvent('hospital:client:RevivePlayer', GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity)))
           else
+            -- fallback: set health
             SetEntityHealth(entity, 200)
             QBCore.Functions.Notify('Paciente reanimado (fallback).', 'success')
           end
@@ -606,6 +596,7 @@ local function addGlobalTargetsOnce()
       },
       {
         label = 'Curar heridas',
+        icon  = 'fa-solid fa-bandage',
         canInteract = function(entity, distance)
           return isJob('ambulance') and distance <= 2.2 and not IsPedDeadOrDying(entity, true)
         end,
@@ -628,28 +619,31 @@ local function addGlobalTargetsOnce()
     options = {
       {
         label = 'Esposar / Quitar esposas',
+        icon  = 'fa-solid fa-handcuffs',
         canInteract = function(_, distance) return isJob('police') and distance <= 2.0 end,
         action = function(entity)
           if GetResourceState('qb-policejob')=='started' then
             TriggerServerEvent('police:server:CuffPlayer', GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity)))
           else
-            TriggerEvent('police:client:CuffPlayer')
+            TriggerEvent('police:client:CuffPlayer') -- muchos forks escuchan este
           end
         end
       },
       {
         label = 'Escoltar',
+        icon  = 'fa-solid fa-person-walking',
         canInteract = function(_, distance) return isJob('police') and distance <= 2.0 end,
         action = function(entity)
           if GetResourceState('qb-policejob')=='started' then
             TriggerEvent('police:client:EscortPlayer', GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity)))
           else
-            TriggerEvent('police:client:Escort')
+            TriggerEvent('police:client:Escort') -- fallback común
           end
         end
       },
       {
         label = 'Meter al vehículo',
+        icon  = 'fa-solid fa-car-side',
         canInteract = function(_, distance) return isJob('police') and distance <= 2.0 end,
         action = function(entity)
           TriggerEvent('police:client:PutInVehicle', GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity)))
@@ -657,6 +651,7 @@ local function addGlobalTargetsOnce()
       },
       {
         label = 'Sacar del vehículo',
+        icon  = 'fa-solid fa-person-through-window',
         canInteract = function(_, distance) return isJob('police') and distance <= 2.0 end,
         action = function(entity)
           TriggerEvent('police:client:SetOutVehicle', GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity)))
@@ -671,6 +666,7 @@ local function addGlobalTargetsOnce()
     options = {
       {
         label = 'Reparar vehículo',
+        icon  = 'fa-solid fa-screwdriver-wrench',
         canInteract = function(_, distance) return isJob('mechanic') and distance <= 2.8 end,
         action = function(entity)
           SetVehicleFixed(entity); SetVehicleDeformationFixed(entity); SetVehicleEngineOn(entity, true, true)
@@ -678,11 +674,13 @@ local function addGlobalTargetsOnce()
       },
       {
         label = 'Limpiar vehículo',
+        icon  = 'fa-solid fa-broom',
         canInteract = function(_, distance) return (isJob('mechanic') or isJob('police') or isJob('ambulance')) and distance <= 2.8 end,
         action = function(entity) SetVehicleDirtLevel(entity, 0.0) end
       },
       {
         label = 'Incautar',
+        icon  = 'fa-solid fa-truck-ramp-box',
         canInteract = function(_, distance) return isJob('police') and distance <= 2.8 end,
         action = function(entity)
           DeleteEntity(entity)

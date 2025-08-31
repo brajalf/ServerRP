@@ -39,22 +39,10 @@
               <div class="card"><div class="h">Empleados</div><div id="metric-employees" class="b">0</div></div>
               <div class="card"><div class="h">Dinero total</div><div id="metric-money" class="b">$0</div></div>
               <div class="card"><div class="h">Más empleados</div><div id="metric-top" class="b">-</div></div>
-              <div class="card"><div class="h">Activos hoy</div><div id="metric-active-day" class="b">0</div></div>
-              <div class="card"><div class="h">Activos semana</div><div id="metric-active-week" class="b">0</div></div>
             </div>
-            <div class="charts">
-              <div class="panel">
-                <div class="panel-h">Top Trabajos</div>
-                <canvas id="employeesChart" height="140"></canvas>
-              </div>
-              <div class="panel">
-                <div class="panel-h">Tipos de Trabajo</div>
-                <canvas id="typesChart" height="140"></canvas>
-              </div>
-              <div class="panel">
-                <div class="panel-h">Actividad de Empleados</div>
-                <canvas id="activityChart" height="140"></canvas>
-              </div>
+            <div class="panel">
+              <div class="panel-h">Empleados Generales</div>
+              <canvas id="employeesChart" height="140"></canvas>
             </div>
           </section>
 
@@ -74,11 +62,6 @@
             <div class="toolbar">
               <select id="employeesJob"></select>
               <input type="text" id="searchEmp" placeholder="Buscar empleados..." />
-              <select id="filterEmp">
-                <option value="all">Todos</option>
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-              </select>
             </div>
             <div class="cards small" id="emp-summary"></div>
             <table class="table" id="empTable">
