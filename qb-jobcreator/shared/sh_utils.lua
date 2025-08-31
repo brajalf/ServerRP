@@ -19,7 +19,14 @@ end
 Utils.HasOpenPermission = HasOpenPermission
 
 function UseTarget()
-  return Config.InteractionMode == 'target' and (Config.Integrations.UseQbTarget or Config.Integrations.UseOxTarget)
+  if Config.InteractionMode ~= 'target' then return false end
+  if Config.Integrations.UseQbTarget and GetResourceState('qb-target') == 'started' then
+    return 'qb-target'
+  end
+  if Config.Integrations.UseOxTarget and GetResourceState('ox_target') == 'started' then
+    return 'ox_target'
+  end
+  return false
 end
 Utils.UseTarget = UseTarget
 
