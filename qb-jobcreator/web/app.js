@@ -735,6 +735,12 @@ const App = (() => {
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="${(zone.data && zone.data.clearRadius) || 0}"/></div>
           <div><button id="zcoords" class="btn">Usar mis coords</button></div>
         </div>
+        <div class="row">
+          <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
+          <div><label>Color</label><input id="zcolor" class="input" value="${zone.color ?? ''}"/></div>
+          <div><label>YTD Dict</label><input id="zytddict" class="input" value="${zone.ytdDict || ''}"/></div>
+          <div><label>YTD Name</label><input id="zytdname" class="input" value="${zone.ytdName || ''}"/></div>
+        </div>
         <div id="zextra"></div>`;
       modal('Editar ' + zone.ztype, base, () => {
         const t = zone.ztype;
@@ -785,7 +791,11 @@ const App = (() => {
         const cr = Number(document.getElementById('zclearrad')?.value || 0);
         data.clearArea = cr > 0;
         data.clearRadius = cr;
-        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords }).then(() => { closeModal(); load(); });
+        const sprite = Number(document.getElementById('zsprite')?.value);
+        const color = Number(document.getElementById('zcolor')?.value);
+        const ytdDict = document.getElementById('zytddict')?.value || '';
+        const ytdName = document.getElementById('zytdname')?.value || '';
+        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords, sprite, color, ytdDict, ytdName }).then(() => { closeModal(); load(); });
       });
 
       document.getElementById('zcoords').onclick = () => {
@@ -871,6 +881,12 @@ const App = (() => {
         <div class="row">
           <div><label>Radio</label><input id="zrad" class="input" value="2.0"/></div>
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" value="0"/></div>
+          <div><label>Sprite</label><input id="zsprite" class="input"/></div>
+          <div><label>Color</label><input id="zcolor" class="input"/></div>
+        </div>
+        <div class="row">
+          <div><label>YTD Dict</label><input id="zytddict" class="input"/></div>
+          <div><label>YTD Name</label><input id="zytdname" class="input"/></div>
           <div><label>Usar mis coords</label><div class="h">Se capturarán al guardar</div></div>
         </div>
         <div id="zextra"></div>`;
@@ -931,6 +947,10 @@ const App = (() => {
             label: document.getElementById('zlabel').value,
             radius: Number(document.getElementById('zrad').value) || 2.0,
             coords: c,
+            sprite: Number(document.getElementById('zsprite')?.value),
+            color: Number(document.getElementById('zcolor')?.value),
+            ytdDict: document.getElementById('zytddict')?.value || '',
+            ytdName: document.getElementById('zytdname')?.value || '',
             data,
           };
           post('createZone', z).then(() => { closeModal(); load(); });

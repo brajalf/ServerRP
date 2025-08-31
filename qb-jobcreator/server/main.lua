@@ -55,6 +55,26 @@ local function SanitizeCategoryList(categories)
   return list
 end
 
+local function ApplyBlipInfo(data, zone)
+  data = data or {}
+  if zone then
+    local s = tonumber(zone.sprite); if s then data.sprite = s end
+    local c = tonumber(zone.color);  if c then data.color  = c end
+    if type(zone.ytdDict) == 'string' and zone.ytdDict ~= '' then data.ytdDict = zone.ytdDict end
+    if type(zone.ytdName) == 'string' and zone.ytdName ~= '' then data.ytdName = zone.ytdName end
+  end
+  return data
+end
+
+local function ExtractBlipInfo(data, zone)
+  if type(data) ~= 'table' or type(zone) ~= 'table' then return end
+  zone.sprite  = tonumber(data.sprite)
+  zone.color   = tonumber(data.color)
+  zone.ytdDict = (type(data.ytdDict) == 'string' and data.ytdDict ~= '') and data.ytdDict or nil
+  zone.ytdName = (type(data.ytdName) == 'string' and data.ytdName ~= '') and data.ytdName or nil
+  data.sprite, data.color, data.ytdDict, data.ytdName = nil, nil, nil, nil
+end
+
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = {
@@ -195,11 +215,13 @@ local function LoadAll()
       end
     end
     local coords = json.decode(z.coords or '{}') or {}
-    Runtime.Zones[#Runtime.Zones+1] = {
+    local zone = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
       coords = coords, radius = z.radius or 2.0,
       data = data
     }
+    ExtractBlipInfo(data, zone)
+    Runtime.Zones[#Runtime.Zones+1] = zone
     if z.ztype == 'music' then
       local name = (data and (data.name or data.djName)) or ('jc_ms_'..z.job..'_'..z.id)
       local range = tonumber(data and (data.range or data.distance)) or 20.0
@@ -573,6 +595,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       zone.data.theme = nil
     end
   end
+  zone.data = ApplyBlipInfo(zone.data, zone)
   local id = MySQL.insert.await('INSERT INTO jobcreator_zones (job,ztype,label,coords,radius,data) VALUES (?,?,?,?,?,?)',
     { zone.job, zone.ztype, zone.label or zone.ztype, json.encode(zone.coords), zone.radius or 2.0, json.encode(zone.data or {}) })
   if not id then return end
@@ -584,6 +607,7 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
     data = json.decode(r.data or '{}') or {}
   }
+  ExtractBlipInfo(nz.data, nz)
   if nz.ztype == 'shop' then
     nz.data.items = SanitizeShopItems(nz.data.items)
   elseif nz.ztype == 'crafting' then
@@ -819,7 +843,7 @@ RegisterNetEvent('qb-jobcreator:server:wash', function(job, amount)
 end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
-RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
+RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords, sprite, color, ytdDict, ytdName)
   local src = source; local job; local ztype; local old
   for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype old = z break end end
   if not allowAdminOrBoss(src, job or '') then return end
@@ -854,6 +878,7 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
   end
+  data = ApplyBlipInfo(data, { sprite = sprite, color = color, ytdDict = ytdDict, ytdName = ytdName })
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
@@ -880,11 +905,13 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
             nd.theme = nil
           end
         end
-        Runtime.Zones[idx] = {
+        local newZone = {
           id = r.id, job = r.job, ztype = r.ztype, label = r.label,
           coords = json.decode(r.coords or '{}') or {}, radius = r.radius or 2.0,
           data = nd
         }
+        ExtractBlipInfo(nd, newZone)
+        Runtime.Zones[idx] = newZone
         break
       end
     end
