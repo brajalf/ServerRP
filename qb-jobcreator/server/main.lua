@@ -249,7 +249,6 @@ local function LoadAll()
       data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
       if type(data.job) ~= 'string' and type(data.job) ~= 'table' then data.job = nil end
-      data.icon = type(data.icon) == 'string' and data.icon or nil
       if type(data.theme) == 'table' then
         data.theme = {
           colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
@@ -262,6 +261,8 @@ local function LoadAll()
         data.theme = nil
       end
     end
+    data.icon = type(data.icon) == 'string' and data.icon or nil
+    data.label = type(data.label) == 'string' and data.label or nil
     local coords = json.decode(z.coords or '{}') or {}
     local zone = {
       id = z.id, job = z.job, ztype = z.ztype, label = z.label,
@@ -629,6 +630,8 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     else
       zone.data.interaction = 'target'
     end
+    zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
+    zone.data.label = type(zone.data.label) == 'string' and zone.data.label or nil
   end
   if zone.ztype == 'shop' then
     zone.data.items = SanitizeShopItems(zone.data.items)
@@ -644,7 +647,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     else
       zone.data.job = nil
     end
-    zone.data.icon = type(zone.data.icon) == 'string' and zone.data.icon or nil
     if type(zone.data.theme) == 'table' then
       local th = zone.data.theme
       zone.data.theme = {
@@ -674,6 +676,8 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   if nzInter ~= 'target' and nzInter ~= 'textui' and nzInter ~= '3dtext' then
     nz.data.interaction = 'target'
   end
+  nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
+  nz.data.label = type(nz.data.label) == 'string' and nz.data.label or nil
   ExtractBlipInfo(nz.data, nz)
   if nz.ztype == 'shop' then
     nz.data.items = SanitizeShopItems(nz.data.items)
@@ -683,7 +687,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     if type(nz.data.job) ~= 'string' and type(nz.data.job) ~= 'table' then
       nz.data.job = nil
     end
-    nz.data.icon = type(nz.data.icon) == 'string' and nz.data.icon or nil
     if type(nz.data.theme) == 'table' then
       nz.data.theme = {
         colorPrimario = type(nz.data.theme.colorPrimario) == 'string' and nz.data.theme.colorPrimario or nil,
@@ -975,6 +978,8 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     end
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
+    data.icon = type(data.icon) == 'string' and data.icon or nil
+    data.label = type(data.label) == 'string' and data.label or nil
   end
   data = ApplyBlipInfo(data, { sprite = sprite, color = color, ytdDict = ytdDict, ytdName = ytdName })
   if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
@@ -988,13 +993,14 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         if inter ~= 'target' and inter ~= 'textui' and inter ~= '3dtext' then
           nd.interaction = 'target'
         end
+        nd.icon = type(nd.icon) == 'string' and nd.icon or nil
+        nd.label = type(nd.label) == 'string' and nd.label or nil
         if ztype == 'shop' then
           nd.items = SanitizeShopItems(nd.items)
         elseif ztype == 'crafting' then
           nd.allowedCategories = SanitizeCategoryList(nd.allowedCategories)
           nd.recipes = SanitizeRecipeList(nd.recipes)
           if type(nd.job) ~= 'string' and type(nd.job) ~= 'table' then nd.job = nil end
-          nd.icon = type(nd.icon) == 'string' and nd.icon or nil
           if type(nd.theme) == 'table' then
             nd.theme = {
               colorPrimario = type(nd.theme.colorPrimario) == 'string' and nd.theme.colorPrimario or nil,

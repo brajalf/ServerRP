@@ -768,6 +768,10 @@ const App = (() => {
           </select></div>
         </div>
         <div class="row">
+          <div><label>Icono acción</label><input id="zacticon" class="input" value="${(zone.data && zone.data.icon) || ''}"/></div>
+          <div><label>Etiqueta acción</label><input id="zactlabel" class="input" value="${(zone.data && zone.data.label) || ''}"/></div>
+        </div>
+        <div class="row">
           <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
           <div><label>Color</label><input id="zcolor" class="input" value="${zone.color ?? ''}"/></div>
           <div><label>YTD Dict</label><input id="zytddict" class="input" value="${zone.ytdDict || ''}"/></div>
@@ -777,6 +781,10 @@ const App = (() => {
       modal('Editar ' + zone.ztype, base, () => {
         const t = zone.ztype;
         const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
+        const actIcon = document.getElementById('zacticon')?.value || '';
+        const actLabel = document.getElementById('zactlabel')?.value || '';
+        if (actIcon) data.icon = actIcon;
+        if (actLabel) data.label = actLabel;
         if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
         if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                             data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -919,6 +927,10 @@ const App = (() => {
           </select></div>
         </div>
         <div class="row">
+          <div><label>Icono acción</label><input id="zacticon" class="input"/></div>
+          <div><label>Etiqueta acción</label><input id="zactlabel" class="input"/></div>
+        </div>
+        <div class="row">
           <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
           <div><label>Limpieza (m)</label><input id="zclearrad" class="input" type="number" value="0" min="0"/></div>
           <div><label>Sprite</label><input id="zsprite" class="input" type="number"/></div>
@@ -941,6 +953,10 @@ const App = (() => {
           if (!radius || radius <= 0) { toast('Radio inválido', 'error'); return; }
           if (!validTypes.includes(t)) { toast('Tipo de zona inválido', 'error'); return; }
           const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
+          const actIcon = document.getElementById('zacticon')?.value || '';
+          const actLabel = document.getElementById('zactlabel')?.value || '';
+          if (actIcon) data.icon = actIcon;
+          if (actLabel) data.label = actLabel;
           if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
           if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                               data.weight = Number(document.getElementById('zweight')?.value || 400000); }
