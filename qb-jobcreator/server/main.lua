@@ -265,6 +265,8 @@ local function LoadAll()
     }
     ExtractBlipInfo(data, zone)
     Runtime.Zones[#Runtime.Zones+1] = zone
+    print(('[qb-jobcreator] Loaded zone id=%s type=%s job=%s radius=%s'):format(
+      tostring(zone.id), tostring(zone.ztype), tostring(zone.job), tostring(zone.radius)))
     if z.ztype == 'music' then
       local name = (data and (data.name or data.djName)) or ('jc_ms_'..z.job..'_'..z.id)
       local range = tonumber(data and (data.range or data.distance)) or 20.0
@@ -277,6 +279,7 @@ local function LoadAll()
     end
   end
   TriggerClientEvent('qb-jobcreator:client:syncAll', -1, Runtime.Jobs, Runtime.Zones)
+  print(('[qb-jobcreator] Enviando %d zonas al cliente'):format(#Runtime.Zones))
   TriggerClientEvent('qb-jobcreator:client:rebuildZones', -1, Runtime.Zones)
 end
 
