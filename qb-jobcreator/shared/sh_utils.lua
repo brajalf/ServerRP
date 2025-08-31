@@ -19,7 +19,6 @@ end
 Utils.HasOpenPermission = HasOpenPermission
 
 function UseTarget()
-  if Config.InteractionMode ~= 'target' then return false end
   if Config.Integrations.UseQbTarget and GetResourceState('qb-target') == 'started' then
     return 'qb-target'
   end
