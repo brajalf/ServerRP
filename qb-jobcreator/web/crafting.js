@@ -24,7 +24,6 @@ window.addEventListener('message', (e) => {
       if (th[k]) document.documentElement.style.setProperty(v, th[k]);
     });
     $('#craftTitleText').innerText = msg.title || th.titulo || CraftApp.locale.ui_title || 'KITCHEN';
-    $('#craftCategoryTag').innerText = msg.category || CraftApp.locale.ui_tab_food || 'FOOD';
     $('#craftPendingTitle').innerText = CraftApp.locale.queue_pending || 'PENDING ITEMS';
     $('#craftCollectTitle').innerText = CraftApp.locale.queue_collect || 'ITEMS TO COLLECT';
     $('#craftBtnLeaveAll').innerText = CraftApp.locale.leave_all || 'LEAVE ALL QUEUES';

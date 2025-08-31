@@ -180,7 +180,6 @@ local function LoadAll()
     elseif z.ztype == 'crafting' then
       data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
-      data.category = type(data.category) == 'string' and data.category or nil
       if type(data.job) ~= 'string' and type(data.job) ~= 'table' then data.job = nil end
       data.icon = type(data.icon) == 'string' and data.icon or nil
       if type(data.theme) == 'table' then
@@ -462,9 +461,6 @@ local function CollectCraftingData(src, zoneId)
     local data = zone.data or {}
     local cats = data.allowedCategories
     local recs = data.recipes
-    if (not cats or #cats == 0) and (not recs or #recs == 0) and data.category then
-      cats = { data.category }
-    end
     if cats and #cats > 0 then
       local set = {}
       for _, c in ipairs(cats) do set[c] = true end
@@ -541,7 +537,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   elseif zone.ztype == 'crafting' then
     zone.data.allowedCategories = SanitizeCategoryList(zone.data.allowedCategories)
     zone.data.recipes = SanitizeRecipeList(zone.data.recipes)
-    zone.data.category = type(zone.data.category) == 'string' and zone.data.category or nil
     if type(zone.data.job) == 'string' then
       zone.data.job = zone.data.job ~= '' and zone.data.job or nil
     elseif type(zone.data.job) == 'table' then
@@ -579,7 +574,6 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
   elseif nz.ztype == 'crafting' then
     nz.data.allowedCategories = SanitizeCategoryList(nz.data.allowedCategories)
     nz.data.recipes = SanitizeRecipeList(nz.data.recipes)
-    nz.data.category = type(nz.data.category) == 'string' and nz.data.category or nil
     if type(nz.data.job) ~= 'string' and type(nz.data.job) ~= 'table' then
       nz.data.job = nil
     end
@@ -818,7 +812,6 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     elseif ztype == 'crafting' then
       data.allowedCategories = SanitizeCategoryList(data.allowedCategories)
       data.recipes = SanitizeRecipeList(data.recipes)
-      data.category = type(data.category) == 'string' and data.category or nil
       if type(data.job) == 'string' then
         data.job = data.job ~= '' and data.job or nil
       elseif type(data.job) == 'table' then
@@ -854,7 +847,6 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
         elseif ztype == 'crafting' then
           nd.allowedCategories = SanitizeCategoryList(nd.allowedCategories)
           nd.recipes = SanitizeRecipeList(nd.recipes)
-          nd.category = type(nd.category) == 'string' and nd.category or nil
           if type(nd.job) ~= 'string' and type(nd.job) ~= 'table' then nd.job = nil end
           nd.icon = type(nd.icon) == 'string' and nd.icon or nil
           if type(nd.theme) == 'table' then
