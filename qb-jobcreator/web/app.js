@@ -5,6 +5,7 @@ const App = (() => {
     employees: [],
     view: 'home',
     empJob: null,
+    empFilter: 'all',
     charts: {},
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
@@ -495,6 +496,8 @@ const App = (() => {
     sel.onchange = loadEmp;
     if (!state.empJob && sel.options[0]) { state.empJob = sel.options[0].value; }
     sel.value = state.empJob;
+    $('#filterEmp').value = state.empFilter;
+    $('#filterEmp').onchange = () => { state.empFilter = $('#filterEmp').value; paintEmp(); };
     loadEmp();
   }
   function loadEmp() {
@@ -508,23 +511,37 @@ const App = (() => {
     const tb = $('#empTable tbody');
     tb.innerHTML = '';
     const query = ($('#searchEmp').value || '').toLowerCase();
+    const jobOpts = Object.values(state.jobs).map((j) => `<option value="${j.name}">${j.label}</option>`).join('');
     let online = 0;
     state.employees
       .filter((e) => e.name.toLowerCase().includes(query))
+      .filter((e) => state.empFilter === 'all' ? true : state.empFilter === 'online' ? e.online : !e.online)
       .forEach((e) => {
         if (e.online) online++;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.name}</td>
-          <td>${e.grade}</td>
+          <td class="grade-inline"><button class="btn dem" data-cid="${e.citizenid}" data-g="${e.grade-1}">-</button><span>${e.grade}</span><button class="btn pro" data-cid="${e.citizenid}" data-g="${e.grade+1}">+</button></td>
           <td>${e.online ? '<span class="badge ok">Online</span>' : '<span class="badge off">Offline</span>'}</td>
           <td class="actions-inline">
-            <button class="btn" data-r="${e.citizenid}">Rango</button>
-            <button class="btn danger" data-cid="${e.citizenid}">Despedir</button>
+            <select class="tfsel">${jobOpts}</select>
+            <button class="btn tf" data-cid="${e.citizenid}">Transferir</button>
+            <button class="btn danger fire" data-cid="${e.citizenid}">Despedir</button>
           </td>`;
-        tr.querySelector('button[data-cid]').onclick = () =>
+        const tfSel = tr.querySelector('.tfsel');
+        const btnFire = tr.querySelector('button.fire');
+        const btnPro  = tr.querySelector('button.pro');
+        const btnDem  = tr.querySelector('button.dem');
+        const btnTf   = tr.querySelector('button.tf');
+        tfSel.value = state.empJob;
+        btnFire.onclick = () =>
           confirm(`¿Despedir a ${e.name}?`, () => { post('fire', { job: state.empJob, citizenid: e.citizenid }); loadEmp(); toast('Empleado despedido', 'success'); });
-        tr.querySelector('button[data-r]').onclick = () => openSetGradeModal(state.empJob, e);
+        btnPro.onclick = () => { post('promote', { job: state.empJob, citizenid: e.citizenid, grade: Number(btnPro.dataset.g) }); setTimeout(loadEmp, 250); };
+        btnDem.onclick = () => { post('promote', { job: state.empJob, citizenid: e.citizenid, grade: Number(btnDem.dataset.g) }); setTimeout(loadEmp, 250); };
+        btnTf.onclick = () => {
+          const to = tfSel.value;
+          post('transfer', { job: state.empJob, citizenid: e.citizenid, to, grade: 0 }).then(() => { setTimeout(loadEmp, 250); toast('Transferido', 'success'); });
+        };
         tb.appendChild(tr);
       });
     $('#emp-summary').innerHTML = `
@@ -1045,16 +1062,24 @@ const App = (() => {
     const skeleton = `
       <div class="row">
         <div><label>Jugador</label><select id="nearbySel" class="input"><option>Cargando...</option></select></div>
-        <div><label>Grado</label><input id="nearbyGrade" class="input" placeholder="0" value="0"/></div>
+        <div><label>Trabajo</label><select id="nearbyJob" class="input"></select></div>
+        <div><label>Grado</label><div class="grade-inline"><button class="btn" id="gradeMinus">-</button><input id="nearbyGrade" class="input" style="width:60px" placeholder="0" value="0"/><button class="btn" id="gradePlus">+</button></div></div>
       </div>`;
     modal('Reclutar', skeleton, () => {
       const sid   = Number($('#nearbySel').value);         // clave esperada por servidor (sid)
       const grade = Number($('#nearbyGrade').value) || 0;
+      const job   = $('#nearbyJob').value || jobName;
       if (!sid || Number.isNaN(sid)) { closeModal(); return; }
-      post('recruit', { job: jobName, sid, grade }).then(() => {
+      post('recruit', { job, sid, grade }).then(() => {
         closeModal(); toast('Reclutado', 'success'); if (onDone) onDone();
       });
     });
+
+    const jobSel = $('#nearbyJob');
+    jobSel.innerHTML = Object.values(state.jobs).map((j) => `<option value="${j.name}">${j.label}</option>`).join('');
+    jobSel.value = jobName;
+    $('#gradePlus').onclick = () => { const g = Number($('#nearbyGrade').value) || 0; $('#nearbyGrade').value = g + 1; };
+    $('#gradeMinus').onclick = () => { const g = Number($('#nearbyGrade').value) || 0; $('#nearbyGrade').value = g - 1; };
 
     postJ('getNearby', { job: jobName, radius: 3.0 }).then((list) => {
       if (!Array.isArray(list) || list.length === 0) {

@@ -743,6 +743,22 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getNearbyPlayers', functio
 end)
 
 -- Reclutar / Despedir / Cambiar rango
+local function DoSetGrade(jobName, citizenid, newGrade)
+  newGrade = tonumber(newGrade) or 0
+  for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
+    if Player.PlayerData.citizenid == citizenid then
+      if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
+        Player.Functions.SetJob(jobName, newGrade)
+      end
+      Multi_SetGrade(citizenid, jobName, newGrade)
+      return
+    end
+  end
+  Multi_SetGrade(citizenid, jobName, newGrade)
+  local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(newGrade), level = newGrade } })
+  MySQL.update.await('UPDATE players SET job=? WHERE citizenid=? AND JSON_EXTRACT(job, "$..name") = ?', { jobJson, citizenid, jobName })
+end
+
 RegisterNetEvent('qb-jobcreator:server:recruit', function(jobName, grade, targetId)
   local src = source; if not allowAdminOrBoss(src, jobName) then return end
   local Target = QBCore.Functions.GetPlayer(tonumber(targetId) or -1)
@@ -773,19 +789,28 @@ end)
 
 RegisterNetEvent('qb-jobcreator:server:setGrade', function(jobName, citizenid, newGrade)
   local src = source; if not allowAdminOrBoss(src, jobName) then return end
-  newGrade = tonumber(newGrade) or 0
+  DoSetGrade(jobName, citizenid, newGrade)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:promote', function(jobName, citizenid, newGrade)
+  local src = source; if not allowAdminOrBoss(src, jobName) then return end
+  DoSetGrade(jobName, citizenid, newGrade)
+end)
+
+RegisterNetEvent('qb-jobcreator:server:transfer', function(fromJob, citizenid, toJob, grade)
+  local src = source; if not allowAdminOrBoss(src, fromJob) then return end
+  grade = tonumber(grade) or 0
   for _, Player in pairs(QBCore.Functions.GetQBPlayers()) do
     if Player.PlayerData.citizenid == citizenid then
-      if Player.PlayerData.job and Player.PlayerData.job.name == jobName then
-        Player.Functions.SetJob(jobName, newGrade)
-      end
-      Multi_SetGrade(citizenid, jobName, newGrade)
+      Player.Functions.SetJob(toJob, grade)
+      Multi_Remove(citizenid, fromJob)
+      Multi_Add(citizenid, toJob, grade)
       return
     end
   end
-  Multi_SetGrade(citizenid, jobName, newGrade)
-  local jobJson = json.encode({ name = jobName, label = jobName, grade = { name = tostring(newGrade), level = newGrade } })
-  MySQL.update.await('UPDATE players SET job=? WHERE citizenid=? AND JSON_EXTRACT(job, "$..name") = ?', { jobJson, citizenid, jobName })
+  DB.UpdateOfflineJob(citizenid, toJob, grade, fromJob)
+  Multi_Remove(citizenid, fromJob)
+  Multi_Add(citizenid, toJob, grade)
 end)
 
 -- ===== Cuentas =====
