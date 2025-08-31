@@ -75,6 +75,49 @@ local function ExtractBlipInfo(data, zone)
   data.sprite, data.color, data.ytdDict, data.ytdName = nil, nil, nil, nil
 end
 
+-- ===== Validations =====
+local function IsAlphaNum(str)
+  return type(str) == 'string' and str:match('^%w+$') ~= nil
+end
+
+local function ValidateJobData(data)
+  if type(data) ~= 'table' then return false, 'Datos inválidos' end
+  local name = data.name or ''
+  if not IsAlphaNum(name) then return false, 'Nombre de trabajo inválido' end
+  return true
+end
+
+local function ValidateGradeData(gradeKey, data)
+  if not tostring(gradeKey):match('^%w+$') then return false, 'Clave de rango inválida' end
+  if type(data) == 'table' then
+    if data.name and not IsAlphaNum(data.name) then return false, 'Nombre de rango inválido' end
+    local pay = tonumber(data.payment) or 0
+    if pay < 0 then return false, 'Pago inválido' end
+  end
+  return true
+end
+
+local function IsValidZoneType(ztype)
+  if type(ztype) ~= 'string' then return false end
+  for _, t in ipairs(Config.ZoneTypes or {}) do
+    if t == ztype then return true end
+  end
+  return false
+end
+
+local function ValidateZoneData(zone)
+  if type(zone) ~= 'table' then return false, 'Datos de zona inválidos' end
+  if not IsAlphaNum(zone.job or '') then return false, 'Trabajo inválido' end
+  if not IsValidZoneType(zone.ztype) then return false, 'Tipo de zona inválido' end
+  local c = zone.coords or {}
+  if tonumber(c.x) == nil or tonumber(c.y) == nil or tonumber(c.z) == nil then
+    return false, 'Coordenadas inválidas'
+  end
+  local r = tonumber(zone.radius)
+  if not r or r <= 0 then return false, 'Radio debe ser mayor a 0' end
+  return true
+end
+
 -- ===== Helpers =====
 local function InjectJobToCore(job)
   QBCore.Shared.Jobs[job.name] = {
@@ -380,6 +423,8 @@ end)
 -- ===== CRUD de trabajos =====
 RegisterNetEvent('qb-jobcreator:server:createJob', function(data)
   local src = source; if not ensurePerm(src) then return end
+  local ok, err = ValidateJobData(data)
+  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   local name = string.lower((data.name or ''):gsub('%s+',''))
   local job = {
     name = name,
@@ -429,6 +474,8 @@ end)
 RegisterNetEvent('qb-jobcreator:server:addGrade', function(jobName, gradeKey, data)
   local src = source; if not ensurePerm(src) then return end
   local j = Runtime.Jobs[jobName]; if not j then return end
+  local ok, err = ValidateGradeData(gradeKey, data)
+  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   j.grades = j.grades or {}
   local k = tostring(gradeKey)
   j.grades[k] = {
@@ -560,6 +607,8 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     return
   end
   _lastCreate[src] = { sig = sig, t = now }
+  local ok, err = ValidateZoneData(zone)
+  if not ok then TriggerClientEvent('QBCore:Notify', src, err, 'error'); return end
   zone.data = zone.data or {}
   if zone.data then
     zone.data.clearArea = zone.data.clearArea and true or false
