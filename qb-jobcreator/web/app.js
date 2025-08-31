@@ -740,9 +740,11 @@ const App = (() => {
                             const icon = document.getElementById('zicon')?.value || '';
                             if (icon) data.icon = icon;
                             const colorPrimario = document.getElementById('zcpri')?.value || '';
+                            const colorPrimarioAlt = document.getElementById('zcpria')?.value || '';
                             const colorSecundario = document.getElementById('zcsec')?.value || '';
+                            const colorSecundarioAlt = document.getElementById('zcseca')?.value || '';
                             const titulo = document.getElementById('zctitle')?.value || '';
-                            data.theme = { colorPrimario, colorSecundario, titulo };
+                            data.theme = { colorPrimario, colorPrimarioAlt, colorSecundario, colorSecundarioAlt, titulo };
                            }
         if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
         if (t === 'shop')  { data.items = collectShopItems(); }
@@ -808,7 +810,8 @@ const App = (() => {
                         row(`<div style="flex:1"><label>Recetas</label><select id="zrecipes" class="input" multiple>${recOpts}</select></div>`) +
                         row(inp('zjob','Job Lock','', jobVal)) +
                         row(inp('zicon','Icono','fa-solid fa-hammer', d.icon || '')) +
-                        row(inp('zcpri','Color Primario','#53a88c', th.colorPrimario || '') + inp('zcsec','Color Secundario','#2f7a62', th.colorSecundario || '') + inp('zctitle','Título','', th.titulo || ''));
+                        row(inp('zcpri','Color Primario','#53a88c', th.colorPrimario || '') + inp('zcpria','Color Primario Alt','#53a88c', th.colorPrimarioAlt || '')) +
+                        row(inp('zcsec','Color Secundario','#2f7a62', th.colorSecundario || '') + inp('zcseca','Color Secundario Alt','#2f7a62', th.colorSecundarioAlt || '') + inp('zctitle','Título','', th.titulo || ''));
         } else if (t === 'cloakroom') {
           box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing', d.mode || ''));
         } else if (t === 'shop') {
@@ -877,10 +880,12 @@ const App = (() => {
             const icon = document.getElementById('zicon')?.value || '';
             if (icon) data.icon = icon;
             const colorPrimario = document.getElementById('zcpri')?.value || '';
+            const colorPrimarioAlt = document.getElementById('zcpria')?.value || '';
             const colorSecundario = document.getElementById('zcsec')?.value || '';
+            const colorSecundarioAlt = document.getElementById('zcseca')?.value || '';
             const titulo = document.getElementById('zctitle')?.value || '';
-            data.theme = { colorPrimario, colorSecundario, titulo };
-          }
+            data.theme = { colorPrimario, colorPrimarioAlt, colorSecundario, colorSecundarioAlt, titulo };
+            }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
           if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
@@ -945,7 +950,8 @@ const App = (() => {
                         row(`<div style=\"flex:1\"><label>Recetas</label><select id=\"zrecipes\" class=\"input\" multiple>${recOpts}</select></div>`) +
                         row(inp('zjob','Job Lock','')) +
                         row(inp('zicon','Icono','fa-solid fa-hammer')) +
-                        row(inp('zcpri','Color Primario','#53a88c') + inp('zcsec','Color Secundario','#2f7a62') + inp('zctitle','Título',''));
+                        row(inp('zcpri','Color Primario','#53a88c') + inp('zcpria','Color Primario Alt','#53a88c')) +
+                        row(inp('zcsec','Color Secundario','#2f7a62') + inp('zcseca','Color Secundario Alt','#2f7a62') + inp('zctitle','Título',''));
       } else if (t === 'cloakroom') {
         box.innerHTML = row(inp('zckmode','Modo','illenium / qb-clothing'));
       } else if (t === 'shop') {

@@ -185,7 +185,9 @@ local function LoadAll()
       if type(data.theme) == 'table' then
         data.theme = {
           colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
+          colorPrimarioAlt = type(data.theme.colorPrimarioAlt) == 'string' and data.theme.colorPrimarioAlt or nil,
           colorSecundario = type(data.theme.colorSecundario) == 'string' and data.theme.colorSecundario or nil,
+          colorSecundarioAlt = type(data.theme.colorSecundarioAlt) == 'string' and data.theme.colorSecundarioAlt or nil,
           titulo = type(data.theme.titulo) == 'string' and data.theme.titulo or nil,
         }
       else
@@ -551,7 +553,9 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
       local th = zone.data.theme
       zone.data.theme = {
         colorPrimario = type(th.colorPrimario) == 'string' and th.colorPrimario or nil,
+        colorPrimarioAlt = type(th.colorPrimarioAlt) == 'string' and th.colorPrimarioAlt or nil,
         colorSecundario = type(th.colorSecundario) == 'string' and th.colorSecundario or nil,
+        colorSecundarioAlt = type(th.colorSecundarioAlt) == 'string' and th.colorSecundarioAlt or nil,
         titulo = type(th.titulo) == 'string' and th.titulo or nil,
       }
     else
@@ -581,7 +585,9 @@ RegisterNetEvent('qb-jobcreator:server:createZone', function(zone)
     if type(nz.data.theme) == 'table' then
       nz.data.theme = {
         colorPrimario = type(nz.data.theme.colorPrimario) == 'string' and nz.data.theme.colorPrimario or nil,
+        colorPrimarioAlt = type(nz.data.theme.colorPrimarioAlt) == 'string' and nz.data.theme.colorPrimarioAlt or nil,
         colorSecundario = type(nz.data.theme.colorSecundario) == 'string' and nz.data.theme.colorSecundario or nil,
+        colorSecundarioAlt = type(nz.data.theme.colorSecundarioAlt) == 'string' and nz.data.theme.colorSecundarioAlt or nil,
         titulo = type(nz.data.theme.titulo) == 'string' and nz.data.theme.titulo or nil,
       }
     else
@@ -825,7 +831,9 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
       if type(data.theme) == 'table' then
         data.theme = {
           colorPrimario = type(data.theme.colorPrimario) == 'string' and data.theme.colorPrimario or nil,
+          colorPrimarioAlt = type(data.theme.colorPrimarioAlt) == 'string' and data.theme.colorPrimarioAlt or nil,
           colorSecundario = type(data.theme.colorSecundario) == 'string' and data.theme.colorSecundario or nil,
+          colorSecundarioAlt = type(data.theme.colorSecundarioAlt) == 'string' and data.theme.colorSecundarioAlt or nil,
           titulo = type(data.theme.titulo) == 'string' and data.theme.titulo or nil,
         }
       else
@@ -852,7 +860,9 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
           if type(nd.theme) == 'table' then
             nd.theme = {
               colorPrimario = type(nd.theme.colorPrimario) == 'string' and nd.theme.colorPrimario or nil,
+              colorPrimarioAlt = type(nd.theme.colorPrimarioAlt) == 'string' and nd.theme.colorPrimarioAlt or nil,
               colorSecundario = type(nd.theme.colorSecundario) == 'string' and nd.theme.colorSecundario or nil,
+              colorSecundarioAlt = type(nd.theme.colorSecundarioAlt) == 'string' and nd.theme.colorSecundarioAlt or nil,
               titulo = type(nd.theme.titulo) == 'string' and nd.theme.titulo or nil,
             }
           else
