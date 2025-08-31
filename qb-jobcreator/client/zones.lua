@@ -62,6 +62,8 @@ end
 local function canUseZone(z, requireBoss)
   local name, grade, isboss = playerJobData()
   local inJob = (name == z.job) or hasMultiJob(z.job)
+  print(('[qb-jobcreator] canUseZone ztype=%s job=%s playerJob=%s grade=%s isboss=%s requireBoss=%s inJob=%s'):format(
+    tostring(z and z.ztype), tostring(z and z.job), tostring(name), tostring(grade), tostring(isboss), tostring(requireBoss), tostring(inJob)))
   if not inJob then return false end
   if requireBoss and not isboss then return false end
   local minG = 0
@@ -209,6 +211,8 @@ local function addTargetForZone(z)
   local distance = radius + 1.0
   local opts = {}
   local usingTarget = GetResourceState('qb-target') == 'started'
+  -- Debug: log zone type and qb-target state
+  print(('[qb-jobcreator] addTargetForZone ztype=%s usingTarget=%s'):format(tostring(z.ztype), tostring(usingTarget)))
   if not usingTarget then
     print(('[qb-jobcreator] qb-target no iniciado, usando fallback para %s'):format(name))
   end
@@ -457,6 +461,17 @@ local function addTargetForZone(z)
       label = 'Craftear', icon = 'fa-solid fa-hammer',
       canInteract = function() return canUseZone(z, false) end,
       action = function() openCraftMenu(z) end
+    })
+  end
+
+  -- Debug: show built options for this zone
+  print(('[qb-jobcreator] options for %s (%s): %s'):format(name, tostring(z.ztype), json.encode(opts)))
+  if #opts == 0 then
+    print(('[qb-jobcreator] zona %s (%s) sin acciones, añadiendo placeholder'):format(name, tostring(z.ztype)))
+    table.insert(opts, {
+      label = 'Sin acciones configuradas', icon = 'fa-solid fa-ban',
+      canInteract = function() return true end,
+      action = function() QBCore.Functions.Notify('Zona sin acciones configuradas', 'error') end
     })
   end
 
