@@ -36,6 +36,8 @@ body{margin:0;background:transparent;color:var(--color-text);font:14px/1.4 Inter
 .card .b{font-size:24px;font-weight:700;margin-top:6px}
 .panel{background:var(--color-card);padding:16px;border-radius:14px;margin-top:16px;border:1px solid #1f2433}
 .panel-h{font-weight:700;margin-bottom:8px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:16px}
+.charts .panel{margin-top:0}
 .toolbar{display:flex;gap:8px;margin:10px 0}
 .btn{background:#232a3d;border:0;color:#cbd5e1;padding:10px 14px;border-radius:10px;cursor:pointer}
 .btn.primary{background:var(--color-primary);color:white}

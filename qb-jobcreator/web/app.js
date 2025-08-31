@@ -5,7 +5,7 @@ const App = (() => {
     employees: [],
     view: 'home',
     empJob: null,
-    chart: null,
+    charts: {},
     jd: { job: null, tab: 'employees' },
     scope: { mode: 'admin', job: null },
     recipes: {},
@@ -213,6 +213,8 @@ const App = (() => {
             zones: [],
             totals: { jobs: 0, employees: 0, money: 0 },
             popular: [],
+            types: {},
+            activity: { day: 0, week: 0 },
             branding: { Title: 'LatinLife RP', Logo: 'logo.png' },
             scope: { mode: 'admin' },
           };
@@ -306,14 +308,41 @@ const App = (() => {
     $('#metric-employees').textContent = t.employees;
     $('#metric-money').textContent     = money(t.money);
     $('#metric-top').textContent       = ((state.payload.popular || [])[0] && (state.payload.popular || [])[0].name) || '-';
+    $('#metric-active-day').textContent  = (state.payload.activity && state.payload.activity.day) || 0;
+    $('#metric-active-week').textContent = (state.payload.activity && state.payload.activity.week) || 0;
 
-    const labels = (state.payload.popular || []).slice(0, 10).map((x) => x.name);
-    const data   = (state.payload.popular || []).slice(0, 10).map((x) => x.count);
+    const labels = (state.payload.popular || []).map((x) => x.name);
+    const data   = (state.payload.popular || []).map((x) => x.count);
     const ctx = document.getElementById('employeesChart');
-    if (state.chart) state.chart.destroy();
-    state.chart = new Chart(ctx, {
+    if (state.charts.employees) state.charts.employees.destroy();
+    state.charts.employees = new Chart(ctx, {
       type: 'bar',
       data: { labels, datasets: [{ label: 'Empleados', data }] },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#9aa3b2' } },
+          y: { ticks: { color: '#9aa3b2' } },
+        },
+      },
+    });
+
+    const typeLabels = Object.keys(state.payload.types || {});
+    const typeData   = Object.values(state.payload.types || {});
+    const ctx2 = document.getElementById('typesChart');
+    if (state.charts.types) state.charts.types.destroy();
+    state.charts.types = new Chart(ctx2, {
+      type: 'pie',
+      data: { labels: typeLabels, datasets: [{ data: typeData }] },
+      options: { plugins: { legend: { labels: { color: '#9aa3b2' } } } },
+    });
+
+    const act = state.payload.activity || { day: 0, week: 0 };
+    const ctx3 = document.getElementById('activityChart');
+    if (state.charts.activity) state.charts.activity.destroy();
+    state.charts.activity = new Chart(ctx3, {
+      type: 'bar',
+      data: { labels: ['Hoy', 'Semana'], datasets: [{ label: 'Activos', data: [act.day || 0, act.week || 0] }] },
       options: {
         plugins: { legend: { display: false } },
         scales: {
