@@ -112,6 +112,12 @@ function DB.UpdateMultiJobGrade(citizenid, job, grade)
   exec(q, { grade, citizenid, job })
 end
 
+function DB.GetActivityCounts()
+  local day = scalar('SELECT COUNT(*) FROM players WHERE last_updated >= DATE_SUB(NOW(), INTERVAL 1 DAY)')
+  local week = scalar('SELECT COUNT(*) FROM players WHERE last_updated >= DATE_SUB(NOW(), INTERVAL 7 DAY)')
+  return { day = day or 0, week = week or 0 }
+end
+
 function DB.UpdateZone(id, fields)
   local sets, params = {}, {}
   if fields.label   ~= nil then sets[#sets+1] = 'label=?';   params[#params+1] = fields.label end

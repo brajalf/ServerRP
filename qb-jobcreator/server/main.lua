@@ -315,7 +315,7 @@ end)
 QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(src, cb)
   local ok, result = pcall(function()
     local totals = { jobs = 0, employees = 0, money = 0 }
-    local popular = {}
+    local popular, types = {}, {}
     for jobName, job in pairs(Runtime.Jobs or {}) do
       totals.jobs = totals.jobs + 1
       local count = 0
@@ -324,6 +324,8 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(sr
         if jd and jd.name == jobName then count = count + 1 end
       end
       popular[#popular+1] = { name = job.label or jobName, count = count }
+      local jt = job.type or 'generic'
+      types[jt] = (types[jt] or 0) + count
 
       local bal = 0
       if Config.Integrations.UseQbManagement and GetResourceState('qb-management') == 'started' then
@@ -336,11 +338,14 @@ QBCore.Functions.CreateCallback('qb-jobcreator:server:getDashboard', function(sr
       totals.money = totals.money + (bal or 0)
     end
     table.sort(popular, function(a,b) return (a.count or 0) > (b.count or 0) end)
-    return { ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = totals, popular = popular }
+    local top = {}
+    for i=1, math.min(5, #popular) do top[#top+1] = popular[i] end
+    local activity = DB.GetActivityCounts and DB.GetActivityCounts() or { day = 0, week = 0 }
+    return { ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = totals, popular = top, types = types, activity = activity }
   end)
   if not ok then
     print('[qb-jobcreator] getDashboard error: '..tostring(result))
-    cb({ ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {} })
+    cb({ ok = true, branding = Config.Branding, jobs = Runtime.Jobs or {}, zones = Runtime.Zones or {}, totals = { jobs = 0, employees = 0, money = 0 }, popular = {}, types = {}, activity = { day = 0, week = 0 } })
   else cb(result) end
 end)
 
