@@ -408,8 +408,8 @@ local function addTargetForZone(z)
         opts = {
           {
             label = 'Teletransportar', icon = 'fa-solid fa-person-arrow-up-from-line',
-            canInteract = function() return false end,
-            action = function() QBCore.Functions.Notify('Destino no configurado.', 'error') end
+            canInteract = function() return true end,
+            action = function() QBCore.Functions.Notify('Destino no configurado', 'error') end
           }
         }
       else
@@ -432,7 +432,7 @@ local function addTargetForZone(z)
           canInteract = function() return canUseZone(z, false) end,
           action = function()
             if #dests == 0 then
-              QBCore.Functions.Notify('Destino no configurado.', 'error')
+              QBCore.Functions.Notify('Destino no configurado', 'error')
               return
             end
             if GetResourceState('qb-menu') == 'started' and #dests > 1 then
