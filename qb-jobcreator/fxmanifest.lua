@@ -19,6 +19,7 @@ files {
 }
 
 dependencies {
+  'qb-target',
   'qb-core',
   'qb-menu',      -- opcional (atajo F6)
   'qb-input'      -- opcional (atajos)
