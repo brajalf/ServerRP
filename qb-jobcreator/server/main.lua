@@ -1186,7 +1186,9 @@ RegisterNetEvent('qb-jobcreator:server:teleport', function(zoneId, fromIdx, toId
   if not Player or not Player.PlayerData then return end
   local jd = Player.PlayerData.job or {}
   local cid = Player.PlayerData.citizenid
-  if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return end
+  if zone.job and zone.job ~= '' then
+    if jd.name ~= zone.job and not Multi_Has(cid, zone.job) then return end
+  end
 
   local d = zone.data or {}
   local to = d.to
