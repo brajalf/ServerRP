@@ -525,27 +525,43 @@ local function addTargetForZone(z)
             if dist <= radius then
               local opt = opts[1]
               if opt then
-                local label = opt.label or (z.label or 'Interactuar')
                 if not opt.canInteract or opt.canInteract() then
-                  if not shown and lib and lib.showTextUI then
-                    lib.showTextUI((Config.Zone.TextUIKey or '[E]') .. ' ' .. label)
+                  local label = opt.label or (z.label or 'Interactuar')
+                  if not shown then
+                    if lib and lib.showTextUI then
+                      lib.showTextUI((Config.Zone.TextUIKey or '[E]') .. ' ' .. label)
+                    else
+                      exports['qb-core']:DrawText((Config.Zone.TextUIKey or '[E]') .. ' Accionar')
+                    end
                     shown = true
                   end
                   if IsControlJustReleased(0, 38) then
                     opt.action()
+                    if shown then
+                      if lib and lib.hideTextUI then lib.hideTextUI() else exports['qb-core']:HideText() end
+                      shown = false
+                    end
                     Wait(1000)
                   end
                 else
-                  if shown and lib and lib.hideTextUI then lib.hideTextUI() shown = false end
+                  if shown then
+                    if lib and lib.hideTextUI then lib.hideTextUI() else exports['qb-core']:HideText() end
+                    shown = false
+                  end
                 end
               end
               Wait(0)
             else
-              if shown and lib and lib.hideTextUI then lib.hideTextUI() shown = false end
+              if shown then
+                if lib and lib.hideTextUI then lib.hideTextUI() else exports['qb-core']:HideText() end
+                shown = false
+              end
               Wait(500)
             end
           end
-          if shown and lib and lib.hideTextUI then lib.hideTextUI() end
+          if shown then
+            if lib and lib.hideTextUI then lib.hideTextUI() else exports['qb-core']:HideText() end
+          end
         end)
       else
         local function spawnZoneProp()
