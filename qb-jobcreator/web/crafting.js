@@ -14,10 +14,17 @@ window.addEventListener('message', (e) => {
     CraftApp.locale = msg.locale || {};
     CraftApp.images = msg.images || CraftApp.images;
     const th = msg.theme || {};
-    if (th.colorPrimario) document.documentElement.style.setProperty('--bg', th.colorPrimario);
-    if (th.colorSecundario) document.documentElement.style.setProperty('--accent', th.colorSecundario);
-    $('#craftTitleText').innerText = th.titulo || CraftApp.locale.ui_title || 'KITCHEN';
-    $('#craftCategoryTag').innerText = CraftApp.locale.ui_tab_food || 'FOOD';
+    const varMap = {
+      colorPrimario: '--bg',
+      colorPrimarioAlt: '--bg-alt',
+      colorSecundario: '--accent',
+      colorSecundarioAlt: '--accent-alt'
+    };
+    Object.entries(varMap).forEach(([k, v]) => {
+      if (th[k]) document.documentElement.style.setProperty(v, th[k]);
+    });
+    $('#craftTitleText').innerText = msg.title || th.titulo || CraftApp.locale.ui_title || 'KITCHEN';
+    $('#craftCategoryTag').innerText = msg.category || CraftApp.locale.ui_tab_food || 'FOOD';
     $('#craftPendingTitle').innerText = CraftApp.locale.queue_pending || 'PENDING ITEMS';
     $('#craftCollectTitle').innerText = CraftApp.locale.queue_collect || 'ITEMS TO COLLECT';
     $('#craftBtnLeaveAll').innerText = CraftApp.locale.leave_all || 'LEAVE ALL QUEUES';
