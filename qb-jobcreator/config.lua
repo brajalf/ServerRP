@@ -78,6 +78,10 @@ Config.Integrations = Config.Integrations or {
   HospitalResources   = { 'ars_ambulancejob' },
 }
 
+-- Forzamos el uso exclusivo de qb-target
+Config.Integrations.UseQbTarget = true
+Config.Integrations.UseOxTarget = false
+
 -- ===== Multi‑trabajo =====
 -- Si usas un recurso de multitrabajo, activa esta sección para integrarlo.
 Config.MultiJob = Config.MultiJob or {
