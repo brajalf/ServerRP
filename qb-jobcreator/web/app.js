@@ -753,6 +753,15 @@ const App = (() => {
       if (!zone) return;
       let coords = zone.coords;
       const inter = (zone.data && zone.data.interaction) || (window.Config?.InteractionMode || 'target');
+      const blipRow = zone.ztype === 'blip'
+        ? `<div class="row" id="zbliprow">
+            <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
+            <div><label>Color</label><input id="zcolor" class="input" value="${zone.color ?? ''}"/></div>
+            <div><label>YTD Dict</label><input id="zytddict" class="input" value="${zone.ytdDict || ''}"/></div>
+            <div><label>YTD Name</label><input id="zytdname" class="input" value="${zone.ytdName || ''}"/></div>
+          </div>`
+        : '';
+
       const base = `
         <div class="row">
           <div><label>Etiqueta</label><input id="zlabel" class="input" value="${zone.label || ''}"/></div>
@@ -767,24 +776,22 @@ const App = (() => {
             <option value="3dtext" ${inter === '3dtext' ? 'selected' : ''}>3D Text</option>
           </select></div>
         </div>
-        <div class="row">
-          <div><label>Icono acción</label><input id="zacticon" class="input" value="${(zone.data && zone.data.icon) || ''}"/></div>
-          <div><label>Etiqueta acción</label><input id="zactlabel" class="input" value="${(zone.data && zone.data.label) || ''}"/></div>
+        <div class="row" id="zactrow">
+          <div><label>Icono acción</label><input id="zacticon" class="input" placeholder="fa-solid fa-briefcase" value="${(zone.data && zone.data.icon) || ''}"/></div>
+          <div><label>Etiqueta acción</label><input id="zactlabel" class="input" placeholder="Abrir gestión" value="${(zone.data && zone.data.label) || ''}"/></div>
         </div>
-        <div class="row">
-          <div><label>Sprite</label><input id="zsprite" class="input" value="${zone.sprite ?? ''}"/></div>
-          <div><label>Color</label><input id="zcolor" class="input" value="${zone.color ?? ''}"/></div>
-          <div><label>YTD Dict</label><input id="zytddict" class="input" value="${zone.ytdDict || ''}"/></div>
-          <div><label>YTD Name</label><input id="zytdname" class="input" value="${zone.ytdName || ''}"/></div>
-        </div>
+        ${blipRow}
         <div id="zextra"></div>`;
       modal('Editar ' + zone.ztype, base, () => {
         const t = zone.ztype;
-        const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
-        const actIcon = document.getElementById('zacticon')?.value || '';
-        const actLabel = document.getElementById('zactlabel')?.value || '';
-        if (actIcon) data.icon = actIcon;
-        if (actLabel) data.label = actLabel;
+        const interVal = document.getElementById('zinteraction')?.value || 'target';
+        const data = { interaction: interVal };
+        if (interVal === 'target') {
+          const actIcon = document.getElementById('zacticon')?.value.trim();
+          const actLabel = document.getElementById('zactlabel')?.value.trim();
+          if (actIcon) data.icon = actIcon;
+          if (actLabel) data.label = actLabel;
+        }
         if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
         if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                             data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -811,8 +818,10 @@ const App = (() => {
         if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
                               data.amount = Number(document.getElementById('zamt')?.value||1);
                               data.time = Number(document.getElementById('ztime')?.value||3000);
-                              data.dict = document.getElementById('zdict')?.value||'';
-                              data.anim = document.getElementById('zanm')?.value||''; }
+                              const dict = document.getElementById('zdict')?.value || '';
+                              const anim = document.getElementById('zanm')?.value || '';
+                              if (dict) data.dict = dict;
+                              if (anim) data.anim = anim; }
         if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
         if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
                             data.price = Number(document.getElementById('zsprice')?.value||10);
@@ -822,21 +831,37 @@ const App = (() => {
                                 data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
                                 data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
         if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
-        if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
-                            data.dict = document.getElementById('zdict')?.value||'';
-                            data.anim = document.getElementById('zanm')?.value||'';
+        if (t === 'anim') { const sc = document.getElementById('zsc')?.value || '';
+                            if (sc) data.scenario = sc;
+                            const dict = document.getElementById('zdict')?.value || '';
+                            const anim = document.getElementById('zanm')?.value || '';
+                            if (dict) data.dict = dict;
+                            if (anim) data.anim = anim;
                             data.time = Number(document.getElementById('ztime')?.value||5000); }
         if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
         if (t === 'teleport') { data.to = collectTeleports(); }
         const cr = Number(document.getElementById('zclearrad')?.value || 0);
         data.clearArea = cr > 0;
         data.clearRadius = cr;
-        const sprite = Number(document.getElementById('zsprite')?.value);
-        const color = Number(document.getElementById('zcolor')?.value);
-        const ytdDict = document.getElementById('zytddict')?.value || '';
-        const ytdName = document.getElementById('zytdname')?.value || '';
-        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords, sprite, color, ytdDict, ytdName }).then(() => { closeModal(); load(); });
+        const payload = { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords };
+        if (t === 'blip') {
+          const spVal = document.getElementById('zsprite')?.value;
+          const colVal = document.getElementById('zcolor')?.value;
+          const dict = document.getElementById('zytddict')?.value.trim();
+          const name = document.getElementById('zytdname')?.value.trim();
+          if (spVal !== '' && !isNaN(Number(spVal))) payload.sprite = Number(spVal);
+          if (colVal !== '' && !isNaN(Number(colVal))) payload.color = Number(colVal);
+          if (dict) payload.ytdDict = dict;
+          if (name) payload.ytdName = name;
+        }
+        post('updateZone', payload).then(() => { closeModal(); load(); });
       });
+
+      const actRow = document.getElementById('zactrow');
+      const interSel = document.getElementById('zinteraction');
+      const toggleAct = () => { if (actRow) actRow.style.display = interSel.value === 'target' ? '' : 'none'; };
+      interSel.addEventListener('change', toggleAct);
+      toggleAct();
 
       document.getElementById('zcoords').onclick = () => {
         postJ('getCoords', {}).then((c) => {
@@ -908,33 +933,33 @@ const App = (() => {
 
     document.getElementById('addz').onclick = () => {
       const interDef = window.Config?.InteractionMode || 'target';
-      const base = `
-        <div class="row">
-          <div>
-            <label>Tipo</label>
-            <select id="ztype" class="input">
+        const base = `
+          <div class="row">
+            <div>
+              <label>Tipo</label>
+              <select id="ztype" class="input">
               ${(window.Config?.ZoneTypes || ['blip', 'boss', 'stash', 'garage', 'crafting', 'cloakroom', 'shop', 'collect', 'spawner', 'sell', 'alarm', 'register', 'anim', 'music', 'teleport'])
                 .map((t) => `<option>${t}</option>`).join('')}
             </select>
           </div>
           <div><label>Etiqueta</label><input id="zlabel" class="input" required/></div>
-        </div>
-        <div class="row">
-          <div><label>Interacción</label><select id="zinteraction" class="input">
-            <option value="target" ${interDef === 'target' ? 'selected' : ''}>qb-target</option>
-            <option value="textui" ${interDef === 'textui' ? 'selected' : ''}>TextUI</option>
-            <option value="3dtext" ${interDef === '3dtext' ? 'selected' : ''}>3D Text</option>
-          </select></div>
-        </div>
-        <div class="row">
-          <div><label>Icono acción</label><input id="zacticon" class="input"/></div>
-          <div><label>Etiqueta acción</label><input id="zactlabel" class="input"/></div>
-        </div>
-        <div class="row">
-          <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
-          <div><label>Limpieza (m)</label><input id="zclearrad" class="input" type="number" value="0" min="0"/></div>
-          <div><label>Sprite</label><input id="zsprite" class="input" type="number"/></div>
-          <div><label>Color</label><input id="zcolor" class="input" type="number"/></div>
+          </div>
+          <div class="row">
+            <div><label>Interacción</label><select id="zinteraction" class="input">
+              <option value="target" ${interDef === 'target' ? 'selected' : ''}>qb-target</option>
+              <option value="textui" ${interDef === 'textui' ? 'selected' : ''}>TextUI</option>
+              <option value="3dtext" ${interDef === '3dtext' ? 'selected' : ''}>3D Text</option>
+            </select></div>
+          </div>
+          <div class="row" id="zactrow">
+            <div><label>Icono acción</label><input id="zacticon" class="input" placeholder="fa-solid fa-briefcase"/></div>
+            <div><label>Etiqueta acción</label><input id="zactlabel" class="input" placeholder="Abrir gestión"/></div>
+          </div>
+          <div class="row">
+            <div><label>Radio</label><input id="zrad" class="input" type="number" value="2.0" min="0.1"/></div>
+            <div><label>Limpieza (m)</label><input id="zclearrad" class="input" type="number" value="0" min="0"/></div>
+            <div><label>Sprite</label><input id="zsprite" class="input" type="number"/></div>
+            <div><label>Color</label><input id="zcolor" class="input" type="number"/></div>
         </div>
         <div class="row">
           <div><label>YTD Dict</label><input id="zytddict" class="input"/></div>
@@ -952,11 +977,14 @@ const App = (() => {
           if (!label) { toast('Etiqueta requerida', 'error'); return; }
           if (!radius || radius <= 0) { toast('Radio inválido', 'error'); return; }
           if (!validTypes.includes(t)) { toast('Tipo de zona inválido', 'error'); return; }
-          const data = { interaction: document.getElementById('zinteraction')?.value || 'target' };
-          const actIcon = document.getElementById('zacticon')?.value || '';
-          const actLabel = document.getElementById('zactlabel')?.value || '';
-          if (actIcon) data.icon = actIcon;
-          if (actLabel) data.label = actLabel;
+            const interVal = document.getElementById('zinteraction')?.value || 'target';
+            const data = { interaction: interVal };
+            if (interVal === 'target') {
+              const actIcon = document.getElementById('zacticon')?.value.trim();
+              const actLabel = document.getElementById('zactlabel')?.value.trim();
+              if (actIcon) data.icon = actIcon;
+              if (actLabel) data.label = actLabel;
+            }
           if (t === 'boss')   data.minGrade = Number(document.getElementById('zmin')?.value || 0);
           if (t === 'stash') { data.slots  = Number(document.getElementById('zslots')?.value || 50);
                               data.weight = Number(document.getElementById('zweight')?.value || 400000); }
@@ -980,11 +1008,13 @@ const App = (() => {
             }
           if (t === 'cloakroom') data.mode = (document.getElementById('zckmode')?.value || 'illenium').toLowerCase();
           if (t === 'shop')  { data.items = collectShopItems(); }
-          if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
-                                data.amount = Number(document.getElementById('zamt')?.value||1);
-                                data.time = Number(document.getElementById('ztime')?.value||3000);
-                                data.dict = document.getElementById('zdict')?.value||'';
-                                data.anim = document.getElementById('zanm')?.value||''; }
+            if (t === 'collect'){ data.item = document.getElementById('zitem')?.value||'material';
+                                  data.amount = Number(document.getElementById('zamt')?.value||1);
+                                  data.time = Number(document.getElementById('ztime')?.value||3000);
+                                  const dict = document.getElementById('zdict')?.value || '';
+                                  const anim = document.getElementById('zanm')?.value || '';
+                                  if (dict) data.dict = dict;
+                                  if (anim) data.anim = anim; }
           if (t === 'spawner') data.prop = document.getElementById('zprop')?.value||'prop_toolchest_05';
           if (t === 'sell') { data.item = document.getElementById('zsitem')?.value||'material';
                               data.price = Number(document.getElementById('zsprice')?.value||10);
@@ -994,33 +1024,47 @@ const App = (() => {
                                   data.method = (document.getElementById('zrmethod')?.value||'bank').toLowerCase();
                                   data.toSociety = (document.getElementById('zrsoc')?.value||'true') !== 'false'; }
           if (t === 'alarm') data.code = document.getElementById('zalcode')?.value||'panic';
-          if (t === 'anim') { data.scenario = document.getElementById('zsc')?.value||'';
-                              data.dict = document.getElementById('zdict')?.value||'';
-                              data.anim = document.getElementById('zanm')?.value||'';
-                              data.time = Number(document.getElementById('ztime')?.value||5000); }
+            if (t === 'anim') { const sc = document.getElementById('zsc')?.value || '';
+                                if (sc) data.scenario = sc;
+                                const dict = document.getElementById('zdict')?.value || '';
+                                const anim = document.getElementById('zanm')?.value || '';
+                                if (dict) data.dict = dict;
+                                if (anim) data.anim = anim;
+                                data.time = Number(document.getElementById('ztime')?.value||5000); }
           if (t === 'music') { data.url = document.getElementById('zurl')?.value||''; data.volume = Number(document.getElementById('zvol')?.value||0.5); const range = Number(document.getElementById('zrange')?.value||20); data.distance = range; data.range = range; data.name = document.getElementById('zname')?.value||''; }
           if (t === 'teleport') { data.to = collectTeleports(); }
           const cr = Number(document.getElementById('zclearrad')?.value || 0);
           data.clearArea = cr > 0;
           data.clearRadius = cr;
-          const z = {
-            job: state.jd.job,
-            ztype: t,
-            label: document.getElementById('zlabel').value,
-            radius: Number(document.getElementById('zrad').value) || 2.0,
-            coords: c,
-            sprite: Number(document.getElementById('zsprite')?.value),
-            color: Number(document.getElementById('zcolor')?.value),
-            ytdDict: document.getElementById('zytddict')?.value || '',
-            ytdName: document.getElementById('zytdname')?.value || '',
-            data,
-          };
-          post('createZone', z).then(() => { closeModal(); load(); });
+            const z = {
+              job: state.jd.job,
+              ztype: t,
+              label: document.getElementById('zlabel').value,
+              radius: Number(document.getElementById('zrad').value) || 2.0,
+              coords: c,
+              data,
+            };
+            if (t === 'blip') {
+              const spVal = document.getElementById('zsprite')?.value;
+              const colVal = document.getElementById('zcolor')?.value;
+              const dict = document.getElementById('zytddict')?.value.trim();
+              const name = document.getElementById('zytdname')?.value.trim();
+              if (spVal !== '' && !isNaN(Number(spVal))) z.sprite = Number(spVal);
+              if (colVal !== '' && !isNaN(Number(colVal))) z.color = Number(colVal);
+              if (dict) z.ytdDict = dict;
+              if (name) z.ytdName = name;
+            }
+            post('createZone', z).then(() => { closeModal(); load(); });
+          });
         });
-      });
 
-      // campos dinámicos según tipo
-      const extraBox = document.getElementById('zextra');
+        // campos dinámicos según tipo
+        const actRow = document.getElementById('zactrow');
+        const interSel = document.getElementById('zinteraction');
+        const toggleAct = () => { if (actRow) actRow.style.display = interSel.value === 'target' ? '' : 'none'; };
+        interSel.addEventListener('change', toggleAct);
+        toggleAct();
+        const extraBox = document.getElementById('zextra');
       function renderExtra() {
       const t = document.getElementById('ztype').value;
       const box = document.getElementById('zextra');
