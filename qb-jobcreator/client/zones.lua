@@ -487,6 +487,8 @@ local function addTargetForZone(z)
             if opt then
               local label = opt.label or (z.label or 'Interactuar')
               if not opt.canInteract or opt.canInteract() then
+                DrawMarker(1, zoneVec.x, zoneVec.y, zoneVec.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.7, 0.7, 0.7, 255, 0, 0, 100, false, false, 2, nil, nil, false)
                 QBCore.Functions.DrawText3D(zoneVec.x, zoneVec.y, zoneVec.z, '[E] '..label)
                 if IsControlJustReleased(0, 38) then
                   opt.action()
