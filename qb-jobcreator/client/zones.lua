@@ -549,8 +549,15 @@ RegisterNetEvent('qb-jobcreator:client:rebuildZones', function(zones)
   for _, z in ipairs(zones or {}) do
     Active[#Active+1] = z
     if z.ztype == 'blip' then
+      if z.ytdDict then
+        RequestStreamedTextureDict(z.ytdDict, false)
+        while not HasStreamedTextureDictLoaded(z.ytdDict) do Wait(0) end
+      end
       local blip = AddBlipForCoord(z.coords.x, z.coords.y, z.coords.z)
-      SetBlipSprite(blip, Config.Zone.BlipSprite); SetBlipColour(blip, Config.Zone.BlipColor)
+      local sprite = z.sprite or Config.Zone.BlipSprite
+      if z.ytdName then sprite = GetHashKey(z.ytdName) end
+      SetBlipSprite(blip, sprite)
+      SetBlipColour(blip, z.color or Config.Zone.BlipColor)
       SetBlipScale(blip, 0.8); SetBlipAsShortRange(blip, true)
       BeginTextCommandSetBlipName('STRING'); AddTextComponentString(z.label or ('Punto '..z.job)); EndTextCommandSetBlipName(blip)
     else

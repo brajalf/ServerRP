@@ -60,3 +60,13 @@ UseQbInventory = false, -- fuerza el uso de qb-inventory
 ```
 
 Las funciones de manejo de inventario (`HasItem`, `RemoveItem` y `AddItem`) detectan automáticamente `ox_inventory` y utilizan la integración apropiada.
+
+## Texturas personalizadas para blips
+
+Puedes utilizar iconos propios en los blips del mapa.
+
+1. Coloca los archivos `.ytd` con tus texturas dentro de una carpeta `stream/` en este recurso.  Asegúrate de declarar `files {'stream/*.ytd'}` en `fxmanifest.lua` si aún no existe.
+2. Desde la interfaz web, al crear o editar una zona, rellena los campos **Sprite**, **Color**, **YTD Dict** (nombre del archivo sin la extensión) y **YTD Name** (nombre de la textura dentro del diccionario).
+3. El cliente cargará ese diccionario mediante `RequestStreamedTextureDict` y aplicará el sprite seleccionado con `SetBlipSprite`.
+
+De esta manera puedes mostrar iconos personalizados en el mapa para cada zona.
