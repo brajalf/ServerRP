@@ -77,7 +77,28 @@ local function startCleanupCycle(manual)
   end)
 
   schedule(10 * 60 * 1000, function()
-    broadcastAlert(Config.AlertText)
+    broadcastAlert('Limpieza en curso...')
+
+    cleanupState.expectedReports = #GetPlayers()
+    cleanupState.reports = 0
+    cleanupState.reportedPlayers = {}
+    cleanupState.timerDone = false
+    cleanupState.finalized = false
+
+    local function finalize()
+      if cleanupState.finalized then return end
+      cleanupState.finalized = true
+      cleanupState.active = false
+      cleanupState.tryFinalize = nil
+      print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))
+      broadcastAlert(Config.CleanupCompleteText, nil, Config.CleanupCompleteTitle)
+    end
+
+    cleanupState.tryFinalize = function()
+      if cleanupState.timerDone and cleanupState.reports >= cleanupState.expectedReports then
+        finalize()
+      end
+    end
 
     TriggerClientEvent('invictus_tow:client:doCleanup', -1, {
       minDist = Config.MinDistanceFromAnyPlayer,
@@ -88,10 +109,9 @@ local function startCleanupCycle(manual)
       debug = Config.Debug
     }, token)
 
-    SetTimeout(8000, function()
-      cleanupState.active = false
-      print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))
-      broadcastAlert(Config.CleanupCompleteText, nil, Config.CleanupCompleteTitle)
+    SetTimeout(Config.AlertDuration * 1000, function()
+      cleanupState.timerDone = true
+      if cleanupState.tryFinalize then cleanupState.tryFinalize() end
     end)
   end)
 end
@@ -101,6 +121,11 @@ RegisterNetEvent('invictus_tow:server:report', function(token, deletedCount)
   if token ~= cleanupState.token then return end
   local src = source
   debugPrint(('Reporte de %s: borrados=%s'):format(src, deletedCount))
+  if cleanupState.reportedPlayers and not cleanupState.reportedPlayers[src] then
+    cleanupState.reportedPlayers[src] = true
+    cleanupState.reports = (cleanupState.reports or 0) + 1
+    if cleanupState.tryFinalize then cleanupState.tryFinalize() end
+  end
 end)
 
 -- Cancelar ciclo
