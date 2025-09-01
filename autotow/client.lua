@@ -137,11 +137,13 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
 
       -- Borrar si el modelo es 0 o nil
       if not model or model == 0 then
-        local res = tryDeleteVehicle(veh, token)
-        if res then
-          cleanupState.removed = cleanupState.removed + 1
-        elseif res == nil then
-          cleanupState.pending = cleanupState.pending + 1
+        if not isAnySeatOccupied(veh, dprint) then
+          local res = tryDeleteVehicle(veh, token)
+          if res then
+            cleanupState.removed = cleanupState.removed + 1
+          elseif res == nil then
+            cleanupState.pending = cleanupState.pending + 1
+          end
         end
         goto continue
       end
@@ -168,15 +170,13 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
         end
       end
 
-      -- No borrar si hay alguien a bordo
-      if isAnySeatOccupied(veh, dprint) then goto continue end
-
-      -- Intentar borrar
-      local res = tryDeleteVehicle(veh, token)
-      if res then
-        cleanupState.removed = cleanupState.removed + 1
-      elseif res == nil then
-        cleanupState.pending = cleanupState.pending + 1
+      if not isAnySeatOccupied(veh, dprint) then
+        local res = tryDeleteVehicle(veh, token)
+        if res then
+          cleanupState.removed = cleanupState.removed + 1
+        elseif res == nil then
+          cleanupState.pending = cleanupState.pending + 1
+        end
       end
     end
     ::continue::
