@@ -43,6 +43,14 @@ local GetPedInVehicleSeat = GetPedInVehicleSeat or function(vehicle, seatIndex)
   return Citizen.InvokeNative(0xBB40DD2270B65366, vehicle, seatIndex)
 end
 
+local GetVehicleNumberOfPassengers = GetVehicleNumberOfPassengers or function(vehicle)
+  return Citizen.InvokeNative(0x24CB213773B00F79, vehicle)
+end
+
+local IsVehicleSeatFree = IsVehicleSeatFree or function(vehicle, seatIndex)
+  return Citizen.InvokeNative(0x22AC59A870E6A669, vehicle, seatIndex)
+end
+
 local GetEntityCoords = GetEntityCoords or function(entity)
   return Citizen.InvokeNative(0x3FEF770D40960D5A, entity, false, false)
 end
@@ -69,13 +77,25 @@ end
 
 local function isAnySeatOccupied(veh)
   local max = GetVehicleMaxNumberOfPassengers(veh)
-  if type(max) ~= "number" then
+  if type(max) ~= "number" or max < -1 then
     debugPrint(('Unexpected max passenger value %s for vehicle %s'):format(tostring(max), veh))
-    return true
+    max = GetVehicleNumberOfPassengers(veh)
+    if type(max) ~= "number" or max < -1 then
+      max = 0
+    end
   end
+
+  if max > 7 then max = 7 end
+
   for seat = -1, max do
-    if GetPedInVehicleSeat(veh, seat) ~= 0 then return true end
+    local seatFree = IsVehicleSeatFree and IsVehicleSeatFree(veh, seat)
+    if type(seatFree) ~= "boolean" then
+      debugPrint(('Unexpected seat state %s for vehicle %s seat %s'):format(tostring(seatFree), veh, seat))
+      seatFree = true
+    end
+    if not seatFree then return true end
   end
+
   return false
 end
 
