@@ -69,6 +69,10 @@ end
 
 local function isAnySeatOccupied(veh)
   local max = GetVehicleMaxNumberOfPassengers(veh)
+  if type(max) ~= "number" then
+    debugPrint(('Unexpected max passenger value %s for vehicle %s'):format(tostring(max), veh))
+    return true
+  end
   for seat = -1, max do
     if not IsVehicleSeatFree(veh, seat) then
       return true
