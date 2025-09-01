@@ -65,25 +65,26 @@ local function cleanupServerVehicles(cfg)
   local removed = 0
   for _, veh in ipairs(GetAllVehicles()) do
     if DoesEntityExist(veh) then
-      if isAnySeatOccupied(veh, debugPrint) then goto continue end
       local model = GetEntityModel(veh)
 
       if not model or model == 0 then
-        SetEntityAsMissionEntity(veh, true, true)
-        local vehCoords = GetEntityCoords(veh)
-        local netId = NetworkGetNetworkIdFromEntity(veh)
-        DeleteEntity(veh)
-        if not DoesEntityExist(veh) then
-          removed = removed + 1
-          local range = Config.RemoveNotifyRange or 0
-          if range > 0 then
-            local players = GetPlayers()
-            for i = 1, #players do
-              local playerId = tonumber(players[i])
-              local ped = GetPlayerPed(playerId)
-              local pCoords = GetEntityCoords(ped)
-              if #(vehCoords - pCoords) < range then
-                TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+        if not isAnySeatOccupied(veh, debugPrint) then
+          SetEntityAsMissionEntity(veh, true, true)
+          local vehCoords = GetEntityCoords(veh)
+          local netId = NetworkGetNetworkIdFromEntity(veh)
+          DeleteEntity(veh)
+          if not DoesEntityExist(veh) then
+            removed = removed + 1
+            local range = Config.RemoveNotifyRange or 0
+            if range > 0 then
+              local players = GetPlayers()
+              for i = 1, #players do
+                local playerId = tonumber(players[i])
+                local ped = GetPlayerPed(playerId)
+                local pCoords = GetEntityCoords(ped)
+                if #(vehCoords - pCoords) < range then
+                  TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+                end
               end
             end
           end
@@ -110,21 +111,23 @@ local function cleanupServerVehicles(cfg)
       --   end
       -- end
 
-      SetEntityAsMissionEntity(veh, true, true)
-      local vehCoords = GetEntityCoords(veh)
-      local netId = NetworkGetNetworkIdFromEntity(veh)
-      DeleteEntity(veh)
-      if not DoesEntityExist(veh) then
-        removed = removed + 1
-        local range = Config.RemoveNotifyRange or 0
-        if range > 0 then
-          local players = GetPlayers()
-          for i = 1, #players do
-            local playerId = tonumber(players[i])
-            local ped = GetPlayerPed(playerId)
-            local pCoords = GetEntityCoords(ped)
-            if #(vehCoords - pCoords) < range then
-              TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+      if not isAnySeatOccupied(veh, debugPrint) then
+        SetEntityAsMissionEntity(veh, true, true)
+        local vehCoords = GetEntityCoords(veh)
+        local netId = NetworkGetNetworkIdFromEntity(veh)
+        DeleteEntity(veh)
+        if not DoesEntityExist(veh) then
+          removed = removed + 1
+          local range = Config.RemoveNotifyRange or 0
+          if range > 0 then
+            local players = GetPlayers()
+            for i = 1, #players do
+              local playerId = tonumber(players[i])
+              local ped = GetPlayerPed(playerId)
+              local pCoords = GetEntityCoords(ped)
+              if #(vehCoords - pCoords) < range then
+                TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+              end
             end
           end
         end
