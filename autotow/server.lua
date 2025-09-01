@@ -161,6 +161,31 @@ RegisterCommand(Config.CommandTrigger, function(src)
   startCleanupCycle(true)
 end)
 
+-- Limpieza inmediata sin avisos ni temporizadores
+local function immediateCleanup()
+  cleanupState.token = cleanupState.token + 1
+  TriggerClientEvent('invictus_tow:client:doCleanup', -1, {
+    minDist = Config.MinDistanceFromAnyPlayer,
+    skipEmergency = Config.SkipEmergencyVehicles,
+    skipBA = Config.SkipBoatsAndAircraft,
+    blModels = Config.BlacklistedModels,
+    blClasses = Config.BlacklistedClasses,
+    debug = Config.Debug
+  }, cleanupState.token)
+  print(('^2[%s]^7 Limpieza inmediata ejecutada.'):format(Config.ResourceName))
+end
+
+-- Comando: limpieza inmediata
+RegisterCommand(Config.CommandImmediate, function(src)
+  if src and src > 0 then
+    if not IsPlayerAceAllowed(src, Config.AceImmediate) then
+      TriggerClientEvent('chat:addMessage', src, { args = {'TOW', '^1No tienes permiso para ejecutar.'} })
+      return
+    end
+  end
+  immediateCleanup()
+end)
+
 -- Bucle automático
 CreateThread(function()
   Wait(2500)
