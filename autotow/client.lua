@@ -110,10 +110,6 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
       -- No borrar si hay alguien a bordo
       if isAnySeatOccupied(veh) then goto continue end
 
-      -- Solo el owner de la entidad elimina para evitar duplicados
-      local owner = NetworkGetEntityOwner(veh)
-      if owner ~= PlayerId() then goto continue end
-
       -- Intentar borrar
       if tryDeleteVehicle(veh) then
         removed = removed + 1
