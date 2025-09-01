@@ -13,6 +13,9 @@ Config.AlertDuration = 20
 -- Distancia mínima a cualquier jugador para poder borrar un vehículo
 Config.MinDistanceFromAnyPlayer = 0
 
+-- Distancia máxima para notificar a jugadores cercanos cuando el servidor elimina un vehículo
+Config.RemoveNotifyRange = 300.0
+
 -- Exclusiones / filtros
 Config.SkipEmergencyVehicles = false     -- Clase 18
 Config.SkipBoatsAndAircraft = false      -- 14=boats, 15=heli, 16=planes, 21=trains
