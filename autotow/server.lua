@@ -39,6 +39,10 @@ local GetVehicleMaxNumberOfPassengers = GetVehicleMaxNumberOfPassengers or funct
   return Citizen.InvokeNative(0xA7C4F2C6E744A1E8, vehicle)
 end
 
+local GetVehicleModelNumberOfSeats = GetVehicleModelNumberOfSeats or function(model)
+  return Citizen.InvokeNative(0x2AD93716F184EDA4, model)
+end
+
 local IsVehicleSeatFree = IsVehicleSeatFree or function(vehicle, seatIndex)
   return Citizen.InvokeNative(0x22AC59A870E6A669, vehicle, seatIndex)
 end
@@ -69,6 +73,12 @@ end
 
 local function isAnySeatOccupied(veh)
   local max = GetVehicleMaxNumberOfPassengers(veh)
+  if type(max) ~= 'number' or max < 0 then
+    local model = GetEntityModel(veh)
+    max = GetVehicleModelNumberOfSeats(model) - 2
+  else
+    max = max - 1
+  end
   for seat = -1, max do
     if not IsVehicleSeatFree(veh, seat) then
       return true
