@@ -210,17 +210,23 @@ RegisterNetEvent('invictus_tow:server:report', function(token, deletedCount)
   end
 end)
 
-RegisterNetEvent('invictus_tow:server:deleteVehicle', function(netId)
+RegisterNetEvent('invictus_tow:server:deleteVehicle', function(netId, token)
+  local src = source
   local veh = NetworkGetEntityFromNetworkId(netId)
+  local success = false
   if DoesEntityExist(veh) then
     SetEntityAsMissionEntity(veh, true, true)
     DeleteEntity(veh)
+    success = not DoesEntityExist(veh)
     if Config.Debug then
       debugPrint(('Vehículo %s eliminado por servidor'):format(netId))
     end
-  elseif Config.Debug then
-    debugPrint(('No se pudo eliminar el vehículo %s: no existe'):format(netId))
+  else
+    if Config.Debug then
+      debugPrint(('No se pudo eliminar el vehículo %s: no existe'):format(netId))
+    end
   end
+  TriggerClientEvent('invictus_tow:client:deleteResult', src, token, success)
 end)
 
 -- Cancelar ciclo

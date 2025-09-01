@@ -4,6 +4,13 @@ local function dprint(msg)
   end
 end
 
+-- Estado de la limpieza actual
+local cleanupState = {
+  removed = 0,
+  pending = 0,
+  token = nil
+}
+
 -- Enumerador seguro de entidades
 local function EnumerateEntities(initFunc, moveFunc, disposeFunc)
   return coroutine.wrap(function()
@@ -51,7 +58,7 @@ local function isAnySeatOccupied(veh)
   return false
 end
 
-local function tryDeleteVehicle(veh)
+local function tryDeleteVehicle(veh, token)
   if not DoesEntityExist(veh) then return false end
 
   -- Asegurar control de red
@@ -74,8 +81,8 @@ local function tryDeleteVehicle(veh)
         if Config.Debug then
           dprint(('No se pudo tomar control del vehículo %s; delegando al servidor'):format(netId))
         end
-        TriggerServerEvent('invictus_tow:server:deleteVehicle', netId)
-        return true
+        TriggerServerEvent('invictus_tow:server:deleteVehicle', netId, token)
+        return nil
       end
     end
   end
@@ -108,9 +115,19 @@ RegisterNetEvent('invictus_tow:client:showCancel', function(payload)
   })
 end)
 
+RegisterNetEvent('invictus_tow:client:deleteResult', function(token, success)
+  if cleanupState.token ~= token then return end
+  if success then
+    cleanupState.removed = cleanupState.removed + 1
+  end
+  cleanupState.pending = math.max(0, cleanupState.pending - 1)
+end)
+
 -- Ejecución de limpieza
 RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
-  local removed = 0
+  cleanupState.removed = 0
+  cleanupState.pending = 0
+  cleanupState.token = token
 
   for veh in EnumerateVehicles() do
     if DoesEntityExist(veh) then
@@ -118,8 +135,11 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
 
       -- Borrar si el modelo es 0 o nil
       if not model or model == 0 then
-        if tryDeleteVehicle(veh) then
-          removed = removed + 1
+        local res = tryDeleteVehicle(veh, token)
+        if res then
+          cleanupState.removed = cleanupState.removed + 1
+        elseif res == nil then
+          cleanupState.pending = cleanupState.pending + 1
         end
         goto continue
       end
@@ -150,15 +170,23 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
       if isAnySeatOccupied(veh) then goto continue end
 
       -- Intentar borrar
-      if tryDeleteVehicle(veh) then
-        removed = removed + 1
+      local res = tryDeleteVehicle(veh, token)
+      if res then
+        cleanupState.removed = cleanupState.removed + 1
+      elseif res == nil then
+        cleanupState.pending = cleanupState.pending + 1
       end
     end
     ::continue::
   end
 
-  TriggerServerEvent('invictus_tow:server:report', token, removed)
+  local timeout = GetGameTimer() + 5000
+  while cleanupState.pending > 0 and GetGameTimer() < timeout do
+    Wait(50)
+  end
+
+  TriggerServerEvent('invictus_tow:server:report', token, cleanupState.removed)
   if Config.Debug then
-    dprint(('Borrados: %s'):format(removed))
+    dprint(('Borrados: %s'):format(cleanupState.removed))
   end
 end)
