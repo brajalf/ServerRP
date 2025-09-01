@@ -73,12 +73,20 @@ end
 
 local function isAnySeatOccupied(veh)
   local max = GetVehicleMaxNumberOfPassengers(veh)
+
   if type(max) ~= 'number' or max < 0 then
     local model = GetEntityModel(veh)
-    max = GetVehicleModelNumberOfSeats(model) - 2
+    local seats = GetVehicleModelNumberOfSeats(model)
+
+    if type(seats) == 'number' and seats > 0 then
+      max = seats - 2      -- iterate all valid seats
+    else
+      max = -1             -- fall back to driver seat only
+    end
   else
     max = max - 1
   end
+
   for seat = -1, max do
     if not IsVehicleSeatFree(veh, seat) then
       return true
