@@ -113,12 +113,15 @@ local function cleanupServerVehicles(cfg)
         if isAnySeatOccupied(veh) then goto continue end
         SetEntityAsMissionEntity(veh, true, true)
         local vehCoords = GetEntityCoords(veh)
-        local netId = NetworkGetNetworkIdFromEntity(veh)
+        local netId = nil
+        if DoesEntityExist(veh) and NetworkGetEntityIsNetworked(veh) then
+          netId = NetworkGetNetworkIdFromEntity(veh)
+        end
         DeleteEntity(veh)
         if not DoesEntityExist(veh) then
           removed = removed + 1
           local range = Config.RemoveNotifyRange or 0
-          if range > 0 then
+          if range > 0 and netId then
             local players = GetPlayers()
             for i = 1, #players do
               local playerId = tonumber(players[i])
@@ -156,12 +159,15 @@ local function cleanupServerVehicles(cfg)
 
       SetEntityAsMissionEntity(veh, true, true)
       local vehCoords = GetEntityCoords(veh)
-      local netId = NetworkGetNetworkIdFromEntity(veh)
+      local netId = nil
+      if DoesEntityExist(veh) and NetworkGetEntityIsNetworked(veh) then
+        netId = NetworkGetNetworkIdFromEntity(veh)
+      end
       DeleteEntity(veh)
       if not DoesEntityExist(veh) then
         removed = removed + 1
         local range = Config.RemoveNotifyRange or 0
-        if range > 0 then
+        if range > 0 and netId then
           local players = GetPlayers()
           for i = 1, #players do
             local playerId = tonumber(players[i])
