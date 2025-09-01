@@ -6,6 +6,7 @@ Automated Tow Script for FiveM – **QBCore** compatible. Elimina vehículos des
 - ⏱️ Limpieza automática cada `Config.IntervalMinutes` minutos
 - 📣 Notificaciones en pantalla con ox_lib
 - 👥 Verificación de **todos los asientos** antes de borrar un vehículo
+- 🔁 Rutina de verificación compartida entre cliente y servidor para garantizar el mismo filtrado
 - 🧯 Filtros: distancia a jugadores, clases/vehículos en blacklist, emergencia/boats/aircraft opcional
 - 🛡️ Permisos **ACE** para cancelar o disparar manualmente
 - 🧩 100% configurable desde `config.lua`

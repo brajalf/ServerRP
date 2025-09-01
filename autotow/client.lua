@@ -4,6 +4,7 @@ local function dprint(msg)
   end
 end
 
+-- Seat occupancy check lives in seat_check.lua and is shared with server.lua
 -- Estado de la limpieza actual
 local cleanupState = {
   removed = 0,
@@ -44,16 +45,6 @@ local function isClassBlacklisted(class, list)
   if not list then return false end
   for i=1, #list do
     if class == list[i] then return true end
-  end
-  return false
-end
-
-local function isAnySeatOccupied(veh)
-  local max = GetVehicleMaxNumberOfPassengers(veh)
-  for seat = -1, max do
-    if not IsVehicleSeatFree(veh, seat) then
-      return true
-    end
   end
   return false
 end
@@ -178,7 +169,7 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
       end
 
       -- No borrar si hay alguien a bordo
-      if isAnySeatOccupied(veh) then goto continue end
+      if isAnySeatOccupied(veh, dprint) then goto continue end
 
       -- Intentar borrar
       local res = tryDeleteVehicle(veh, token)

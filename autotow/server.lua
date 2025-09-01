@@ -10,6 +10,7 @@ local function debugPrint(msg)
   end
 end
 
+-- Seat occupancy check lives in seat_check.lua and is shared with client.lua
 local function isModelBlacklisted(model, list)
   if not list then return false end
   for i = 1, #list do
@@ -33,22 +34,6 @@ end
 
 local GetVehicleClass = GetVehicleClass or function(vehicle)
   return Citizen.InvokeNative(0x29439776AAA00A62, vehicle)
-end
-
-local GetVehicleMaxNumberOfPassengers = GetVehicleMaxNumberOfPassengers or function(vehicle)
-  return Citizen.InvokeNative(0xA7C4F2C6E744A1E8, vehicle)
-end
-
-local GetPedInVehicleSeat = GetPedInVehicleSeat or function(vehicle, seatIndex)
-  return Citizen.InvokeNative(0xBB40DD2270B65366, vehicle, seatIndex)
-end
-
-local GetVehicleNumberOfPassengers = GetVehicleNumberOfPassengers or function(vehicle)
-  return Citizen.InvokeNative(0x24CB213773B00F79, vehicle)
-end
-
-local IsVehicleSeatFree = IsVehicleSeatFree or function(vehicle, seatIndex)
-  return Citizen.InvokeNative(0x22AC59A870E6A669, vehicle, seatIndex)
 end
 
 local GetEntityCoords = GetEntityCoords or function(entity)
@@ -75,36 +60,12 @@ local GetPlayerPed = GetPlayerPed or function(player)
   return Citizen.InvokeNative(0x6E31E99359A9B316, player)
 end
 
-local function isAnySeatOccupied(veh)
-  local max = GetVehicleMaxNumberOfPassengers(veh)
-  if type(max) ~= "number" or max < -1 then
-    debugPrint(('Unexpected max passenger value %s for vehicle %s'):format(tostring(max), veh))
-    max = GetVehicleNumberOfPassengers(veh)
-    if type(max) ~= "number" or max < -1 then
-      max = 0
-    end
-  end
-
-  if max > 7 then max = 7 end
-
-  for seat = -1, max do
-    local seatFree = IsVehicleSeatFree and IsVehicleSeatFree(veh, seat)
-    if type(seatFree) ~= "boolean" then
-      debugPrint(('Unexpected seat state %s for vehicle %s seat %s'):format(tostring(seatFree), veh, seat))
-      seatFree = true
-    end
-    if not seatFree then return true end
-  end
-
-  return false
-end
-
 -- Limpia vehículos no streameados en el servidor
 local function cleanupServerVehicles(cfg)
   local removed = 0
   for _, veh in ipairs(GetAllVehicles()) do
     if DoesEntityExist(veh) then
-      if isAnySeatOccupied(veh) then goto continue end
+      if isAnySeatOccupied(veh, debugPrint) then goto continue end
       local model = GetEntityModel(veh)
 
       if not model or model == 0 then
@@ -307,7 +268,7 @@ RegisterNetEvent('invictus_tow:server:deleteVehicle', function(netId, token)
   local veh = NetworkGetEntityFromNetworkId(netId)
   local success = false
   if DoesEntityExist(veh) then
-    if isAnySeatOccupied(veh) then
+    if isAnySeatOccupied(veh, debugPrint) then
       success = false
       if Config.Debug then
         debugPrint(('No se eliminó el vehículo %s: hay jugadores dentro'):format(netId))
