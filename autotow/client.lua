@@ -123,6 +123,17 @@ RegisterNetEvent('invictus_tow:client:deleteResult', function(token, success)
   cleanupState.pending = math.max(0, cleanupState.pending - 1)
 end)
 
+RegisterNetEvent('invictus_tow:client:vehicleRemoved', function(netId)
+  local veh = NetworkGetEntityFromNetworkId(netId)
+  if DoesEntityExist(veh) then
+    SetEntityAsMissionEntity(veh, false, false)
+    DeleteVehicle(veh)
+    if DoesEntityExist(veh) then
+      DeleteEntity(veh)
+    end
+  end
+end)
+
 -- Ejecución de limpieza
 RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
   cleanupState.removed = 0

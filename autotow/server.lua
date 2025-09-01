@@ -59,6 +59,10 @@ local DeleteEntity = DeleteEntity or function(entity)
   return Citizen.InvokeNative(0x7D9EFB7AD0A3BED7, entity)
 end
 
+local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity or function(entity)
+  return Citizen.InvokeNative(0xA11700682F3AD45C, entity)
+end
+
 local GetPlayerPed = GetPlayerPed or function(player)
   return Citizen.InvokeNative(0x6E31E99359A9B316, player)
 end
@@ -82,9 +86,23 @@ local function cleanupServerVehicles(cfg)
 
       if not model or model == 0 then
         SetEntityAsMissionEntity(veh, true, true)
+        local vehCoords = GetEntityCoords(veh)
+        local netId = NetworkGetNetworkIdFromEntity(veh)
         DeleteEntity(veh)
         if not DoesEntityExist(veh) then
           removed = removed + 1
+          local range = Config.RemoveNotifyRange or 0
+          if range > 0 then
+            local players = GetPlayers()
+            for i = 1, #players do
+              local playerId = tonumber(players[i])
+              local ped = GetPlayerPed(playerId)
+              local pCoords = GetEntityCoords(ped)
+              if #(vehCoords - pCoords) < range then
+                TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+              end
+            end
+          end
         end
         goto continue
       end
@@ -111,9 +129,23 @@ local function cleanupServerVehicles(cfg)
       -- if isAnySeatOccupied(veh) then goto continue end
 
       SetEntityAsMissionEntity(veh, true, true)
+      local vehCoords = GetEntityCoords(veh)
+      local netId = NetworkGetNetworkIdFromEntity(veh)
       DeleteEntity(veh)
       if not DoesEntityExist(veh) then
         removed = removed + 1
+        local range = Config.RemoveNotifyRange or 0
+        if range > 0 then
+          local players = GetPlayers()
+          for i = 1, #players do
+            local playerId = tonumber(players[i])
+            local ped = GetPlayerPed(playerId)
+            local pCoords = GetEntityCoords(ped)
+            if #(vehCoords - pCoords) < range then
+              TriggerClientEvent('invictus_tow:client:vehicleRemoved', playerId, netId)
+            end
+          end
+        end
       end
     end
     ::continue::
