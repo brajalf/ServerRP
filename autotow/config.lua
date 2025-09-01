@@ -26,10 +26,12 @@ Config.BlacklistedClasses = {}
 -- Comandos
 Config.CommandCancel = 'towcancel'
 Config.CommandTrigger = 'towtrigger' -- disparo manual
+Config.CommandImmediate = 'towclean' -- limpieza inmediata
 
 -- Permisos ACE (usa add_ace en server.cfg)
 Config.AceCancel  = 'invictus.tow.cancel'
 Config.AceTrigger = 'invictus.tow.trigger'
+Config.AceImmediate = 'invictus.tow.immediate'
 
 -- Mensajes de alerta
 Config.AlertTitle  = 'LIMPIEZA DE VEHÍCULOS'
