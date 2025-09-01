@@ -146,6 +146,8 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
 
       -- Borrar si el modelo es 0 o nil
       if not model or model == 0 then
+        -- Saltar si hay alguien en cualquier asiento
+        if isAnySeatOccupied(veh) then goto continue end
         local res = tryDeleteVehicle(veh, token)
         if res then
           cleanupState.removed = cleanupState.removed + 1
