@@ -128,6 +128,19 @@ RegisterNetEvent('invictus_tow:server:report', function(token, deletedCount)
   end
 end)
 
+RegisterNetEvent('invictus_tow:server:deleteVehicle', function(netId)
+  local veh = NetworkGetEntityFromNetworkId(netId)
+  if DoesEntityExist(veh) then
+    SetEntityAsMissionEntity(veh, true, true)
+    DeleteEntity(veh)
+    if Config.Debug then
+      debugPrint(('Vehículo %s eliminado por servidor'):format(netId))
+    end
+  elseif Config.Debug then
+    debugPrint(('No se pudo eliminar el vehículo %s: no existe'):format(netId))
+  end
+end)
+
 -- Cancelar ciclo
 local function cancelCleanup(src)
   if not cleanupState.active then

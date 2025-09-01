@@ -62,6 +62,22 @@ local function tryDeleteVehicle(veh)
       attempts = attempts + 1
       Wait(25)
     end
+    if not NetworkHasControlOfEntity(veh) then
+      local netId = NetworkGetNetworkIdFromEntity(veh)
+      NetworkRequestControlOfNetworkId(netId)
+      attempts = 0
+      while attempts < 20 and not NetworkHasControlOfEntity(veh) do
+        attempts = attempts + 1
+        Wait(25)
+      end
+      if not NetworkHasControlOfEntity(veh) then
+        if Config.Debug then
+          dprint(('No se pudo tomar control del vehículo %s; delegando al servidor'):format(netId))
+        end
+        TriggerServerEvent('invictus_tow:server:deleteVehicle', netId)
+        return true
+      end
+    end
   end
 
   SetEntityAsMissionEntity(veh, true, true)
