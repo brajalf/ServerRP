@@ -234,7 +234,7 @@ end)
 
 -- Guardar data de una zona (para “vehículos por rango”)
 RegisterNUICallback('updateZone', function(data, cb)
-  TriggerServerEvent('qb-jobcreator:server:updateZone', tonumber(data.id), data.data, data.label, data.radius, data.coords)
+  TriggerServerEvent('qb-jobcreator:server:updateZone', tonumber(data.id), data.data, data.label, data.radius, data.coords, data.job)
   cb({ ok = true })
 end)
 

@@ -808,10 +808,11 @@ RegisterNetEvent('qb-jobcreator:server:wash', function(job, amount)
 end)
 
 -- Actualizar zona (guardar 'data', label/radius/coords opcional)
-RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords)
-  local src = source; local job; local ztype; local old
-  for _, z in ipairs(Runtime.Zones) do if z.id == id then job = z.job ztype = z.ztype old = z break end end
-  if not allowAdminOrBoss(src, job or '') then return end
+RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, radius, coords, job)
+  local src = source; local oldJob; local ztype; local old
+  for _, z in ipairs(Runtime.Zones) do if z.id == id then oldJob = z.job ztype = z.ztype old = z break end end
+  if not allowAdminOrBoss(src, oldJob or '') then return end
+  if type(job) ~= 'string' then job = oldJob end
   if type(data) == 'table' then
     if ztype == 'shop' then
       data.items = SanitizeShopItems(data.items)
@@ -843,7 +844,7 @@ RegisterNetEvent('qb-jobcreator:server:updateZone', function(id, data, label, ra
     data.clearArea = data.clearArea and true or false
     if data.clearRadius ~= nil then data.clearRadius = tonumber(data.clearRadius) or Config.Zone.ClearRadius end
   end
-  if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords }) end
+  if DB.UpdateZone then DB.UpdateZone(id, { data = data, label = label, radius = radius, coords = coords, job = job }) end
   local row = MySQL.query.await('SELECT * FROM jobcreator_zones WHERE id = ?', { id })
   local r = row and row[1]
   if r then
