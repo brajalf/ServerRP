@@ -135,9 +135,10 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
       -- Distancia mínima a jugadores
       if cfg.minDist and cfg.minDist > 0 then
         local vehCoords = GetEntityCoords(veh)
-        local players = GetPlayers()
+        local players = GetActivePlayers()
         for i = 1, #players do
-          local ped = GetPlayerPed(players[i])
+          local playerId = players[i]
+          local ped = GetPlayerPed(playerId)
           local pCoords = GetEntityCoords(ped)
           if #(vehCoords - pCoords) < cfg.minDist then
             goto continue
