@@ -99,6 +99,15 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
   for veh in EnumerateVehicles() do
     if DoesEntityExist(veh) then
       local model = GetEntityModel(veh)
+
+      -- Borrar si el modelo es 0 o nil
+      if not model or model == 0 then
+        if tryDeleteVehicle(veh) then
+          removed = removed + 1
+        end
+        goto continue
+      end
+
       local class = GetVehicleClass(veh)
 
       -- Filtros
@@ -106,6 +115,19 @@ RegisterNetEvent('invictus_tow:client:doCleanup', function(cfg, token)
       if cfg.skipBA and (class == 14 or class == 15 or class == 16 or class == 21) then goto continue end
       if isModelBlacklisted(model, cfg.blModels) then goto continue end
       if isClassBlacklisted(class, cfg.blClasses) then goto continue end
+
+      -- Distancia mínima a jugadores
+      if cfg.minDist and cfg.minDist > 0 then
+        local vehCoords = GetEntityCoords(veh)
+        local players = GetPlayers()
+        for i = 1, #players do
+          local ped = GetPlayerPed(players[i])
+          local pCoords = GetEntityCoords(ped)
+          if #(vehCoords - pCoords) < cfg.minDist then
+            goto continue
+          end
+        end
+      end
 
       -- No borrar si hay alguien a bordo
       if isAnySeatOccupied(veh) then goto continue end
