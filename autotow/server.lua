@@ -104,20 +104,31 @@ end
 
 -- Limpia vehículos no streameados en el servidor
 local function cleanupServerVehicles(cfg)
+  debugPrint('cleanupServerVehicles start')
   local removed = 0
   for _, veh in ipairs(GetAllVehicles()) do
     if DoesEntityExist(veh) then
       local model = GetEntityModel(veh)
+      debugPrint(('Evaluating veh %s model=%s'):format(veh, model))
 
       if not model or model == 0 then
-        if isAnySeatOccupied(veh) then goto continue end
+        local occupied = isAnySeatOccupied(veh)
+        if occupied then
+          debugPrint(('veh %s occupied; skipping'):format(veh))
+          goto continue
+        end
+        debugPrint(('veh %s free; deleting'):format(veh))
         SetEntityAsMissionEntity(veh, true, true)
         local vehCoords = GetEntityCoords(veh)
         local netId = nil
         if DoesEntityExist(veh) and NetworkGetEntityIsNetworked(veh) then
           netId = NetworkGetNetworkIdFromEntity(veh)
+          if not netId then
+            debugPrint(('veh %s has no net ID; skipping notify'):format(veh))
+          end
         end
         DeleteEntity(veh)
+        debugPrint(('veh %s deleted=%s'):format(veh, tostring(not DoesEntityExist(veh))))
         if not DoesEntityExist(veh) then
           removed = removed + 1
           local range = Config.RemoveNotifyRange or 0
@@ -155,15 +166,24 @@ local function cleanupServerVehicles(cfg)
       --   end
       -- end
 
-      if isAnySeatOccupied(veh) then goto continue end
+      local occupied = isAnySeatOccupied(veh)
+      if occupied then
+        debugPrint(('veh %s occupied; skipping'):format(veh))
+        goto continue
+      end
 
+      debugPrint(('veh %s free; deleting'):format(veh))
       SetEntityAsMissionEntity(veh, true, true)
       local vehCoords = GetEntityCoords(veh)
       local netId = nil
       if DoesEntityExist(veh) and NetworkGetEntityIsNetworked(veh) then
         netId = NetworkGetNetworkIdFromEntity(veh)
+        if not netId then
+          debugPrint(('veh %s has no net ID; skipping notify'):format(veh))
+        end
       end
       DeleteEntity(veh)
+      debugPrint(('veh %s deleted=%s'):format(veh, tostring(not DoesEntityExist(veh))))
       if not DoesEntityExist(veh) then
         removed = removed + 1
         local range = Config.RemoveNotifyRange or 0
@@ -183,9 +203,7 @@ local function cleanupServerVehicles(cfg)
     ::continue::
   end
 
-  if Config.Debug then
-    debugPrint(('Servidor eliminó %s vehículos no streameados'):format(removed))
-  end
+  debugPrint(('cleanupServerVehicles end; removed %s vehicles'):format(removed))
 end
 
 -- Broadcast alert a todos
