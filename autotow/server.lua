@@ -85,6 +85,7 @@ local function cleanupServerVehicles(cfg)
       local model = GetEntityModel(veh)
 
       if not model or model == 0 then
+        if isAnySeatOccupied(veh) then goto continue end
         SetEntityAsMissionEntity(veh, true, true)
         local vehCoords = GetEntityCoords(veh)
         local netId = NetworkGetNetworkIdFromEntity(veh)
@@ -126,7 +127,7 @@ local function cleanupServerVehicles(cfg)
       --   end
       -- end
 
-      -- if isAnySeatOccupied(veh) then goto continue end
+      if isAnySeatOccupied(veh) then goto continue end
 
       SetEntityAsMissionEntity(veh, true, true)
       local vehCoords = GetEntityCoords(veh)
