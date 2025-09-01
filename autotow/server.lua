@@ -10,6 +10,81 @@ local function debugPrint(msg)
   end
 end
 
+local function isModelBlacklisted(model, list)
+  if not list then return false end
+  for i = 1, #list do
+    if model == list[i] then return true end
+  end
+  return false
+end
+
+local function isClassBlacklisted(class, list)
+  if not list then return false end
+  for i = 1, #list do
+    if class == list[i] then return true end
+  end
+  return false
+end
+
+local function isAnySeatOccupied(veh)
+  local max = GetVehicleMaxNumberOfPassengers(veh)
+  for seat = -1, max do
+    if not IsVehicleSeatFree(veh, seat) then
+      return true
+    end
+  end
+  return false
+end
+
+-- Limpia vehículos no streameados en el servidor
+local function cleanupServerVehicles(cfg)
+  local removed = 0
+  for _, veh in ipairs(GetAllVehicles()) do
+    if DoesEntityExist(veh) then
+      local model = GetEntityModel(veh)
+
+      if not model or model == 0 then
+        SetEntityAsMissionEntity(veh, true, true)
+        DeleteEntity(veh)
+        removed = removed + 1
+        goto continue
+      end
+
+      local class = GetVehicleClass(veh)
+
+      if cfg.skipEmergency and class == 18 then goto continue end
+      if cfg.skipBA and (class == 14 or class == 15 or class == 16 or class == 21) then goto continue end
+      if isModelBlacklisted(model, cfg.blModels) then goto continue end
+      if isClassBlacklisted(class, cfg.blClasses) then goto continue end
+
+      if cfg.minDist and cfg.minDist > 0 then
+        local vehCoords = GetEntityCoords(veh)
+        local players = GetPlayers()
+        for i = 1, #players do
+          local ped = GetPlayerPed(players[i])
+          local pCoords = GetEntityCoords(ped)
+          if #(vehCoords - pCoords) < cfg.minDist then
+            goto continue
+          end
+        end
+      end
+
+      if isAnySeatOccupied(veh) then goto continue end
+
+      SetEntityAsMissionEntity(veh, true, true)
+      DeleteEntity(veh)
+      if not DoesEntityExist(veh) then
+        removed = removed + 1
+      end
+    end
+    ::continue::
+  end
+
+  if Config.Debug then
+    debugPrint(('Servidor eliminó %s vehículos no streameados'):format(removed))
+  end
+end
+
 -- Broadcast alert a todos
 local function broadcastAlert(text, duration, title)
   TriggerClientEvent('invictus_tow:client:showAlert', -1, {
@@ -90,6 +165,13 @@ local function startCleanupCycle(manual)
       cleanupState.finalized = true
       cleanupState.active = false
       cleanupState.tryFinalize = nil
+      cleanupServerVehicles({
+        minDist = Config.MinDistanceFromAnyPlayer,
+        skipEmergency = Config.SkipEmergencyVehicles,
+        skipBA = Config.SkipBoatsAndAircraft,
+        blModels = Config.BlacklistedModels,
+        blClasses = Config.BlacklistedClasses
+      })
       print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))
       broadcastAlert(Config.CleanupCompleteText, nil, Config.CleanupCompleteTitle)
     end
@@ -185,6 +267,13 @@ local function immediateCleanup()
     blClasses = Config.BlacklistedClasses,
     debug = Config.Debug
   }, cleanupState.token)
+  cleanupServerVehicles({
+    minDist = Config.MinDistanceFromAnyPlayer,
+    skipEmergency = Config.SkipEmergencyVehicles,
+    skipBA = Config.SkipBoatsAndAircraft,
+    blModels = Config.BlacklistedModels,
+    blClasses = Config.BlacklistedClasses
+  })
   print(('^2[%s]^7 Limpieza inmediata ejecutada.'):format(Config.ResourceName))
 end
 
