@@ -28,13 +28,8 @@ function isAnySeatOccupied(veh, logFn)
   if max > 7 then max = 7 end
 
   for seat = -1, max do
-    local seatFree = IsVehicleSeatFree and IsVehicleSeatFree(veh, seat)
-    if type(seatFree) ~= "boolean" then
-      if logFn then
-        logFn(('Unexpected seat state %s for vehicle %s seat %s'):format(tostring(seatFree), veh, seat))
-      end
-      seatFree = true
-    end
+    local seatFree = IsVehicleSeatFree(veh, seat)
+    seatFree = seatFree == true or seatFree == 1
     if not seatFree then return true end
   end
 
