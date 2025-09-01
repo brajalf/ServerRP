@@ -11,8 +11,7 @@ version '1.0.0'
 
 shared_scripts {
   '@ox_lib/init.lua',
-  'config.lua',
-  'seat_check.lua'
+  'config.lua'
 }
 
 client_scripts {
