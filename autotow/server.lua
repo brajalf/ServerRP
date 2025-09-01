@@ -82,6 +82,7 @@ local function cleanupServerVehicles(cfg)
   local removed = 0
   for _, veh in ipairs(GetAllVehicles()) do
     if DoesEntityExist(veh) then
+      if isAnySeatOccupied(veh) then goto continue end
       local model = GetEntityModel(veh)
 
       if not model or model == 0 then
@@ -125,8 +126,6 @@ local function cleanupServerVehicles(cfg)
       --     end
       --   end
       -- end
-
-      -- if isAnySeatOccupied(veh) then goto continue end
 
       SetEntityAsMissionEntity(veh, true, true)
       local vehCoords = GetEntityCoords(veh)
@@ -286,11 +285,18 @@ RegisterNetEvent('invictus_tow:server:deleteVehicle', function(netId, token)
   local veh = NetworkGetEntityFromNetworkId(netId)
   local success = false
   if DoesEntityExist(veh) then
-    SetEntityAsMissionEntity(veh, true, true)
-    DeleteEntity(veh)
-    success = not DoesEntityExist(veh)
-    if Config.Debug then
-      debugPrint(('Vehículo %s eliminado por servidor'):format(netId))
+    if isAnySeatOccupied(veh) then
+      success = false
+      if Config.Debug then
+        debugPrint(('No se eliminó el vehículo %s: hay jugadores dentro'):format(netId))
+      end
+    else
+      SetEntityAsMissionEntity(veh, true, true)
+      DeleteEntity(veh)
+      success = not DoesEntityExist(veh)
+      if Config.Debug then
+        debugPrint(('Vehículo %s eliminado por servidor'):format(netId))
+      end
     end
   else
     if Config.Debug then
