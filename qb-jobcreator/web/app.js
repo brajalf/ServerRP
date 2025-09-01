@@ -51,8 +51,9 @@ const App = (() => {
     };
   }
 
-  function renderTeleportSection(box, items = []) {
+  function renderTeleportSection(box, items = [], job = '') {
     box.innerHTML = `
+      <div class="row"><input id="zjob" class="input" placeholder="Job" value="${job || ''}"/></div>
       <div id="tp-items"></div>
       <div class="row"><button class="btn" id="addTP">+ Destino</button></div>`;
     const wrap = box.querySelector('#tp-items');
@@ -771,7 +772,7 @@ const App = (() => {
         const cr = Number(document.getElementById('zclearrad')?.value || 0);
         data.clearArea = cr > 0;
         data.clearRadius = cr;
-        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords }).then(() => { closeModal(); load(); });
+        post('updateZone', { id, data, label: document.getElementById('zlabel').value, radius: Number(document.getElementById('zrad').value) || 2.0, coords, job: document.getElementById('zjob')?.value || '' }).then(() => { closeModal(); load(); });
       });
 
       document.getElementById('zcoords').onclick = () => {
@@ -834,7 +835,7 @@ const App = (() => {
           box.innerHTML = row(inp('zname','Nombre DJ','', d.name || '') + inp('zrange','Radio','20', d.range || d.distance || '')) +
                           row(inp('zurl','YouTube/URL','https://...', d.url || '') + inp('zvol','Volumen (0-1)','0.5', d.volume || ''));
         } else if (t === 'teleport') {
-          renderTeleportSection(box, d.to || []);
+          renderTeleportSection(box, d.to || [], zone.job);
         } else {
           box.innerHTML = '';
         }
@@ -912,7 +913,7 @@ const App = (() => {
           data.clearArea = cr > 0;
           data.clearRadius = cr;
           const z = {
-            job: state.jd.job,
+            job: document.getElementById('zjob')?.value || '',
             ztype: t,
             label: document.getElementById('zlabel').value,
             radius: Number(document.getElementById('zrad').value) || 2.0,
@@ -974,7 +975,7 @@ const App = (() => {
         box.innerHTML = row(inp('zname','Nombre DJ','') + inp('zrange','Radio','20')) +
                         row(inp('zurl','YouTube/URL','https://...') + inp('zvol','Volumen (0-1)','0.5'));
       } else if (t === 'teleport') {
-        renderTeleportSection(box, []);
+        renderTeleportSection(box, [], state.jd.job);
       } else {
         box.innerHTML = '';
       }

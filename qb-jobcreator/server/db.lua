@@ -118,6 +118,7 @@ function DB.UpdateZone(id, fields)
   if fields.radius  ~= nil then sets[#sets+1] = 'radius=?';  params[#params+1] = fields.radius end
   if fields.coords  ~= nil then sets[#sets+1] = 'coords=?';  params[#params+1] = json.encode(fields.coords) end
   if fields.data    ~= nil then sets[#sets+1] = 'data=?';    params[#params+1] = json.encode(fields.data) end
+  if fields.job     ~= nil then sets[#sets+1] = 'job=?';     params[#params+1] = fields.job end
   if #sets == 0 then return end
   params[#params+1] = id
   MySQL.query.await(('UPDATE jobcreator_zones SET %s WHERE id=?'):format(table.concat(sets, ',')), params)
