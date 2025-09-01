@@ -26,6 +26,43 @@ local function isClassBlacklisted(class, list)
   return false
 end
 
+-- Safe native fallbacks
+local GetEntityModel = GetEntityModel or function(entity)
+  return Citizen.InvokeNative(0x9F47B058362C84B5, entity)
+end
+
+local GetVehicleClass = GetVehicleClass or function(vehicle)
+  return Citizen.InvokeNative(0x29439776AAA00A62, vehicle)
+end
+
+local GetVehicleMaxNumberOfPassengers = GetVehicleMaxNumberOfPassengers or function(vehicle)
+  return Citizen.InvokeNative(0xA7C4F2C6E744A1E8, vehicle)
+end
+
+local IsVehicleSeatFree = IsVehicleSeatFree or function(vehicle, seatIndex)
+  return Citizen.InvokeNative(0x22AC59A870E6A669, vehicle, seatIndex)
+end
+
+local GetEntityCoords = GetEntityCoords or function(entity)
+  return Citizen.InvokeNative(0x3FEF770D40960D5A, entity, false, false)
+end
+
+local DoesEntityExist = DoesEntityExist or function(entity)
+  return Citizen.InvokeNative(0x7239B21A38F536BA, entity)
+end
+
+local SetEntityAsMissionEntity = SetEntityAsMissionEntity or function(entity, p1, p2)
+  return Citizen.InvokeNative(0xAD738C3085FE7E11, entity, p1, p2)
+end
+
+local DeleteEntity = DeleteEntity or function(entity)
+  return Citizen.InvokeNative(0x7D9EFB7AD0A3BED7, entity)
+end
+
+local GetPlayerPed = GetPlayerPed or function(player)
+  return Citizen.InvokeNative(0x6E31E99359A9B316, player)
+end
+
 local function isAnySeatOccupied(veh)
   local max = GetVehicleMaxNumberOfPassengers(veh)
   for seat = -1, max do
