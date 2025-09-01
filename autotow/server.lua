@@ -83,30 +83,32 @@ local function cleanupServerVehicles(cfg)
       if not model or model == 0 then
         SetEntityAsMissionEntity(veh, true, true)
         DeleteEntity(veh)
-        removed = removed + 1
+        if not DoesEntityExist(veh) then
+          removed = removed + 1
+        end
         goto continue
       end
 
-      local class = GetVehicleClass(veh)
+      -- local class = GetVehicleClass(veh)
 
-      if cfg.skipEmergency and class == 18 then goto continue end
-      if cfg.skipBA and (class == 14 or class == 15 or class == 16 or class == 21) then goto continue end
-      if isModelBlacklisted(model, cfg.blModels) then goto continue end
-      if isClassBlacklisted(class, cfg.blClasses) then goto continue end
+      -- if cfg.skipEmergency and class == 18 then goto continue end
+      -- if cfg.skipBA and (class == 14 or class == 15 or class == 16 or class == 21) then goto continue end
+      -- if isModelBlacklisted(model, cfg.blModels) then goto continue end
+      -- if isClassBlacklisted(class, cfg.blClasses) then goto continue end
 
-      if cfg.minDist and cfg.minDist > 0 then
-        local vehCoords = GetEntityCoords(veh)
-        local players = GetPlayers()
-        for i = 1, #players do
-          local ped = GetPlayerPed(players[i])
-          local pCoords = GetEntityCoords(ped)
-          if #(vehCoords - pCoords) < cfg.minDist then
-            goto continue
-          end
-        end
-      end
+      -- if cfg.minDist and cfg.minDist > 0 then
+      --   local vehCoords = GetEntityCoords(veh)
+      --   local players = GetPlayers()
+      --   for i = 1, #players do
+      --     local ped = GetPlayerPed(players[i])
+      --     local pCoords = GetEntityCoords(ped)
+      --     if #(vehCoords - pCoords) < cfg.minDist then
+      --       goto continue
+      --     end
+      --   end
+      -- end
 
-      if isAnySeatOccupied(veh) then goto continue end
+      -- if isAnySeatOccupied(veh) then goto continue end
 
       SetEntityAsMissionEntity(veh, true, true)
       DeleteEntity(veh)
@@ -203,11 +205,11 @@ local function startCleanupCycle(manual)
       cleanupState.active = false
       cleanupState.tryFinalize = nil
       cleanupServerVehicles({
-        minDist = Config.MinDistanceFromAnyPlayer,
-        skipEmergency = Config.SkipEmergencyVehicles,
-        skipBA = Config.SkipBoatsAndAircraft,
-        blModels = Config.BlacklistedModels,
-        blClasses = Config.BlacklistedClasses
+        minDist = 0,
+        skipEmergency = false,
+        skipBA = false,
+        blModels = {},
+        blClasses = {}
       })
       print(('^2[%s]^7 Ciclo %s terminado.'):format(Config.ResourceName, token))
       broadcastAlert(Config.CleanupCompleteText, nil, Config.CleanupCompleteTitle)
@@ -220,11 +222,11 @@ local function startCleanupCycle(manual)
     end
 
     TriggerClientEvent('invictus_tow:client:doCleanup', -1, {
-      minDist = Config.MinDistanceFromAnyPlayer,
-      skipEmergency = Config.SkipEmergencyVehicles,
-      skipBA = Config.SkipBoatsAndAircraft,
-      blModels = Config.BlacklistedModels,
-      blClasses = Config.BlacklistedClasses,
+      minDist = 0,
+      skipEmergency = false,
+      skipBA = false,
+      blModels = {},
+      blClasses = {},
       debug = Config.Debug
     }, token)
 
@@ -303,19 +305,19 @@ end)
 local function immediateCleanup()
   cleanupState.token = cleanupState.token + 1
   TriggerClientEvent('invictus_tow:client:doCleanup', -1, {
-    minDist = Config.MinDistanceFromAnyPlayer,
-    skipEmergency = Config.SkipEmergencyVehicles,
-    skipBA = Config.SkipBoatsAndAircraft,
-    blModels = Config.BlacklistedModels,
-    blClasses = Config.BlacklistedClasses,
+    minDist = 0,
+    skipEmergency = false,
+    skipBA = false,
+    blModels = {},
+    blClasses = {},
     debug = Config.Debug
   }, cleanupState.token)
   cleanupServerVehicles({
-    minDist = Config.MinDistanceFromAnyPlayer,
-    skipEmergency = Config.SkipEmergencyVehicles,
-    skipBA = Config.SkipBoatsAndAircraft,
-    blModels = Config.BlacklistedModels,
-    blClasses = Config.BlacklistedClasses
+    minDist = 0,
+    skipEmergency = false,
+    skipBA = false,
+    blModels = {},
+    blClasses = {}
   })
   print(('^2[%s]^7 Limpieza inmediata ejecutada.'):format(Config.ResourceName))
 end
