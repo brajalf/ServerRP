@@ -70,6 +70,10 @@ local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity or function(
   return Citizen.InvokeNative(0xA11700682F3AD45C, entity)
 end
 
+local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked or function(entity)
+  return Citizen.InvokeNative(0xC7827959479DCC78, entity)
+end
+
 local GetPlayerPed = GetPlayerPed or function(player)
   return Citizen.InvokeNative(0x6E31E99359A9B316, player)
 end
