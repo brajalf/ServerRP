@@ -93,13 +93,12 @@ local function isAnySeatOccupied(veh)
   if max == -1 then max = 3 end  -- assume up to four seats
 
   for seat = -1, max do
+    local ped = GetPedInVehicleSeat(veh, seat)
     if Config.Debug then
-      local free = IsVehicleSeatFree(veh, seat)
-      debugPrint(('veh %s seat %s free=%s'):format(veh, seat, tostring(free)))
+      debugPrint(('veh %s seat %s ped=%s'):format(veh, seat, ped or 'none'))
     end
 
-    local ped = GetPedInVehicleSeat(veh, seat)
-    if ped and ped > 0 then
+    if ped and ped ~= 0 then
       if Config.Debug then
         debugPrint(('veh %s seat %s occupied'):format(veh, seat))
       end
