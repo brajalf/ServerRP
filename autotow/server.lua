@@ -90,38 +90,26 @@ local function isAnySeatOccupied(veh)
     max = max - 1
   end
 
-  local found = false
-
   for seat = -1, max do
-    local free = IsVehicleSeatFree(veh, seat)
-
     if Config.Debug then
+      local free = IsVehicleSeatFree(veh, seat)
       debugPrint(('veh %s seat %s free=%s'):format(veh, seat, tostring(free)))
     end
 
-    if free == false then
+    local ped = GetPedInVehicleSeat(veh, seat)
+    if ped and ped > 0 then
       if Config.Debug then
         debugPrint(('veh %s seat %s occupied'):format(veh, seat))
       end
-      found = true
-      break
-    elseif free == nil then
-      local ped = GetPedInVehicleSeat(veh, seat)
-      if ped and ped > 0 then
-        if Config.Debug then
-          debugPrint(('veh %s seat %s occupied'):format(veh, seat))
-        end
-        found = true
-        break
-      end
+      return true
     end
   end
 
   if Config.Debug then
-    debugPrint(('veh %s occupied=%s'):format(veh, tostring(found)))
+    debugPrint(('veh %s occupied=false'):format(veh))
   end
 
-  return found
+  return false
 end
 
 -- Limpia vehículos no streameados en el servidor
