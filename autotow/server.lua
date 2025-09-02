@@ -90,6 +90,8 @@ local function isAnySeatOccupied(veh)
     max = max - 1
   end
 
+  if max == -1 then max = 3 end  -- assume up to four seats
+
   for seat = -1, max do
     if Config.Debug then
       local free = IsVehicleSeatFree(veh, seat)
